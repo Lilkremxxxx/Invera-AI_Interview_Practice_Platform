@@ -15,11 +15,11 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/app' },
-  { icon: PlusCircle, label: 'New Session', path: '/app/new' },
-  { icon: History, label: 'Sessions', path: '/app/sessions' },
-  { icon: User, label: 'Profile', path: '/app/profile' },
-  { icon: Settings, label: 'Settings', path: '/app/settings' },
+  { icon: LayoutDashboard, label: 'Bảng điều khiển', path: '/app' },
+  { icon: PlusCircle, label: 'Phiên mới', path: '/app/new' },
+  { icon: History, label: 'Phiên', path: '/app/sessions' },
+  { icon: User, label: 'Hồ sơ', path: '/app/profile' },
+  { icon: Settings, label: 'Cài đặt', path: '/app/settings' },
 ];
 
 export const AppSidebar = () => {
@@ -39,7 +39,7 @@ export const AppSidebar = () => {
               <Sparkles className="w-5 h-5 text-accent-foreground" />
             </div>
             {!collapsed && (
-              <span className="font-bold text-lg">InterviewAI</span>
+              <span className="font-bold text-lg">invera</span>
             )}
           </Link>
           <button
@@ -85,11 +85,11 @@ export const AppSidebar = () => {
           {!collapsed && (
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <span className="text-sm font-medium">JD</span>
+                <span className="text-sm font-medium">ND</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">John Doe</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate">Pro Plan</p>
+                <p className="text-sm font-medium truncate">Người dùng</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">Gói Pro</p>
               </div>
             </div>
           )}
@@ -104,7 +104,7 @@ export const AppSidebar = () => {
           >
             <Link to="/login">
               <LogOut className="w-4 h-4" />
-              {!collapsed && <span className="ml-2">Log out</span>}
+              {!collapsed && <span className="ml-2">Đăng xuất</span>}
             </Link>
           </Button>
         </div>

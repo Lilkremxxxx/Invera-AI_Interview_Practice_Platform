@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const Settings = () => {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('vi');
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [dataSharing, setDataSharing] = useState(false);
@@ -21,8 +21,8 @@ const Settings = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your app preferences</p>
+        <h1 className="text-3xl font-bold text-foreground">Cài đặt</h1>
+        <p className="text-muted-foreground">Quản lý tùy chọn ứng dụng của bạn</p>
       </div>
 
       {/* Language */}
@@ -30,9 +30,9 @@ const Settings = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="w-5 h-5" />
-            Language
+            Ngôn ngữ
           </CardTitle>
-          <CardDescription>Choose your preferred language</CardDescription>
+          <CardDescription>Chọn ngôn ngữ ưa thích của bạn</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-3">
@@ -57,16 +57,16 @@ const Settings = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Volume2 className="w-5 h-5" />
-            Audio Settings
+            Cài đặt âm thanh
           </CardTitle>
-          <CardDescription>Configure text-to-speech and audio feedback</CardDescription>
+          <CardDescription>Cấu hình chuyển văn bản thành giọng nói và phản hồi âm thanh</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="tts" className="text-base">Text-to-Speech</Label>
+              <Label htmlFor="tts" className="text-base">Chuyển văn bản thành giọng nói</Label>
               <p className="text-sm text-muted-foreground">
-                Have feedback read aloud to you
+                Nghe phản hồi được đọc to cho bạn
               </p>
             </div>
             <Switch
@@ -83,16 +83,16 @@ const Settings = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Moon className="w-5 h-5" />
-            Appearance
+            Giao diện
           </CardTitle>
-          <CardDescription>Customize the look and feel</CardDescription>
+          <CardDescription>Tùy chỉnh giao diện và cảm giác</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="dark" className="text-base">Dark Mode</Label>
+              <Label htmlFor="dark" className="text-base">Chế độ tối</Label>
               <p className="text-sm text-muted-foreground">
-                Use dark theme for the interface
+                Sử dụng giao diện tối cho ứng dụng
               </p>
             </div>
             <Switch
@@ -109,16 +109,16 @@ const Settings = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Privacy
+            Quyền riêng tư
           </CardTitle>
-          <CardDescription>Control your data and privacy settings</CardDescription>
+          <CardDescription>Kiểm soát dữ liệu và cài đặt quyền riêng tư của bạn</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="sharing" className="text-base">Anonymous Data Sharing</Label>
+              <Label htmlFor="sharing" className="text-base">Chia sẻ dữ liệu ẩn danh</Label>
               <p className="text-sm text-muted-foreground">
-                Help improve our AI by sharing anonymized practice data
+                Giúp cải thiện AI của chúng tôi bằng cách chia sẻ dữ liệu luyện tập ẩn danh
               </p>
             </div>
             <Switch
@@ -130,7 +130,7 @@ const Settings = () => {
 
           <div className="pt-4 border-t">
             <Button variant="outline" className="text-destructive hover:text-destructive">
-              Delete All My Data
+              Xóa tất cả dữ liệu của tôi
             </Button>
           </div>
         </CardContent>
@@ -140,7 +140,7 @@ const Settings = () => {
       <div className="flex justify-end">
         <Button variant="accent" size="lg">
           <Save className="w-4 h-4" />
-          Save Settings
+          Lưu cài đặt
         </Button>
       </div>
     </div>

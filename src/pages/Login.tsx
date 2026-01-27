@@ -26,12 +26,12 @@ const Login = () => {
             <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-accent-foreground" />
             </div>
-            <span className="font-bold text-2xl text-foreground">InterviewAI</span>
+            <span className="font-bold text-2xl text-foreground">invera</span>
           </Link>
 
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Chào mừng trở lại</h1>
           <p className="text-muted-foreground mb-8">
-            Enter your credentials to access your account
+            Nhập thông tin đăng nhập để truy cập tài khoản của bạn
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -40,7 +40,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="ban@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -50,9 +50,9 @@ const Login = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Mật khẩu</Label>
                 <Link to="/forgot-password" className="text-sm text-accent hover:underline">
-                  Forgot password?
+                  Quên mật khẩu?
                 </Link>
               </div>
               <div className="relative">
@@ -76,7 +76,7 @@ const Login = () => {
             </div>
 
             <Button type="submit" variant="accent" size="lg" className="w-full">
-              Sign in
+              Đăng nhập
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
@@ -88,7 +88,7 @@ const Login = () => {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-background px-2 text-muted-foreground">Hoặc tiếp tục với</span>
               </div>
             </div>
 
@@ -112,9 +112,9 @@ const Login = () => {
           </div>
 
           <p className="text-center text-muted-foreground mt-8">
-            Don't have an account?{' '}
+            Chưa có tài khoản?{' '}
             <Link to="/signup" className="text-accent hover:underline font-medium">
-              Sign up
+              Đăng ký
             </Link>
           </p>
         </div>
@@ -129,11 +129,11 @@ const Login = () => {
         
         <div className="relative z-10 text-center max-w-md">
           <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-            Practice Makes Perfect
+            Luyện tập tạo nên sự hoàn hảo
           </h2>
           <p className="text-primary-foreground/70 text-lg">
-            Join thousands of job seekers who improved their interview skills 
-            with AI-powered practice and feedback.
+            Tham gia cùng hàng nghìn người tìm việc đã cải thiện kỹ năng phỏng vấn 
+            với luyện tập và phản hồi được hỗ trợ bởi AI.
           </p>
         </div>
       </div>

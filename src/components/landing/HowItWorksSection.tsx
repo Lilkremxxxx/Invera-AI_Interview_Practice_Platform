@@ -4,20 +4,20 @@ const steps = [
   {
     icon: Target,
     step: '01',
-    title: 'Choose Your Role',
-    description: 'Select from 10+ job roles and experience levels. Get questions tailored to your target position.',
+    title: 'Chọn vị trí của bạn',
+    description: 'Chọn từ hơn 10 vị trí công việc và cấp độ kinh nghiệm. Nhận câu hỏi phù hợp với vị trí mục tiêu của bạn.',
   },
   {
     icon: MessageSquare,
     step: '02',
-    title: 'Practice Answering',
-    description: 'Answer questions via text, voice, or video. Our AI interviewer creates a realistic interview experience.',
+    title: 'Luyện tập trả lời',
+    description: 'Trả lời câu hỏi qua văn bản, giọng nói hoặc video. Người phỏng vấn AI của chúng tôi tạo ra trải nghiệm phỏng vấn thực tế.',
   },
   {
     icon: TrendingUp,
     step: '03',
-    title: 'Get Feedback & Improve',
-    description: 'Receive instant, structured feedback on your answers. Track your progress over time and see improvement.',
+    title: 'Nhận phản hồi & Cải thiện',
+    description: 'Nhận phản hồi tức thì, có cấu trúc về câu trả lời của bạn. Theo dõi tiến độ theo thời gian và thấy sự cải thiện.',
   },
 ];
 
@@ -27,13 +27,13 @@ export const HowItWorksSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Simple Process
+            Quy trình đơn giản
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            How It Works
+            Cách thức hoạt động
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Get started in minutes. Practice as much as you need to feel confident.
+            Bắt đầu trong vài phút. Luyện tập nhiều như bạn cần để cảm thấy tự tin.
           </p>
         </div>
 

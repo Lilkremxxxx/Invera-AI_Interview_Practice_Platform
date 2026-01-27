@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
   Search, 
-  Filter, 
   Calendar, 
   Target, 
   ChevronRight,
@@ -39,12 +38,12 @@ const Sessions = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Sessions</h1>
-          <p className="text-muted-foreground">View and manage your practice sessions</p>
+          <h1 className="text-3xl font-bold text-foreground">Phiên</h1>
+          <p className="text-muted-foreground">Xem và quản lý các phiên luyện tập của bạn</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4" />
-          Export All
+          Xuất tất cả
         </Button>
       </div>
 
@@ -55,7 +54,7 @@ const Sessions = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Search by role..."
+                placeholder="Tìm kiếm theo vị trí..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -67,7 +66,7 @@ const Sessions = () => {
                 size="sm"
                 onClick={() => setFilterMode(null)}
               >
-                All
+                Tất cả
               </Button>
               <Button
                 variant={filterMode === 'text' ? "secondary" : "ghost"}
@@ -75,7 +74,7 @@ const Sessions = () => {
                 onClick={() => setFilterMode('text')}
               >
                 <Type className="w-4 h-4" />
-                Text
+                Văn bản
               </Button>
               <Button
                 variant={filterMode === 'voice' ? "secondary" : "ghost"}
@@ -83,7 +82,7 @@ const Sessions = () => {
                 onClick={() => setFilterMode('voice')}
               >
                 <Mic className="w-4 h-4" />
-                Voice
+                Giọng nói
               </Button>
               <Button
                 variant={filterMode === 'video' ? "secondary" : "ghost"}
@@ -101,7 +100,7 @@ const Sessions = () => {
       {/* Sessions List */}
       <Card>
         <CardHeader>
-          <CardTitle>Practice History</CardTitle>
+          <CardTitle>Lịch sử luyện tập</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredSessions.length === 0 ? (
@@ -109,12 +108,12 @@ const Sessions = () => {
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                 <Target className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">No sessions found</h3>
+              <h3 className="font-semibold text-foreground mb-2">Không tìm thấy phiên nào</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || filterMode ? 'Try adjusting your filters' : 'Start your first practice session'}
+                {searchQuery || filterMode ? 'Thử điều chỉnh bộ lọc của bạn' : 'Bắt đầu phiên luyện tập đầu tiên của bạn'}
               </p>
               <Button variant="accent" asChild>
-                <Link to="/app/new">Create New Session</Link>
+                <Link to="/app/new">Tạo phiên mới</Link>
               </Button>
             </div>
           ) : (
@@ -136,7 +135,7 @@ const Sessions = () => {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span>{session.level}</span>
                         <span>•</span>
-                        <span>{session.questionsCount} questions</span>
+                        <span>{session.questionsCount} câu hỏi</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           {getModeIcon(session.mode)}

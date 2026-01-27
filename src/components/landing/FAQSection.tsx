@@ -12,13 +12,13 @@ export const FAQSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            FAQ
+            Câu hỏi thường gặp
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Frequently Asked Questions
+            Câu hỏi thường gặp
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Got questions? We've got answers.
+            Có câu hỏi? Chúng tôi có câu trả lời.
           </p>
         </div>
 

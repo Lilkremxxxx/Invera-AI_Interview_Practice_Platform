@@ -18,9 +18,9 @@ const Signup = () => {
   };
 
   const benefits = [
-    'Unlimited practice sessions',
-    'AI-powered feedback',
-    'Track your progress',
+    'Phiên luyện tập không giới hạn',
+    'Phản hồi được hỗ trợ bởi AI',
+    'Theo dõi tiến độ của bạn',
   ];
 
   return (
@@ -34,10 +34,10 @@ const Signup = () => {
         
         <div className="relative z-10 max-w-md">
           <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-            Start Your Interview Journey
+            Bắt đầu hành trình phỏng vấn của bạn
           </h2>
           <p className="text-primary-foreground/70 text-lg mb-8">
-            Get personalized practice and feedback to land your dream job.
+            Nhận luyện tập và phản hồi cá nhân hóa để có được công việc mơ ước.
           </p>
           
           <ul className="space-y-4">
@@ -59,21 +59,21 @@ const Signup = () => {
             <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-accent-foreground" />
             </div>
-            <span className="font-bold text-2xl text-foreground">InterviewAI</span>
+            <span className="font-bold text-2xl text-foreground">invera</span>
           </Link>
 
-          <h1 className="text-3xl font-bold text-foreground mb-2">Create your account</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Tạo tài khoản của bạn</h1>
           <p className="text-muted-foreground mb-8">
-            Start practicing for free. No credit card required.
+            Bắt đầu luyện tập miễn phí. Không cần thẻ tín dụng.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">Họ và tên</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Nguyễn Văn A"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -86,7 +86,7 @@ const Signup = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="ban@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -95,7 +95,7 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mật khẩu</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -115,12 +115,12 @@ const Signup = () => {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
+                Phải có ít nhất 8 ký tự
               </p>
             </div>
 
             <Button type="submit" variant="accent" size="lg" className="w-full">
-              Create account
+              Tạo tài khoản
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
@@ -132,7 +132,7 @@ const Signup = () => {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-background px-2 text-muted-foreground">Hoặc tiếp tục với</span>
               </div>
             </div>
 
@@ -156,16 +156,16 @@ const Signup = () => {
           </div>
 
           <p className="text-center text-muted-foreground mt-8">
-            Already have an account?{' '}
+            Đã có tài khoản?{' '}
             <Link to="/login" className="text-accent hover:underline font-medium">
-              Sign in
+              Đăng nhập
             </Link>
           </p>
 
           <p className="text-center text-xs text-muted-foreground mt-4">
-            By creating an account, you agree to our{' '}
-            <Link to="/terms" className="hover:underline">Terms</Link> and{' '}
-            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+            Bằng cách tạo tài khoản, bạn đồng ý với{' '}
+            <Link to="/terms" className="hover:underline">Điều khoản</Link> và{' '}
+            <Link to="/privacy" className="hover:underline">Chính sách bảo mật</Link> của chúng tôi
           </p>
         </div>
       </div>

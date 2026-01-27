@@ -12,11 +12,11 @@ export const Footer = () => {
               <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-accent-foreground" />
               </div>
-              <span className="font-bold text-xl">InterviewAI</span>
+              <span className="font-bold text-xl">invera</span>
             </Link>
             <p className="text-primary-foreground/70 max-w-md mb-6">
-              Practice makes perfect. Our AI-powered interview platform helps you 
-              prepare for your dream job with personalized feedback and progress tracking.
+              Luyện tập tạo nên sự hoàn hảo. Nền tảng phỏng vấn được hỗ trợ bởi AI của chúng tôi giúp bạn 
+              chuẩn bị cho công việc mơ ước với phản hồi cá nhân hóa và theo dõi tiến độ.
             </p>
             <div className="flex gap-4">
               <a href="#" className="p-2 rounded-lg bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors">
@@ -33,52 +33,52 @@ export const Footer = () => {
 
           {/* Links */}
           <div>
-            <h4 className="font-semibold mb-4">Product</h4>
+            <h4 className="font-semibold mb-4">Sản phẩm</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/#features" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Features
+                  Tính năng
                 </Link>
               </li>
               <li>
                 <Link to="/#pricing" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Pricing
+                  Bảng giá
                 </Link>
               </li>
               <li>
                 <Link to="/#faq" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  FAQ
+                  Câu hỏi thường gặp
                 </Link>
               </li>
               <li>
                 <Link to="/app" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Dashboard
+                  Bảng điều khiển
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Company</h4>
+            <h4 className="font-semibold mb-4">Công ty</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/about" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  About
+                  Về chúng tôi
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Contact
+                  Liên hệ
                 </Link>
               </li>
               <li>
                 <Link to="/privacy" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Privacy Policy
+                  Chính sách bảo mật
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Terms of Service
+                  Điều khoản dịch vụ
                 </Link>
               </li>
             </ul>
@@ -86,7 +86,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/10 mt-12 pt-8 text-center text-primary-foreground/60">
-          <p>&copy; {new Date().getFullYear()} InterviewAI. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} invera. Tất cả quyền được bảo lưu.</p>
         </div>
       </div>
     </footer>

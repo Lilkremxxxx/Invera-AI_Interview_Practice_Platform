@@ -10,13 +10,13 @@ export const PricingSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Pricing
+            Bảng giá
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+            Bảng giá đơn giản, minh bạch
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start free and upgrade when you need more. No hidden fees.
+            Bắt đầu miễn phí và nâng cấp khi bạn cần thêm. Không có phí ẩn.
           </p>
         </div>
 
@@ -33,7 +33,7 @@ export const PricingSection = () => {
             >
               {plan.popular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full gradient-accent text-accent-foreground text-sm font-medium shadow-sm">
-                  Most Popular
+                  Phổ biến nhất
                 </span>
               )}
 
@@ -45,7 +45,7 @@ export const PricingSection = () => {
                     ${plan.price}
                   </span>
                   {plan.price > 0 && (
-                    <span className="text-muted-foreground">/month</span>
+                    <span className="text-muted-foreground">/tháng</span>
                   )}
                 </div>
               </div>

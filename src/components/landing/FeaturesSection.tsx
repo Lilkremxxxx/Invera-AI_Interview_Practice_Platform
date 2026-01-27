@@ -11,40 +11,40 @@ import {
 const features = [
   {
     icon: Target,
-    title: 'Role-Based Questions',
-    description: 'Curated question sets for Frontend, Backend, Data Science, Product, Marketing, and more.',
-    highlights: ['10+ job roles', 'Multiple experience levels', 'Industry-specific'],
+    title: 'Câu hỏi theo vị trí',
+    description: 'Bộ câu hỏi được tuyển chọn cho Frontend, Backend, Data Science, Product, Marketing và nhiều hơn nữa.',
+    highlights: ['Hơn 10 vị trí công việc', 'Nhiều cấp độ kinh nghiệm', 'Chuyên biệt theo ngành'],
   },
   {
     icon: Mic,
-    title: 'Multiple Answer Modes',
-    description: 'Practice your way—type your answers, record your voice, or use video for full simulation.',
-    highlights: ['Text input', 'Voice recording', 'Video mode'],
+    title: 'Nhiều chế độ trả lời',
+    description: 'Luyện tập theo cách của bạn—nhập câu trả lời, ghi âm giọng nói hoặc sử dụng video để mô phỏng đầy đủ.',
+    highlights: ['Nhập văn bản', 'Ghi âm giọng nói', 'Chế độ video'],
   },
   {
     icon: BarChart3,
-    title: 'Structured Feedback',
-    description: 'Get detailed analysis on relevance, coherence, structure, and delivery with improvement tips.',
-    highlights: ['Score breakdown', 'Strengths identified', 'Rewrite suggestions'],
+    title: 'Phản hồi có cấu trúc',
+    description: 'Nhận phân tích chi tiết về mức độ liên quan, mạch lạc, cấu trúc và cách trình bày với các mẹo cải thiện.',
+    highlights: ['Phân tích điểm số', 'Xác định điểm mạnh', 'Gợi ý viết lại'],
   },
   {
     icon: History,
-    title: 'Progress Tracking',
-    description: 'See your improvement over time with detailed analytics and session history.',
-    highlights: ['Visual charts', 'Session history', 'Streak tracking'],
+    title: 'Theo dõi tiến độ',
+    description: 'Xem sự cải thiện của bạn theo thời gian với phân tích chi tiết và lịch sử phiên.',
+    highlights: ['Biểu đồ trực quan', 'Lịch sử phiên', 'Theo dõi chuỗi ngày'],
   },
   {
     icon: Volume2,
-    title: 'Text-to-Speech',
-    description: 'Have your feedback read aloud. Great for reviewing on the go or accessibility.',
-    highlights: ['Natural voice', 'Adjustable speed', 'Multiple languages'],
+    title: 'Chuyển văn bản thành giọng nói',
+    description: 'Nghe phản hồi của bạn được đọc to. Tuyệt vời để xem lại khi di chuyển hoặc hỗ trợ khả năng tiếp cận.',
+    highlights: ['Giọng nói tự nhiên', 'Tốc độ điều chỉnh', 'Nhiều ngôn ngữ'],
     optional: true,
   },
   {
     icon: Eye,
-    title: 'Expression Analysis',
-    description: 'Get insights on your non-verbal communication during video practice sessions.',
-    highlights: ['Eye contact', 'Facial expressions', 'Confidence cues'],
+    title: 'Phân tích biểu cảm',
+    description: 'Nhận thông tin chi tiết về giao tiếp phi ngôn ngữ của bạn trong các phiên luyện tập video.',
+    highlights: ['Giao tiếp bằng mắt', 'Biểu cảm khuôn mặt', 'Dấu hiệu tự tin'],
     optional: true,
   },
 ];
@@ -55,13 +55,13 @@ export const FeaturesSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Features
+            Tính năng
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Everything You Need to Prepare
+            Mọi thứ bạn cần để chuẩn bị
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Comprehensive tools and features designed to help you succeed in your interviews.
+            Công cụ và tính năng toàn diện được thiết kế để giúp bạn thành công trong các cuộc phỏng vấn.
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export const FeaturesSection = () => {
             >
               {feature.optional && (
                 <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                  Optional
+                  Tùy chọn
                 </span>
               )}
               

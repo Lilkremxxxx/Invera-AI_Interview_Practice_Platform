@@ -20,7 +20,7 @@ export const Navbar = () => {
               <Sparkles className="w-5 h-5 text-accent-foreground" />
             </div>
             <span className={`font-bold text-xl ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}>
-              InterviewAI
+              invera
             </span>
           </Link>
 
@@ -32,7 +32,7 @@ export const Navbar = () => {
                 isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
               }`}
             >
-              Features
+              Tính năng
             </Link>
             <Link 
               to="/#pricing" 
@@ -40,7 +40,7 @@ export const Navbar = () => {
                 isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
               }`}
             >
-              Pricing
+              Bảng giá
             </Link>
             <Link 
               to="/#faq" 
@@ -48,7 +48,7 @@ export const Navbar = () => {
                 isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
               }`}
             >
-              FAQ
+              Câu hỏi thường gặp
             </Link>
           </div>
 
@@ -59,14 +59,14 @@ export const Navbar = () => {
               size="sm" 
               asChild
             >
-              <Link to="/login">Log in</Link>
+              <Link to="/login">Đăng nhập</Link>
             </Button>
             <Button 
               variant={isLanding ? "hero" : "accent"} 
               size="sm" 
               asChild
             >
-              <Link to="/signup">Start practicing</Link>
+              <Link to="/signup">Bắt đầu luyện tập</Link>
             </Button>
           </div>
 
@@ -92,28 +92,28 @@ export const Navbar = () => {
                 className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
                 onClick={() => setIsOpen(false)}
               >
-                Features
+                Tính năng
               </Link>
               <Link 
                 to="/#pricing" 
                 className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
                 onClick={() => setIsOpen(false)}
               >
-                Pricing
+                Bảng giá
               </Link>
               <Link 
                 to="/#faq" 
                 className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
                 onClick={() => setIsOpen(false)}
               >
-                FAQ
+                Câu hỏi thường gặp
               </Link>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/20">
                 <Button variant="outline" size="sm" asChild className="w-full">
-                  <Link to="/login">Log in</Link>
+                  <Link to="/login">Đăng nhập</Link>
                 </Button>
                 <Button variant="accent" size="sm" asChild className="w-full">
-                  <Link to="/signup">Start practicing</Link>
+                  <Link to="/signup">Bắt đầu luyện tập</Link>
                 </Button>
               </div>
             </div>

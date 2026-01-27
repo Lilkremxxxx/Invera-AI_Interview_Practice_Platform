@@ -16,22 +16,22 @@ export const CTASection = () => {
           <div className="relative z-10 px-8 py-16 md:px-16 md:py-20 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 text-accent-foreground/90 mb-6">
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">Start your journey today</span>
+              <span className="text-sm font-medium">Bắt đầu hành trình của bạn hôm nay</span>
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-              Ready to Ace Your Next Interview?
+              Sẵn sàng chinh phục buổi phỏng vấn tiếp theo?
             </h2>
             
             <p className="text-lg text-primary-foreground/70 max-w-xl mx-auto mb-8">
-              Join thousands of job seekers who improved their interview skills 
-              with AI-powered practice. Start free today.
+              Tham gia cùng hàng nghìn người tìm việc đã cải thiện kỹ năng phỏng vấn 
+              với luyện tập được hỗ trợ bởi AI. Bắt đầu miễn phí hôm nay.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button variant="hero" size="xl" asChild>
                 <Link to="/signup">
-                  Get started for free
+                  Bắt đầu miễn phí
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>

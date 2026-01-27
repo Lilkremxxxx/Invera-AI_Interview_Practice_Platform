@@ -19,13 +19,13 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Ready to practice?</p>
+          <h1 className="text-3xl font-bold text-foreground">Bảng điều khiển</h1>
+          <p className="text-muted-foreground">Chào mừng trở lại! Sẵn sàng luyện tập?</p>
         </div>
         <Button variant="accent" size="lg" asChild>
           <Link to="/app/new">
             <PlusCircle className="w-5 h-5" />
-            Create new session
+            Tạo phiên mới
           </Link>
         </Button>
       </div>
@@ -36,7 +36,7 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Sessions</p>
+                <p className="text-sm text-muted-foreground mb-1">Tổng số phiên</p>
                 <p className="text-3xl font-bold text-foreground">{userStats.totalSessions}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -50,7 +50,7 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Average Score</p>
+                <p className="text-sm text-muted-foreground mb-1">Điểm trung bình</p>
                 <p className="text-3xl font-bold text-foreground">{userStats.averageScore}%</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
@@ -59,7 +59,7 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center gap-1 mt-2">
               <span className="text-xs text-success">+{userStats.improvementRate}%</span>
-              <span className="text-xs text-muted-foreground">from last month</span>
+              <span className="text-xs text-muted-foreground">so với tháng trước</span>
             </div>
           </CardContent>
         </Card>
@@ -68,8 +68,8 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Practice Streak</p>
-                <p className="text-3xl font-bold text-foreground">{userStats.practiceStreak} days</p>
+                <p className="text-sm text-muted-foreground mb-1">Chuỗi luyện tập</p>
+                <p className="text-3xl font-bold text-foreground">{userStats.practiceStreak} ngày</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
                 <Flame className="w-6 h-6 text-warning" />
@@ -82,7 +82,7 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Questions Answered</p>
+                <p className="text-sm text-muted-foreground mb-1">Câu hỏi đã trả lời</p>
                 <p className="text-3xl font-bold text-foreground">{userStats.totalQuestions}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-info/10 flex items-center justify-center">
@@ -97,11 +97,11 @@ const Dashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Progress Over Time</span>
+            <span>Tiến độ theo thời gian</span>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm">7 days</Button>
-              <Button variant="ghost" size="sm">30 days</Button>
-              <Button variant="ghost" size="sm">90 days</Button>
+              <Button variant="secondary" size="sm">7 ngày</Button>
+              <Button variant="ghost" size="sm">30 ngày</Button>
+              <Button variant="ghost" size="sm">90 ngày</Button>
             </div>
           </CardTitle>
         </CardHeader>
@@ -146,10 +146,10 @@ const Dashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Recent Sessions</span>
+            <span>Phiên gần đây</span>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/app/sessions">
-                View all
+                Xem tất cả
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </Button>
@@ -170,7 +170,7 @@ const Dashboard = () => {
                   <div>
                     <h4 className="font-medium text-foreground">{session.role}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {session.level} • {session.questionsCount} questions • {session.mode}
+                      {session.level} • {session.questionsCount} câu hỏi • {session.mode}
                     </p>
                   </div>
                 </div>
