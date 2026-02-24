@@ -23,10 +23,10 @@ export const PainPointsSection = () => {
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Tại sao luyện tập phỏng vấn quan trọng
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Thị trường việc làm rất cạnh tranh. Đừng để việc thiếu chuẩn bị cản trở bạn.
           </p>
         </div>
@@ -40,10 +40,10 @@ export const PainPointsSection = () => {
               <div className="w-14 h-14 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <point.icon className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
+              <h3 className="text-xl font-semibold text-primary dark:text-foreground mb-3">
                 {point.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-primary/70 dark:text-muted-foreground leading-relaxed">
                 {point.description}
               </p>
             </div>

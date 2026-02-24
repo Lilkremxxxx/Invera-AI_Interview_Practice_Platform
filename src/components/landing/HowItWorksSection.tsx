@@ -29,10 +29,10 @@ export const HowItWorksSection = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Quy trình đơn giản
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Cách thức hoạt động
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Bắt đầu trong vài phút. Luyện tập nhiều như bạn cần để cảm thấy tự tin.
           </p>
         </div>
@@ -52,12 +52,12 @@ export const HowItWorksSection = () => {
                   
                   <div className="flex items-center gap-3 mb-4">
                     <step.icon className="w-6 h-6 text-accent" />
-                    <h3 className="text-xl font-semibold text-foreground">
+                    <h3 className="text-xl font-semibold text-primary dark:text-foreground">
                       {step.title}
                     </h3>
                   </div>
                   
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-primary/70 dark:text-muted-foreground leading-relaxed">
                     {step.description}
                   </p>
                 </div>

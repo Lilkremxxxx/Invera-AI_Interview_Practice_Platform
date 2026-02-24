@@ -57,10 +57,10 @@ export const FeaturesSection = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Tính năng
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Mọi thứ bạn cần để chuẩn bị
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Công cụ và tính năng toàn diện được thiết kế để giúp bạn thành công trong các cuộc phỏng vấn.
           </p>
         </div>
@@ -81,17 +81,17 @@ export const FeaturesSection = () => {
                 <feature.icon className="w-6 h-6" />
               </div>
               
-              <h3 className="text-xl font-semibold text-foreground mb-2">
+              <h3 className="text-xl font-semibold text-primary dark:text-foreground mb-2">
                 {feature.title}
               </h3>
               
-              <p className="text-muted-foreground mb-4 leading-relaxed">
+              <p className="text-primary/70 dark:text-muted-foreground mb-4 leading-relaxed">
                 {feature.description}
               </p>
               
               <ul className="space-y-2">
                 {feature.highlights.map((highlight, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <li key={idx} className="flex items-center gap-2 text-sm text-primary/60 dark:text-muted-foreground">
                     <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
                     {highlight}
                   </li>

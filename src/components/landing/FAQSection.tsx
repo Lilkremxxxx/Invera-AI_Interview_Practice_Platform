@@ -14,10 +14,10 @@ export const FAQSection = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Câu hỏi thường gặp
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Câu hỏi thường gặp
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Có câu hỏi? Chúng tôi có câu trả lời.
           </p>
         </div>
@@ -30,10 +30,10 @@ export const FAQSection = () => {
                 value={`item-${index}`}
                 className="bg-card border border-border rounded-xl px-6 data-[state=open]:border-accent/50 transition-colors"
               >
-                <AccordionTrigger className="text-left text-foreground hover:text-accent py-5">
+                <AccordionTrigger className="text-left text-primary dark:text-foreground hover:text-accent py-5">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5">
+                <AccordionContent className="text-primary/70 dark:text-muted-foreground pb-5">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>

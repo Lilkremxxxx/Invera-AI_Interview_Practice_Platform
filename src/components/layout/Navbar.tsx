@@ -10,43 +10,42 @@ export const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isLanding ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md border-b'
+      isLanding 
+        ? 'bg-background/95 backdrop-blur-lg border-b border-border/50 shadow-sm' 
+        : 'bg-background/95 backdrop-blur-lg border-b border-border'
     }`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center">
+          <Link 
+            to="/" 
+            className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
+          >
+            <div className="w-9 h-9 rounded-xl gradient-accent flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
               <Sparkles className="w-5 h-5 text-accent-foreground" />
             </div>
-            <span className={`font-bold text-xl ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}>
+            <span className="font-bold text-xl text-foreground group-hover:text-accent transition-colors">
               invera
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-1">
             <Link 
               to="/#features" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
-              }`}
+              className="px-4 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-accent/10 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Tính năng
             </Link>
             <Link 
               to="/#pricing" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
-              }`}
+              className="px-4 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-accent/10 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Bảng giá
             </Link>
             <Link 
               to="/#faq" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                isLanding ? 'text-primary-foreground/80' : 'text-muted-foreground'
-              }`}
+              className="px-4 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-accent/10 rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Câu hỏi thường gặp
             </Link>
@@ -55,16 +54,18 @@ export const Navbar = () => {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Button 
-              variant={isLanding ? "hero-outline" : "ghost"} 
+              variant="ghost" 
               size="sm" 
               asChild
+              className="font-semibold"
             >
               <Link to="/login">Đăng nhập</Link>
             </Button>
             <Button 
-              variant={isLanding ? "hero" : "accent"} 
+              variant="accent" 
               size="sm" 
               asChild
+              className="font-semibold shadow-md hover:shadow-lg"
             >
               <Link to="/signup">Bắt đầu luyện tập</Link>
             </Button>
@@ -72,47 +73,48 @@ export const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2"
+            className="md:hidden p-2 text-foreground hover:bg-accent/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
           >
             {isOpen ? (
-              <X className={`w-6 h-6 ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`} />
+              <X className="w-6 h-6" />
             ) : (
-              <Menu className={`w-6 h-6 ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`} />
+              <Menu className="w-6 h-6" />
             )}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-border/20 animate-fade-in">
-            <div className="flex flex-col gap-4">
+          <div className="md:hidden py-4 border-t border-border/50 bg-background/98 backdrop-blur-lg animate-fade-in">
+            <div className="flex flex-col gap-2">
               <Link 
                 to="/#features" 
-                className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
+                className="px-4 py-3 text-sm font-semibold text-foreground hover:bg-accent/10 rounded-lg transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 Tính năng
               </Link>
               <Link 
                 to="/#pricing" 
-                className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
+                className="px-4 py-3 text-sm font-semibold text-foreground hover:bg-accent/10 rounded-lg transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 Bảng giá
               </Link>
               <Link 
                 to="/#faq" 
-                className={`text-sm font-medium ${isLanding ? 'text-primary-foreground' : 'text-foreground'}`}
+                className="px-4 py-3 text-sm font-semibold text-foreground hover:bg-accent/10 rounded-lg transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 Câu hỏi thường gặp
               </Link>
-              <div className="flex flex-col gap-2 pt-4 border-t border-border/20">
-                <Button variant="outline" size="sm" asChild className="w-full">
+              <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border/50">
+                <Button variant="outline" size="sm" asChild className="w-full font-semibold">
                   <Link to="/login">Đăng nhập</Link>
                 </Button>
-                <Button variant="accent" size="sm" asChild className="w-full">
+                <Button variant="accent" size="sm" asChild className="w-full font-semibold">
                   <Link to="/signup">Bắt đầu luyện tập</Link>
                 </Button>
               </div>

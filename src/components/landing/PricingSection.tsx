@@ -12,10 +12,10 @@ export const PricingSection = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Bảng giá
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Bảng giá đơn giản, minh bạch
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Bắt đầu miễn phí và nâng cấp khi bạn cần thêm. Không có phí ẩn.
           </p>
         </div>
@@ -38,14 +38,14 @@ export const PricingSection = () => {
               )}
 
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-foreground mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground mb-4">{plan.description}</p>
+                <h3 className="text-2xl font-bold text-primary dark:text-foreground mb-2">{plan.name}</h3>
+                <p className="text-primary/60 dark:text-muted-foreground mb-4">{plan.description}</p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold text-foreground">
+                  <span className="text-4xl font-bold text-primary dark:text-foreground">
                     ${plan.price}
                   </span>
                   {plan.price > 0 && (
-                    <span className="text-muted-foreground">/tháng</span>
+                    <span className="text-primary/60 dark:text-muted-foreground">/tháng</span>
                   )}
                 </div>
               </div>
@@ -54,7 +54,7 @@ export const PricingSection = () => {
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">{feature}</span>
+                    <span className="text-primary dark:text-foreground">{feature}</span>
                   </li>
                 ))}
               </ul>

@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import { useAuth } from "@/hooks/use-auth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -18,12 +20,15 @@ import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+// Wrapper component to access location and auth
+function AppContent() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="interview-prep-theme" isAuthenticated={isAuthenticated}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Index />} />
@@ -46,8 +51,16 @@ const App = () => (
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

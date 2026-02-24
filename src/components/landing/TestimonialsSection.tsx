@@ -9,10 +9,10 @@ export const TestimonialsSection = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Đánh giá
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
             Được yêu thích bởi người tìm việc
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
             Nghe từ các chuyên gia đã có được công việc mơ ước sau khi luyện tập với chúng tôi.
           </p>
         </div>
@@ -33,7 +33,7 @@ export const TestimonialsSection = () => {
               </div>
               
               {/* Content */}
-              <p className="text-foreground mb-6 leading-relaxed relative z-10">
+              <p className="text-primary dark:text-foreground mb-6 leading-relaxed relative z-10">
                 "{testimonial.content}"
               </p>
               
@@ -43,8 +43,8 @@ export const TestimonialsSection = () => {
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
-                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  <h4 className="font-semibold text-primary dark:text-foreground">{testimonial.name}</h4>
+                  <p className="text-sm text-primary/60 dark:text-muted-foreground">{testimonial.role}</p>
                 </div>
               </div>
             </div>

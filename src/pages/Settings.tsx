@@ -3,20 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/components/theme-provider';
 import { 
   Settings as SettingsIcon,
   Globe,
   Volume2,
   Shield,
   Moon,
-  Save
+  Save,
+  Lock
 } from 'lucide-react';
 
 const Settings = () => {
   const [language, setLanguage] = useState('vi');
   const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [dataSharing, setDataSharing] = useState(false);
+  const { theme, setTheme, isAuthenticated } = useTheme();
+  
+  // Determine if dark mode is active (only for authenticated users)
+  const isDarkMode = isAuthenticated && theme === 'dark';
+  
+  const handleDarkModeToggle = (checked: boolean) => {
+    if (!isAuthenticated) {
+      return; // Prevent toggle for non-authenticated users
+    }
+    setTheme(checked ? 'dark' : 'light');
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -89,16 +101,26 @@ const Settings = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <Label htmlFor="dark" className="text-base">Chế độ tối</Label>
               <p className="text-sm text-muted-foreground">
-                Sử dụng giao diện tối cho ứng dụng
+                {isAuthenticated 
+                  ? "Sử dụng giao diện tối cho ứng dụng"
+                  : "Chỉ khả dụng cho người dùng đã đăng nhập"
+                }
               </p>
+              {!isAuthenticated && (
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  <Lock className="w-3 h-3" />
+                  <span>Đăng nhập để thay đổi chủ đề</span>
+                </div>
+              )}
             </div>
             <Switch
               id="dark"
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
+              checked={isDarkMode}
+              onCheckedChange={handleDarkModeToggle}
+              disabled={!isAuthenticated}
             />
           </div>
         </CardContent>
