@@ -1,21 +1,34 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Sparkles, ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/use-auth';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { t } = useLanguage();
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - redirect to dashboard
-    window.location.href = '/app';
+    setErrorMsg('');
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+      navigate('/app', { replace: true });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : t('login', 'error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -45,6 +58,14 @@ const Login = () => {
 
             {/* Form with improved spacing */}
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error message */}
+              {errorMsg && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm text-destructive">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
               <div className="space-y-2.5">
                 <Label htmlFor="email" className="text-sm font-semibold text-foreground">
                   {t('login', 'email')}
@@ -98,10 +119,20 @@ const Login = () => {
                 type="submit" 
                 variant="accent" 
                 size="lg" 
+                disabled={isSubmitting}
                 className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg mt-8"
               >
-                {t('login', 'submit')}
-                <ArrowRight className="w-5 h-5 ml-1" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    {t('login', 'submitting')}
+                  </>
+                ) : (
+                  <>
+                    {t('login', 'submit')}
+                    <ArrowRight className="w-5 h-5 ml-1" />
+                  </>
+                )}
               </Button>
             </form>
 

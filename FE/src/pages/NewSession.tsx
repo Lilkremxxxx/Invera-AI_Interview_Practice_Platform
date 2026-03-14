@@ -10,37 +10,65 @@ import {
   ArrowRight, 
   ArrowLeft,
   Search,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { roles, levels, answerModes, questionCounts, timeLimits, difficulties } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { sessionsApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const NewSession = () => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   
   const [config, setConfig] = useState({
     role: '',
     level: 'junior',
-    questionCount: 10,
+    questionCount: 5,
     timeLimit: 'none',
     answerMode: 'text',
     difficulty: 'medium',
   });
 
-  const filteredRoles = roles.filter(role =>
+  // Only MVP roles with questions seeded: frontend, backend, fullstack
+  const mvpRoles = roles.filter(r => ['frontend', 'backend', 'fullstack'].includes(r.id));
+  // Only MVP levels: intern, junior, mid
+  const mvpLevels = levels.filter(l => ['intern', 'junior', 'mid'].includes(l.id));
+
+  const filteredRoles = mvpRoles.filter(role =>
     role.name[language].toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedRole = roles.find(r => r.id === config.role);
+  const selectedRole = mvpRoles.find(r => r.id === config.role);
 
-  const handleStartInterview = () => {
-    // Generate a mock session ID and navigate to interview room
-    const sessionId = Math.random().toString(36).substring(7);
-    navigate(`/app/interview/${sessionId}`);
+  const handleStartInterview = async () => {
+    if (!config.role) return;
+    setIsCreating(true);
+    try {
+      const session = await sessionsApi.create({
+        role: config.role,
+        level: config.level,
+        mode: config.answerMode,
+        question_count: config.questionCount,
+      });
+      // Store session questions in sessionStorage so InterviewRoom can use them
+      sessionStorage.setItem(`session_${session.id}`, JSON.stringify(session));
+      navigate(`/app/interview/${session.id}`);
+    } catch (err) {
+      toast({
+        title: 'Lỗi tạo session',
+        description: err instanceof Error ? err.message : 'Không thể tạo session. Vui lòng thử lại.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -134,7 +162,7 @@ const NewSession = () => {
                   onValueChange={(value) => setConfig({ ...config, level: value })}
                   className="grid gap-3"
                 >
-                  {levels.map((level) => (
+                  {mvpLevels.map((level) => (
                     <Label
                       key={level.id}
                       htmlFor={level.id}
@@ -269,9 +297,10 @@ const NewSession = () => {
                   <Button
                     variant="accent"
                     onClick={handleStartInterview}
+                    disabled={isCreating}
                   >
-                    <Sparkles className="w-4 h-4" />
-                    {t('newSession', 'startInterview')}
+                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {isCreating ? 'Đang tạo...' : t('newSession', 'startInterview')}
                   </Button>
                 )}
               </div>
@@ -295,7 +324,7 @@ const NewSession = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'level')}</span>
-                  <span className="font-medium text-foreground capitalize">{levels.find(l => l.id === config.level)?.name[language]}</span>
+                  <span className="font-medium text-foreground capitalize">{mvpLevels.find(l => l.id === config.level)?.name[language]}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'questions')}</span>
@@ -323,10 +352,10 @@ const NewSession = () => {
                   size="lg" 
                   className="w-full"
                   onClick={handleStartInterview}
-                  disabled={!config.role}
+                  disabled={!config.role || isCreating}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  {t('newSession', 'startInterview')}
+                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isCreating ? 'Đang tạo...' : t('newSession', 'startInterview')}
                 </Button>
               </div>
             </CardContent>

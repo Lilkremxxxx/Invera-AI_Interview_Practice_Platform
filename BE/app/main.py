@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from db.session import create_pool, close_pool
 from api.endpoints.meetings import router as meetings_endpoint_router
 from api.endpoints.auth import router as login_router
+from api.endpoints.sessions import router as sessions_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,6 +36,7 @@ app.add_middleware(
 
 app.include_router(meetings_endpoint_router, prefix="/meetings", tags=["meetings"])
 app.include_router(login_router, prefix="/auth", tags=["auth"])
+app.include_router(sessions_router, prefix="/sessions", tags=["sessions"])
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -44,7 +46,17 @@ app.mount("/media", StaticFiles(directory=str(UPLOAD_DIR)), name="media")
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Starting server...")
-    await create_pool()
+    pool = await create_pool()
+    # Run migrations on startup
+    try:
+        migration_path = BASE_DIR / "migrations" / "001_create_sessions_questions_answers.sql"
+        if migration_path.exists():
+            sql = migration_path.read_text(encoding="utf-8")
+            async with pool.acquire() as conn:
+                await conn.execute(sql)
+            print("✅ Migrations applied")
+    except Exception as e:
+        print(f"⚠️  Migration error (may already exist): {e}")
     print("✅ Server ready!")
 
 

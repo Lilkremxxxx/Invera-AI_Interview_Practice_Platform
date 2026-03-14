@@ -343,6 +343,7 @@ export const translations = {
     password:     { vi: 'Mật khẩu',                         en: 'Password' },
     forgot:       { vi: 'Quên mật khẩu?',                   en: 'Forgot password?' },
     submit:       { vi: 'Đăng nhập',                        en: 'Log in' },
+    submitting:   { vi: 'Đang đăng nhập...',                en: 'Logging in...' },
     noAccount:    { vi: 'Chưa có tài khoản?',               en: "Don't have an account?" },
     signupLink:   { vi: 'Đăng ký',                          en: 'Sign up' },
     hidePassword: { vi: 'Ẩn mật khẩu',                     en: 'Hide password' },
@@ -353,6 +354,7 @@ export const translations = {
     feature2:     { vi: 'Phản hồi AI tức thì có cấu trúc',          en: 'Instant structured AI feedback' },
     feature3:     { vi: 'Theo dõi tiến độ chi tiết',                en: 'Detailed progress tracking' },
     feature4:     { vi: 'Luyện tập bất cứ lúc nào, bất cứ nơi đâu',en: 'Practice anytime, anywhere' },
+    error:        { vi: 'Email hoặc mật khẩu không đúng. Vui lòng thử lại.', en: 'Incorrect email or password. Please try again.' },
   },
 
   signup: {
@@ -367,8 +369,11 @@ export const translations = {
     and:          { vi: 'và',                         en: 'and' },
     privacyLink:  { vi: 'Chính sách bảo mật',        en: 'Privacy Policy' },
     submit:       { vi: 'Tạo tài khoản',             en: 'Create account' },
+    submitting:   { vi: 'Đang tạo tài khoản...',     en: 'Creating account...' },
     hasAccount:   { vi: 'Đã có tài khoản?',          en: 'Already have an account?' },
     loginLink:    { vi: 'Đăng nhập',                 en: 'Log in' },
+    errorEmail:   { vi: 'Email này đã được sử dụng. Vui lòng dùng email khác.', en: 'This email is already in use. Please use a different email.' },
+    error:        { vi: 'Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại.', en: 'An error occurred while creating your account. Please try again.' },
   },
 
   // ── Settings ────────────────────────────────────────────────────────────

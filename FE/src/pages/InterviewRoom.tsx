@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,47 +14,121 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Lightbulb
+  Lightbulb,
+  Loader2
 } from 'lucide-react';
-import { sampleQuestions, sampleFeedback } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { sessionsApi, SessionDetail, QuestionOut, AnswerOut } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const InterviewRoom = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+
+  const [session, setSession] = useState<SessionDetail | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completedSession, setCompletedSession] = useState(null);
 
-  const question = sampleQuestions[currentQuestion];
-  const progress = ((currentQuestion + 1) / sampleQuestions.length) * 100;
+  // Load session from sessionStorage (set by NewSession after create)
+  useEffect(() => {
+    if (!id) return;
+    const cached = sessionStorage.getItem(`session_${id}`);
+    if (cached) {
+      try {
+        setSession(JSON.parse(cached));
+        return;
+      } catch {}
+    }
+    // Fallback: fetch from API
+    sessionsApi.get(id).then(setSession).catch(() => {
+      toast({ title: 'Lỗi', description: 'Không thể tải session.', variant: 'destructive' });
+      navigate('/app/sessions');
+    });
+  }, [id]);
 
-  const handleSubmitAnswer = () => {
-    setIsAnalyzing(true);
-    // Simulate AI analysis
-    setTimeout(() => {
-      setIsAnalyzing(false);
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  const questions: QuestionOut[] = session.questions || [];
+  const totalQuestions = questions.length;
+  const question = questions[currentQuestion];
+  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
+
+  const handleSubmitAnswer = async () => {
+    if (!answer.trim() || !question || !id) return;
+    setIsSubmitting(true);
+    try {
+      const result = await sessionsApi.submitAnswer(id, {
+        question_id: question.id,
+        answer_text: answer,
+      });
+      setCurrentAnswer(result);
       setShowFeedback(true);
-    }, 2000);
+    } catch (err) {
+      toast({
+        title: 'Lỗi nộp bài',
+        description: err instanceof Error ? err.message : 'Vui lòng thử lại.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestion < sampleQuestions.length - 1) {
+  const handleNextQuestion = async () => {
+    if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer('');
       setShowFeedback(false);
+      setCurrentAnswer(null);
     } else {
-      navigate('/app/sessions');
+      // Last question — complete the session
+      setIsCompleting(true);
+      try {
+        const completed = await sessionsApi.complete(id!);
+        setCompletedSession(completed);
+        // Clean up sessionStorage
+        sessionStorage.removeItem(`session_${id}`);
+        navigate(`/app/sessions/${id}`);
+      } catch (err) {
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể hoàn thành session.',
+          variant: 'destructive',
+        });
+        navigate('/app/sessions');
+      } finally {
+        setIsCompleting(false);
+      }
     }
   };
 
-  const handleEndSession = () => {
-    if (confirm('Are you sure you want to end this session?')) {
-      navigate('/app/sessions');
-    }
+  const handleEndSession = async () => {
+    if (!confirm('Bạn có chắc muốn kết thúc session này?')) return;
+    try {
+      await sessionsApi.complete(id!);
+      sessionStorage.removeItem(`session_${id}`);
+    } catch {}
+    navigate('/app/sessions');
   };
+
+  const getScoreColor = (score: number) =>
+    score >= 70 ? 'text-success' : score >= 40 ? 'text-warning' : 'text-destructive';
+
+  const getScoreBg = (score: number) =>
+    score >= 70 ? 'bg-success/10' : score >= 40 ? 'bg-warning/10' : 'bg-destructive/10';
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,21 +137,20 @@ const InterviewRoom = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-accent">
-              Question {currentQuestion + 1} of {sampleQuestions.length}
+              Câu {currentQuestion + 1} / {totalQuestions}
             </span>
             <div className="w-32 hidden sm:block">
               <Progress value={progress} className="h-2" />
             </div>
+            <span className="text-xs text-muted-foreground hidden sm:inline capitalize">
+              {session.role} • {session.level}
+            </span>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm font-medium">02:45</span>
-            </div>
             <Button variant="destructive" size="sm" onClick={handleEndSession}>
               <X className="w-4 h-4" />
-              <span className="hidden sm:inline">End Session</span>
+              <span className="hidden sm:inline">Kết thúc</span>
             </Button>
           </div>
         </div>
@@ -100,42 +173,37 @@ const InterviewRoom = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground text-lg">AI Interviewer</h3>
-                  <p className="text-sm text-muted-foreground">Technical Interview • Mid-Level</p>
+                  <p className="text-sm text-muted-foreground capitalize">{session.role} • {session.level}</p>
                 </div>
               </div>
 
-              <div className="bg-muted/50 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium",
-                    question.difficulty === 'easy' ? "bg-success/20 text-success" :
-                    question.difficulty === 'medium' ? "bg-warning/20 text-warning" :
-                    "bg-destructive/20 text-destructive"
-                  )}>
-                    {question.difficulty}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{question.category}</span>
+              {question && (
+                <div className="bg-muted/50 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium",
+                      question.difficulty === 'easy' ? "bg-success/20 text-success" :
+                      question.difficulty === 'medium' ? "bg-warning/20 text-warning" :
+                      "bg-destructive/20 text-destructive"
+                    )}>
+                      {question.difficulty}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{question.category}</span>
+                  </div>
+                  <p className="text-foreground text-lg leading-relaxed">
+                    "{question.text}"
+                  </p>
                 </div>
-                <p className="text-foreground text-lg leading-relaxed">
-                  "{question.text}"
-                </p>
-              </div>
-
-              <div className="flex gap-3 mt-4">
-                <Button variant="outline" size="sm">
-                  <Volume2 className="w-4 h-4" />
-                  Play question
-                </Button>
-              </div>
+              )}
             </div>
 
             {/* STAR Hint */}
             <div className="bg-info/10 border border-info/20 rounded-xl p-4 flex gap-3">
               <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">Pro tip: Use the STAR method</p>
+                <p className="text-sm font-medium text-foreground mb-1">Mẹo: Dùng phương pháp STAR</p>
                 <p className="text-xs text-muted-foreground">
-                  Structure your answer: Situation, Task, Action, Result
+                  Cấu trúc câu trả lời: Situation, Task, Action, Result
                 </p>
               </div>
             </div>
@@ -143,21 +211,20 @@ const InterviewRoom = () => {
 
           {/* Answer Side */}
           <div className="space-y-6">
-            {!showFeedback && !isAnalyzing && (
+            {!showFeedback && !isSubmitting && (
               <div className="bg-card rounded-2xl border p-6 md:p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-foreground">Your Answer</h4>
-                  <span className="text-sm text-muted-foreground">{answer.length} characters</span>
+                  <h4 className="font-semibold text-foreground">Câu trả lời của bạn</h4>
+                  <span className="text-sm text-muted-foreground">{answer.length} ký tự</span>
                 </div>
 
                 <Textarea
-                  placeholder="Type your answer here... Be specific and use examples from your experience."
+                  placeholder="Nhập câu trả lời của bạn... Hãy cụ thể và dùng ví dụ từ kinh nghiệm thực tế."
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   className="min-h-[200px] resize-none text-base"
                 />
 
-                {/* Voice/Video Controls */}
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="flex gap-2">
                     <Button
@@ -166,11 +233,7 @@ const InterviewRoom = () => {
                       onClick={() => setIsRecording(!isRecording)}
                     >
                       {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                      {isRecording ? 'Stop' : 'Voice'}
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Video className="w-4 h-4" />
-                      Video
+                      {isRecording ? 'Dừng' : 'Voice'}
                     </Button>
                   </div>
                   <Button 
@@ -178,7 +241,7 @@ const InterviewRoom = () => {
                     onClick={handleSubmitAnswer}
                     disabled={!answer.trim()}
                   >
-                    Submit Answer
+                    Nộp câu trả lời
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
@@ -186,13 +249,13 @@ const InterviewRoom = () => {
             )}
 
             {/* Analyzing State */}
-            {isAnalyzing && (
+            {isSubmitting && (
               <div className="bg-card rounded-2xl border p-8 text-center">
                 <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
                   <Sparkles className="w-8 h-8 text-accent-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-2">AI is analyzing your answer...</h4>
-                <p className="text-sm text-muted-foreground">This usually takes a few seconds</p>
+                <h4 className="font-semibold text-foreground mb-2">Đang chấm bài...</h4>
+                <p className="text-sm text-muted-foreground">Chỉ mất vài giây</p>
                 <div className="mt-6 space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse" />
                   <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
@@ -202,96 +265,59 @@ const InterviewRoom = () => {
             )}
 
             {/* Feedback Panel */}
-            {showFeedback && (
+            {showFeedback && currentAnswer && (
               <div className="bg-card rounded-2xl border p-6 md:p-8 space-y-6">
-                {/* Overall Score */}
+                {/* Score */}
                 <div className="text-center pb-6 border-b">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-accent mb-3">
-                    <span className="text-3xl font-bold text-accent-foreground">
-                      {sampleFeedback.overallScore}
+                  <div className={cn(
+                    "inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-3",
+                    getScoreBg(currentAnswer.score)
+                  )}>
+                    <span className={cn("text-3xl font-bold", getScoreColor(currentAnswer.score))}>
+                      {currentAnswer.score}
                     </span>
                   </div>
-                  <p className="text-muted-foreground">Overall Score</p>
-                </div>
-
-                {/* Score Breakdown */}
-                <div>
-                  <h5 className="font-semibold text-foreground mb-4">Score Breakdown</h5>
-                  <div className="space-y-3">
-                    {Object.entries(sampleFeedback.criteria).map(([key, value]) => (
-                      <div key={key} className="flex items-center gap-3">
-                        <span className="text-sm text-muted-foreground capitalize w-24">{key}</span>
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full gradient-accent rounded-full transition-all"
-                            style={{ width: `${value}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium w-10 text-right">{value}%</span>
-                      </div>
-                    ))}
+                  <p className="text-muted-foreground">Điểm số</p>
+                  <div className="w-full bg-muted rounded-full h-2 mt-3">
+                    <div
+                      className={cn("h-2 rounded-full transition-all", 
+                        currentAnswer.score >= 70 ? "bg-success" : 
+                        currentAnswer.score >= 40 ? "bg-warning" : "bg-destructive"
+                      )}
+                      style={{ width: `${currentAnswer.score}%` }}
+                    />
                   </div>
                 </div>
 
-                {/* Strengths */}
+                {/* Feedback */}
                 <div>
                   <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                    Strengths
+                    {currentAnswer.score >= 70 ? (
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-warning" />
+                    )}
+                    Nhận xét
                   </h5>
-                  <ul className="space-y-2">
-                    {sampleFeedback.strengths.map((strength, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="w-1.5 h-1.5 rounded-full bg-success mt-1.5 flex-shrink-0" />
-                        {strength}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Improvements */}
-                <div>
-                  <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-warning" />
-                    Areas to Improve
-                  </h5>
-                  <ul className="space-y-2">
-                    {sampleFeedback.improvements.map((improvement, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="w-1.5 h-1.5 rounded-full bg-warning mt-1.5 flex-shrink-0" />
-                        {improvement}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Rewrite Suggestion */}
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <h5 className="font-semibold text-foreground mb-3">Suggested Improvement</h5>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Your version:</p>
-                      <p className="text-sm text-foreground/70 line-through">
-                        {sampleFeedback.rewriteSuggestion.original}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Improved version:</p>
-                      <p className="text-sm text-foreground">
-                        {sampleFeedback.rewriteSuggestion.improved}
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{currentAnswer.feedback}</p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t">
-                  <Button variant="outline" className="flex-1">
-                    Retry Question
-                  </Button>
-                  <Button variant="accent" className="flex-1" onClick={handleNextQuestion}>
-                    {currentQuestion < sampleQuestions.length - 1 ? 'Next Question' : 'Finish Session'}
-                    <ArrowRight className="w-4 h-4" />
+                  <Button 
+                    variant="accent" 
+                    className="flex-1" 
+                    onClick={handleNextQuestion}
+                    disabled={isCompleting}
+                  >
+                    {isCompleting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        {currentQuestion < totalQuestions - 1 ? 'Câu tiếp theo' : 'Hoàn thành'}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

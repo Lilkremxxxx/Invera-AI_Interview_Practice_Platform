@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -21,7 +23,24 @@ import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
-// Wrapper component to access location and auth
+// ─── Loading Spinner ──────────────────────────────────────────────────────────
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+    </div>
+  );
+}
+
+// ─── Private Route Guard ──────────────────────────────────────────────────────
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+// ─── App Content (needs to be inside Router to use hooks) ────────────────────
 function AppContent() {
   const { isAuthenticated } = useAuth();
 
@@ -36,11 +55,25 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           
-          {/* Interview room (full screen) */}
-          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+          {/* Interview room (full screen) — protected */}
+          <Route
+            path="/app/interview/:id"
+            element={
+              <PrivateRoute>
+                <InterviewRoom />
+              </PrivateRoute>
+            }
+          />
           
-          {/* App routes with sidebar */}
-          <Route path="/app" element={<AppLayout />}>
+          {/* App routes with sidebar — protected */}
+          <Route
+            path="/app"
+            element={
+              <PrivateRoute>
+                <AppLayout />
+              </PrivateRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="new" element={<NewSession />} />
             <Route path="sessions" element={<Sessions />} />
@@ -61,7 +94,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <LanguageProvider>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>
   </QueryClientProvider>
