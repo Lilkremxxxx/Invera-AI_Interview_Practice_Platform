@@ -43,20 +43,30 @@ You are in debug mode. Your primary objective is to systematically identify, ana
 
 ## Phase 3: Resolution
 
-5. **Implement Fix**:
+5. **Document in `tasks.md`**:
+   - Read `agent.md` first, then `tasks.md`
+   - If this bug is part of an open task, update that task block
+   - If this is a new request, create a new task block before implementing the fix
+   - Example work-log entry:
+     ```
+     - YYYY-MM-DD HH:MM UTC — Bug fix: [brief description]; root cause: [cause]; files: [list]
+     ```
+
+6. **Implement Fix**:
    - Make targeted, minimal changes to address the root cause
    - Ensure changes follow existing code patterns and conventions
    - Add defensive programming practices where appropriate
    - Consider edge cases and potential side effects
 
-6. **Verification**:
+7. **Verification**:
    - Run tests to verify the fix resolves the issue
    - Execute the original reproduction steps to confirm resolution
    - Run broader test suites to ensure no regressions
    - Test edge cases related to the fix
+   - Update the task status/result in `tasks.md` when the fix is complete
 
 ## Phase 4: Quality Assurance
-7. **Code Quality**:
+8. **Code Quality**:
    - Review the fix for code quality and maintainability
    - Add or update tests to prevent regression
    - Update documentation if necessary

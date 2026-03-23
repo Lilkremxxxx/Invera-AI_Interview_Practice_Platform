@@ -1,0 +1,22 @@
+[Unit]
+Description=Invera backend API
+After=network-online.target
+Wants=network-online.target
+PartOf=invera.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_ROOT__/BE
+Environment=PYTHONUNBUFFERED=1
+Environment=CONDA_ENV_NAME=__CONDA_ENV__
+ExecStart=__PROJECT_ROOT__/scripts/conda_exec.sh uvicorn app.main:app --host 127.0.0.1 --port 9000
+ExecReload=/bin/kill -TERM $MAINPID
+Restart=always
+RestartSec=2
+KillMode=mixed
+TimeoutStopSec=20
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

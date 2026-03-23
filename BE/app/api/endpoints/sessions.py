@@ -3,13 +3,14 @@ from typing import List, Optional
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from db.session import get_db
-from api.endpoints.auth import get_current_user
-from schemas.user import UserOut
-from schemas.session import SessionCreate, SessionOut, SessionDetail
-from schemas.question import QuestionOut
-from schemas.answer import AnswerSubmit, AnswerOut
-from services.scoring import score_answer
+from app.db.session import get_db
+from app.api.endpoints.auth import get_current_user
+from app.schemas.user import UserOut
+from app.schemas.session import SessionCreate, SessionOut, SessionDetail
+from app.schemas.question import QuestionOut
+from app.schemas.answer import AnswerSubmit, AnswerOut
+from app.services.plans import get_user_plan_snapshot
+from app.services.scoring import ScoringRequest, score_answer
 
 router = APIRouter()
 
@@ -21,6 +22,13 @@ async def create_session(
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
+    entitlement = await get_user_plan_snapshot(db, current_user.id)
+    if not entitlement["can_start_new_session"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Bạn đã dùng hết 1 session miễn phí. Hãy nâng cấp gói để tạo phiên mới.",
+        )
+
     # Validate role/level combo
     valid_roles = {'frontend', 'backend', 'fullstack'}
     valid_levels = {'intern', 'junior', 'mid'}
@@ -140,9 +148,7 @@ async def get_session(
 
     answered_question_ids = {a["question_id"] for a in answers_rows}
 
-    # Lấy tất cả câu hỏi liên quan đến session (từ answers + seed queries)
-    # Đối với session đang IN_PROGRESS mà chưa có answers, cần lấy từ bảng questions
-    # Lưu question_ids trong session metadata (ta sẽ dùng trick: lấy câu hỏi theo role/level)
+    # Lấy câu hỏi: ưu tiên lấy từ answers đã nộp, nếu chưa có answers thì lấy theo role/level
     questions_rows = await db.fetch(
         """
         SELECT DISTINCT q.id, q.role, q.level, q.text, q.category, q.difficulty
@@ -154,9 +160,18 @@ async def get_session(
         session_id,
     )
 
-    # Nếu session mới (chưa có answers), lấy questions theo phương thức tương tự create
-    # Trả về empty questions list — FE sẽ re-create session nếu cần
-    # Nhưng thực tế FE sẽ gọi POST /sessions rồi store questions từ response đó
+    # Nếu session mới (IN_PROGRESS, chưa có answers) → lấy câu hỏi theo role/level để FE vẫn có data
+    if not questions_rows and session_row["status"] == "IN_PROGRESS":
+        questions_rows = await db.fetch(
+            """
+            SELECT id, role, level, text, category, difficulty
+            FROM questions
+            WHERE role = $1 AND level = $2
+            ORDER BY id
+            LIMIT 15
+            """,
+            session_row["role"], session_row["level"],
+        )
 
     avg_score = None
     if answers_rows:
@@ -188,7 +203,7 @@ async def submit_answer(
 ):
     # Verify session belongs to user and is still IN_PROGRESS
     session_row = await db.fetchrow(
-        "SELECT id, status FROM sessions WHERE id = $1 AND user_id = $2",
+        "SELECT id, status, role, level FROM sessions WHERE id = $1 AND user_id = $2",
         session_id, current_user.id,
     )
     if not session_row:
@@ -198,14 +213,28 @@ async def submit_answer(
 
     # Get ideal_answer for scoring
     question_row = await db.fetchrow(
-        "SELECT ideal_answer FROM questions WHERE id = $1",
+        """
+        SELECT text, category, difficulty, ideal_answer
+        FROM questions
+        WHERE id = $1
+        """,
         body.question_id,
     )
     if not question_row:
         raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại")
 
     # Score the answer
-    score, feedback = score_answer(body.answer_text, question_row["ideal_answer"])
+    score, feedback = await score_answer(
+        ScoringRequest(
+            answer_text=body.answer_text,
+            ideal_answer=question_row["ideal_answer"],
+            question_text=question_row["text"],
+            role=session_row["role"],
+            level=session_row["level"],
+            category=question_row["category"],
+            difficulty=question_row["difficulty"],
+        )
+    )
 
     # Upsert answer (allow retry)
     existing = await db.fetchrow(

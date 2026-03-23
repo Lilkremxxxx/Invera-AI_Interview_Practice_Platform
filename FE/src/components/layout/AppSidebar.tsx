@@ -3,30 +3,45 @@ import {
   LayoutDashboard, 
   PlusCircle, 
   History, 
+  MessageSquareText,
   User, 
   Settings, 
   LogOut,
-  Sparkles,
+  CreditCard,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { BrandIcon } from '@/components/layout/BrandIcon';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { formatPlanLabel, userInitials } from '@/lib/plans';
 
 export const AppSidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user, logout } = useAuthContext();
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('sidebar', 'dashboard'), path: '/app' },
     { icon: PlusCircle, label: t('sidebar', 'newSession'), path: '/app/new' },
     { icon: History, label: t('sidebar', 'sessions'), path: '/app/sessions' },
+    { icon: MessageSquareText, label: t('sidebar', 'qna'), path: '/app/qna' },
     { icon: User, label: t('sidebar', 'profile'), path: '/app/profile' },
     { icon: Settings, label: t('sidebar', 'settings'), path: '/app/settings' },
   ];
+
+  if (!user?.is_admin) {
+    menuItems.splice(4, 0, {
+      icon: CreditCard,
+      label: language === 'vi' ? 'Nâng cấp gói' : 'Upgrade plan',
+      path: '/app/upgrade',
+    });
+  }
 
   return (
     <aside className={cn(
@@ -36,12 +51,10 @@ export const AppSidebar = () => {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
-          <Link to="/app" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-accent-foreground" />
-            </div>
+          <Link to="/app" className="flex items-center gap-2.5">
+            <BrandIcon className="w-9 h-9" />
             {!collapsed && (
-              <span className="font-bold text-lg">invera</span>
+              <span className="font-bold text-lg tracking-tight">invera</span>
             )}
           </Link>
           <button
@@ -86,12 +99,15 @@ export const AppSidebar = () => {
         <div className="p-3 border-t border-sidebar-border">
           {!collapsed && (
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <span className="text-sm font-medium">ND</span>
-              </div>
+              <Avatar className="h-8 w-8 border border-sidebar-border/70">
+                <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.email ?? 'User avatar'} />
+                <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-sm font-medium">
+                  {userInitials(user)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{t('sidebar', 'user')}</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate">{t('sidebar', 'proPlan')}</p>
+                <p className="text-sm font-medium truncate">{user?.full_name || user?.email?.split('@')[0] || t('sidebar', 'user')}</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">{formatPlanLabel(user, language)}</p>
               </div>
             </div>
           )}
@@ -102,12 +118,12 @@ export const AppSidebar = () => {
               "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
               collapsed ? "justify-center" : "justify-start"
             )}
-            asChild
+            onClick={logout}
           >
-            <Link to="/login">
+            <>
               <LogOut className="w-4 h-4" />
               {!collapsed && <span className="ml-2">{t('sidebar', 'logout')}</span>}
-            </Link>
+            </>
           </Button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Sparkles, Twitter, Linkedin, Github } from 'lucide-react';
+import { Twitter, Linkedin, Github } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { BrandIcon } from '@/components/layout/BrandIcon';
 
 export const Footer = () => {
   const { t } = useLanguage();
@@ -11,9 +12,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-accent-foreground" />
-              </div>
+              <BrandIcon className="w-8 h-8" />
               <span className="font-bold text-xl">invera</span>
             </Link>
             <p className="text-primary-foreground/70 max-w-md mb-6">
@@ -52,7 +51,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/app" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+                <Link to="/#dashboard-demo" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
                   {t('footer', 'dashboard')}
                 </Link>
               </li>

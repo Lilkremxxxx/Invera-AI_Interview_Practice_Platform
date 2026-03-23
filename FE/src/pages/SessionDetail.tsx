@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -10,12 +10,14 @@ import {
   CheckCircle2,
   AlertCircle,
   TrendingUp,
-  Loader2
+  Loader2,
+  Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { sessionsApi, SessionDetail as SessionDetailType } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 
 const roleLabels: Record<string, { vi: string; en: string }> = {
   frontend: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' },
@@ -31,7 +33,24 @@ const levelLabels: Record<string, { vi: string; en: string }> = {
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { language } = useLanguage();
+  const copy = {
+    loadError: language === 'vi' ? 'Không thể tải session.' : 'Unable to load this session.',
+    back: language === 'vi' ? 'Quay lại' : 'Back',
+    completed: language === 'vi' ? 'Hoàn thành' : 'Completed',
+    inProgress: language === 'vi' ? 'Đang làm' : 'In progress',
+    continue: language === 'vi' ? 'Tiếp tục' : 'Continue',
+    averageScore: language === 'vi' ? 'Điểm trung bình' : 'Average score',
+    answered: language === 'vi' ? 'Câu đã trả lời' : 'Answered questions',
+    mode: language === 'vi' ? 'Chế độ' : 'Mode',
+    qaTitle: language === 'vi' ? 'Câu hỏi & Câu trả lời' : 'Questions & Answers',
+    noQuestions: language === 'vi' ? 'Chưa có câu hỏi nào.' : 'No questions available yet.',
+    yourAnswer: language === 'vi' ? 'Câu trả lời của bạn:' : 'Your answer:',
+    emptyAnswer: language === 'vi' ? '(Không có)' : '(Empty)',
+    newSession: language === 'vi' ? 'Tạo session mới' : 'Create new session',
+    locale: language === 'vi' ? 'vi-VN' : 'en-US',
+  };
 
   const { data: session, isLoading, error } = useQuery<SessionDetailType>({
     queryKey: ['session', id],
@@ -50,7 +69,7 @@ const SessionDetail = () => {
   if (error || !session) {
     return (
       <div className="text-center py-24 text-destructive">
-        Không thể tải session. <Link to="/app/sessions" className="underline">Quay lại</Link>
+        {copy.loadError} <Link to="/app/sessions" className="underline">{copy.back}</Link>
       </div>
     );
   }
@@ -73,20 +92,28 @@ const SessionDetail = () => {
               {roleLabels[session.role]?.[language] || session.role}
             </h1>
             <p className="text-muted-foreground">
-              {levelLabels[session.level]?.[language] || session.level} • {new Date(session.created_at).toLocaleDateString('vi-VN')} •{' '}
+              {levelLabels[session.level]?.[language] || session.level} • {new Date(session.created_at).toLocaleDateString(copy.locale)} •{' '}
               <span className={cn(
                 'font-medium text-xs px-1.5 py-0.5 rounded',
                 session.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
               )}>
-                {session.status === 'COMPLETED' ? 'Hoàn thành' : 'Đang làm'}
+                {session.status === 'COMPLETED' ? copy.completed : copy.inProgress}
               </span>
             </p>
           </div>
         </div>
-        <Button variant="outline">
-          <Download className="w-4 h-4" />
-          Export PDF
-        </Button>
+        <div className="flex gap-3">
+          {session.status === 'IN_PROGRESS' && (
+            <Button variant="accent" onClick={() => navigate(`/app/interview/${id}`)}>
+              <Play className="w-4 h-4" />
+              {copy.continue}
+            </Button>
+          )}
+          <Button variant="outline" disabled={session.status !== 'COMPLETED'}>
+            <Download className="w-4 h-4" />
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -104,7 +131,7 @@ const SessionDetail = () => {
                 {avgScore != null ? `${avgScore}%` : '—'}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">Điểm trung bình</p>
+            <p className="text-sm text-muted-foreground">{copy.averageScore}</p>
           </CardContent>
         </Card>
         <Card>
@@ -113,7 +140,7 @@ const SessionDetail = () => {
               <Target className="w-6 h-6 text-accent" />
             </div>
             <p className="text-2xl font-bold text-foreground">{session.answers.length}</p>
-            <p className="text-sm text-muted-foreground">Câu đã trả lời</p>
+            <p className="text-sm text-muted-foreground">{copy.answered}</p>
           </CardContent>
         </Card>
         <Card>
@@ -122,7 +149,7 @@ const SessionDetail = () => {
               <Clock className="w-6 h-6 text-info" />
             </div>
             <p className="text-2xl font-bold text-foreground capitalize">{session.mode}</p>
-            <p className="text-sm text-muted-foreground">Chế độ</p>
+            <p className="text-sm text-muted-foreground">{copy.mode}</p>
           </CardContent>
         </Card>
       </div>
@@ -130,11 +157,11 @@ const SessionDetail = () => {
       {/* Questions & Answers Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>Câu hỏi & Câu trả lời</CardTitle>
+          <CardTitle>{copy.qaTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           {session.questions.length === 0 && session.answers.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Chưa có câu hỏi nào.</p>
+            <p className="text-muted-foreground text-center py-8">{copy.noQuestions}</p>
           ) : (
             <div className="space-y-6">
               {session.answers.map((answer, index) => {
@@ -163,8 +190,8 @@ const SessionDetail = () => {
                           </>
                         )}
                         <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                          <p className="text-xs text-muted-foreground mb-1">Câu trả lời của bạn:</p>
-                          <p className="text-sm text-foreground">{answer.answer_text || '(Không có)'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{copy.yourAnswer}</p>
+                          <p className="text-sm text-foreground">{answer.answer_text || copy.emptyAnswer}</p>
                         </div>
                         <div className="flex items-start gap-2">
                           {answer.score >= 70 ? (
@@ -172,7 +199,9 @@ const SessionDetail = () => {
                           ) : (
                             <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
                           )}
-                          <p className="text-sm text-muted-foreground">{answer.feedback}</p>
+                          <div className="min-w-0 flex-1">
+                            <StructuredFeedback feedback={answer.feedback} />
+                          </div>
                         </div>
                       </div>
                       <div className={cn(
@@ -195,7 +224,7 @@ const SessionDetail = () => {
 
       <div className="flex justify-center">
         <Button variant="accent" asChild>
-          <Link to="/app/new">Tạo session mới</Link>
+          <Link to="/app/new">{copy.newSession}</Link>
         </Button>
       </div>
     </div>

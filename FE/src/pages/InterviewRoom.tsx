@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Volume2, 
   ArrowRight, 
+  ArrowLeft,
   X, 
   Mic, 
   MicOff, 
@@ -20,11 +21,43 @@ import {
 import { cn } from '@/lib/utils';
 import { sessionsApi, SessionDetail, QuestionOut, AnswerOut } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const InterviewRoom = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const copy = {
+    sessionNotFound: language === 'vi' ? 'Session không tìm thấy' : 'Session not found',
+    sessionNotFoundBody: language === 'vi'
+      ? 'Session này không còn tồn tại hoặc bạn không có quyền truy cập.'
+      : 'This session no longer exists or you do not have permission to access it.',
+    sessionList: language === 'vi' ? 'Danh sách sessions' : 'Sessions list',
+    newSession: language === 'vi' ? 'Tạo session mới' : 'Create a new session',
+    submitError: language === 'vi' ? 'Lỗi nộp bài' : 'Unable to submit answer',
+    retry: language === 'vi' ? 'Vui lòng thử lại.' : 'Please try again.',
+    completeError: language === 'vi' ? 'Không thể hoàn thành session.' : 'Unable to complete the session.',
+    questionLabel: language === 'vi' ? 'Câu' : 'Question',
+    end: language === 'vi' ? 'Kết thúc' : 'End',
+    confirmEnd: language === 'vi' ? 'Bạn có chắc muốn kết thúc session này?' : 'Are you sure you want to end this session?',
+    hintTitle: language === 'vi' ? 'Mẹo: Dùng phương pháp STAR' : 'Tip: use the STAR method',
+    hintBody: language === 'vi' ? 'Cấu trúc câu trả lời: Situation, Task, Action, Result' : 'Structure your answer with Situation, Task, Action, Result.',
+    yourAnswer: language === 'vi' ? 'Câu trả lời của bạn' : 'Your answer',
+    characters: language === 'vi' ? 'ký tự' : 'characters',
+    answerPlaceholder: language === 'vi'
+      ? 'Nhập câu trả lời của bạn... Hãy cụ thể và dùng ví dụ từ kinh nghiệm thực tế.'
+      : 'Type your answer... Be specific and use examples from your real experience.',
+    stop: language === 'vi' ? 'Dừng' : 'Stop',
+    submit: language === 'vi' ? 'Nộp câu trả lời' : 'Submit answer',
+    grading: language === 'vi' ? 'Đang chấm bài...' : 'Scoring your answer...',
+    takeSeconds: language === 'vi' ? 'Chỉ mất vài giây' : 'This should only take a few seconds',
+    score: language === 'vi' ? 'Điểm số' : 'Score',
+    feedback: language === 'vi' ? 'Nhận xét' : 'Feedback',
+    nextQuestion: language === 'vi' ? 'Câu tiếp theo' : 'Next question',
+    finish: language === 'vi' ? 'Hoàn thành' : 'Finish',
+  };
 
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -35,6 +68,7 @@ const InterviewRoom = () => {
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
   // Load session from sessionStorage (set by NewSession after create)
   useEffect(() => {
@@ -48,11 +82,36 @@ const InterviewRoom = () => {
     }
     // Fallback: fetch from API
     sessionsApi.get(id).then(setSession).catch(() => {
-      toast({ title: 'Lỗi', description: 'Không thể tải session.', variant: 'destructive' });
-      navigate('/app/sessions');
+      setLoadError(true);
     });
   }, [id]);
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-10 h-10 text-destructive" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{copy.sessionNotFound}</h2>
+          <p className="text-muted-foreground mb-6">
+            {copy.sessionNotFoundBody}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => navigate('/app/sessions')}>
+              <ArrowLeft className="w-4 h-4" />
+              {copy.sessionList}
+            </Button>
+            <Button variant="accent" onClick={() => navigate('/app/new')}>
+              {copy.newSession}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Session chưa load xong → spinner
   if (!session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -66,6 +125,7 @@ const InterviewRoom = () => {
   const question = questions[currentQuestion];
   const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
 
+
   const handleSubmitAnswer = async () => {
     if (!answer.trim() || !question || !id) return;
     setIsSubmitting(true);
@@ -78,8 +138,8 @@ const InterviewRoom = () => {
       setShowFeedback(true);
     } catch (err) {
       toast({
-        title: 'Lỗi nộp bài',
-        description: err instanceof Error ? err.message : 'Vui lòng thử lại.',
+        title: copy.submitError,
+        description: err instanceof Error ? err.message : copy.retry,
         variant: 'destructive',
       });
     } finally {
@@ -104,8 +164,8 @@ const InterviewRoom = () => {
         navigate(`/app/sessions/${id}`);
       } catch (err) {
         toast({
-          title: 'Lỗi',
-          description: 'Không thể hoàn thành session.',
+          title: copy.submitError,
+          description: copy.completeError,
           variant: 'destructive',
         });
         navigate('/app/sessions');
@@ -116,7 +176,7 @@ const InterviewRoom = () => {
   };
 
   const handleEndSession = async () => {
-    if (!confirm('Bạn có chắc muốn kết thúc session này?')) return;
+    if (!confirm(copy.confirmEnd)) return;
     try {
       await sessionsApi.complete(id!);
       sessionStorage.removeItem(`session_${id}`);
@@ -137,7 +197,7 @@ const InterviewRoom = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-accent">
-              Câu {currentQuestion + 1} / {totalQuestions}
+              {copy.questionLabel} {currentQuestion + 1} / {totalQuestions}
             </span>
             <div className="w-32 hidden sm:block">
               <Progress value={progress} className="h-2" />
@@ -150,7 +210,7 @@ const InterviewRoom = () => {
           <div className="flex items-center gap-4">
             <Button variant="destructive" size="sm" onClick={handleEndSession}>
               <X className="w-4 h-4" />
-              <span className="hidden sm:inline">Kết thúc</span>
+              <span className="hidden sm:inline">{copy.end}</span>
             </Button>
           </div>
         </div>
@@ -201,10 +261,8 @@ const InterviewRoom = () => {
             <div className="bg-info/10 border border-info/20 rounded-xl p-4 flex gap-3">
               <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">Mẹo: Dùng phương pháp STAR</p>
-                <p className="text-xs text-muted-foreground">
-                  Cấu trúc câu trả lời: Situation, Task, Action, Result
-                </p>
+                <p className="text-sm font-medium text-foreground mb-1">{copy.hintTitle}</p>
+                <p className="text-xs text-muted-foreground">{copy.hintBody}</p>
               </div>
             </div>
           </div>
@@ -214,12 +272,12 @@ const InterviewRoom = () => {
             {!showFeedback && !isSubmitting && (
               <div className="bg-card rounded-2xl border p-6 md:p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-foreground">Câu trả lời của bạn</h4>
-                  <span className="text-sm text-muted-foreground">{answer.length} ký tự</span>
+                  <h4 className="font-semibold text-foreground">{copy.yourAnswer}</h4>
+                  <span className="text-sm text-muted-foreground">{answer.length} {copy.characters}</span>
                 </div>
 
                 <Textarea
-                  placeholder="Nhập câu trả lời của bạn... Hãy cụ thể và dùng ví dụ từ kinh nghiệm thực tế."
+                  placeholder={copy.answerPlaceholder}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   className="min-h-[200px] resize-none text-base"
@@ -233,7 +291,7 @@ const InterviewRoom = () => {
                       onClick={() => setIsRecording(!isRecording)}
                     >
                       {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                      {isRecording ? 'Dừng' : 'Voice'}
+                      {isRecording ? copy.stop : 'Voice'}
                     </Button>
                   </div>
                   <Button 
@@ -241,7 +299,7 @@ const InterviewRoom = () => {
                     onClick={handleSubmitAnswer}
                     disabled={!answer.trim()}
                   >
-                    Nộp câu trả lời
+                    {copy.submit}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
@@ -254,8 +312,8 @@ const InterviewRoom = () => {
                 <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
                   <Sparkles className="w-8 h-8 text-accent-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-2">Đang chấm bài...</h4>
-                <p className="text-sm text-muted-foreground">Chỉ mất vài giây</p>
+                <h4 className="font-semibold text-foreground mb-2">{copy.grading}</h4>
+                <p className="text-sm text-muted-foreground">{copy.takeSeconds}</p>
                 <div className="mt-6 space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse" />
                   <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
@@ -277,7 +335,7 @@ const InterviewRoom = () => {
                       {currentAnswer.score}
                     </span>
                   </div>
-                  <p className="text-muted-foreground">Điểm số</p>
+                  <p className="text-muted-foreground">{copy.score}</p>
                   <div className="w-full bg-muted rounded-full h-2 mt-3">
                     <div
                       className={cn("h-2 rounded-full transition-all", 
@@ -297,9 +355,9 @@ const InterviewRoom = () => {
                     ) : (
                       <AlertCircle className="w-5 h-5 text-warning" />
                     )}
-                    Nhận xét
+                    {copy.feedback}
                   </h5>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{currentAnswer.feedback}</p>
+                  <StructuredFeedback feedback={currentAnswer.feedback} />
                 </div>
 
                 {/* Actions */}
@@ -314,7 +372,7 @@ const InterviewRoom = () => {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        {currentQuestion < totalQuestions - 1 ? 'Câu tiếp theo' : 'Hoàn thành'}
+                        {currentQuestion < totalQuestions - 1 ? copy.nextQuestion : copy.finish}
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

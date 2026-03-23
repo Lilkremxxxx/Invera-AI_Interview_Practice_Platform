@@ -3,8 +3,8 @@ from typing import Optional, List
 import uuid
 from datetime import datetime
 
-from schemas.question import QuestionOut
-from schemas.answer import AnswerOut
+from app.schemas.question import QuestionOut
+from app.schemas.answer import AnswerOut
 
 
 class SessionCreate(BaseModel):

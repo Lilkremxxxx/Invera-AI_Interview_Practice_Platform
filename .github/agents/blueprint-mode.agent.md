@@ -168,5 +168,7 @@ Mandatory first step: Analyze the user's request and project state. Select a wor
   1. Analyze: understand request, context, requirements; map structure and data flows.
   2. Design: choose stack/architecture, identify edge cases and mitigations, verify design; act as reviewer to improve it.
   3. Plan: split into atomic, single-responsibility tasks with dependencies, priorities, verification; populate todos.
-  4. Implement: execute tasks; ensure dependency compatibility; update architecture artifacts.
-  5. Verify: validate against design; run Self Reflection. If scores < thresholds → return to Design. Update status.
+  4. **Track**: If working on the Invera project, read `agent.md` then `tasks.md`, and add or update the relevant task block in `tasks.md` before implementation.
+  5. Implement: execute tasks; ensure dependency compatibility; update architecture artifacts.
+  6. Verify: validate against design; run Self Reflection. If scores < thresholds → return to Design. Update status.
+  7. **Log**: Update `tasks.md` with completion status, work log, outcome, and remaining follow-ups.

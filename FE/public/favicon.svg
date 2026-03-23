@@ -1,4 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#6366f1"/>
-  <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">i</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Invera">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033" />
+      <stop offset="1" stop-color="#070b14" />
+    </linearGradient>
+    <linearGradient id="v" x1="35" y1="14" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#32b3ff" />
+      <stop offset="0.55" stop-color="#3278ff" />
+      <stop offset="1" stop-color="#7d35ff" />
+    </linearGradient>
+    <linearGradient id="wave" x1="16" y1="28" x2="54" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10a4ff" />
+      <stop offset="0.55" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#8a3cff" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#bg)" />
+  <path d="M19 16H28V48H19V16Z" fill="#F8FAFC" />
+  <path d="M36 16H48L39 48H29L36 16Z" fill="url(#v)" />
+  <g fill="none" stroke="url(#wave)" stroke-width="1.9" stroke-linecap="round" opacity="0.98">
+    <path d="M15.5 31.5C20 27.5 24.5 26 29 27.5C33.5 29 38 34.5 42.5 35.5C47 36.5 51.5 34 56 30.5" />
+    <path d="M15.5 34C20 30 24.5 28.5 29 30C33.5 31.5 38 37 42.5 38C47 39 51.5 36.5 56 33" />
+    <path d="M15.5 36.5C20 32.5 24.5 31 29 32.5C33.5 34 38 39.5 42.5 40.5C47 41.5 51.5 39 56 35.5" />
+    <path d="M15.5 39C20 35 24.5 33.5 29 35C33.5 36.5 38 42 42.5 43C47 44 51.5 41.5 56 38" />
+    <path d="M15.5 41.5C20 37.5 24.5 36 29 37.5C33.5 39 38 44.5 42.5 45.5C47 46.5 51.5 44 56 40.5" />
+  </g>
 </svg>

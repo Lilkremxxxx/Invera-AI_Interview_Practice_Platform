@@ -1,0 +1,11 @@
+tunnel: a1c70ed4-3056-4c31-b2dc-8e55c841b494
+credentials-file: __HOME__/.cloudflared/a1c70ed4-3056-4c31-b2dc-8e55c841b494.json
+
+ingress:
+  - hostname: invera.pp.ua
+    service: http://127.0.0.1:9000
+  - hostname: www.invera.pp.ua
+    service: http://127.0.0.1:9000
+  - hostname: openclaw.invera.pp.ua
+    service: http://127.0.0.1:18789
+  - service: http_status:404

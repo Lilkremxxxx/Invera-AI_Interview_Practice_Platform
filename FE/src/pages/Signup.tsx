@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/hooks/use-auth';
 import { authApi } from '@/lib/api';
+import { BrandIcon } from '@/components/layout/BrandIcon';
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +16,6 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const { language, t } = useLanguage();
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const benefits = [
@@ -24,17 +23,41 @@ const Signup = () => {
     { vi: 'Phản hồi được hỗ trợ bởi AI', en: 'AI-powered feedback' },
     { vi: 'Theo dõi tiến độ của bạn', en: 'Track your progress' },
   ];
+  const copy = {
+    heroTitle: language === 'vi' ? 'Bắt đầu hành trình phỏng vấn của bạn' : 'Start your interview journey',
+    heroBody:
+      language === 'vi'
+        ? 'Nhận luyện tập và phản hồi cá nhân hóa để có được công việc mơ ước.'
+        : 'Get personalized practice and feedback to land your dream job.',
+    signupBody:
+      language === 'vi'
+        ? 'Bắt đầu luyện tập miễn phí. Không cần thẻ tín dụng.'
+        : 'Start practicing for free. No credit card required.',
+    namePlaceholder: language === 'vi' ? 'Nguyễn Văn A' : 'Jane Doe',
+    emailPlaceholder: language === 'vi' ? 'ban@example.com' : 'you@example.com',
+    passwordHint:
+      language === 'vi' ? 'Phải có ít nhất 8 ký tự' : 'Must be at least 8 characters long',
+    continueWith: language === 'vi' ? 'Hoặc tiếp tục với' : 'Or continue with',
+    agreementPrefix: language === 'vi' ? 'Bằng cách tạo tài khoản, bạn đồng ý với' : 'By creating an account, you agree to our',
+    terms: language === 'vi' ? 'Điều khoản' : 'Terms',
+    and: language === 'vi' ? 'và' : 'and',
+    privacy: language === 'vi' ? 'Chính sách bảo mật' : 'Privacy Policy',
+    agreementSuffix: language === 'vi' ? 'của chúng tôi' : '',
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsSubmitting(true);
     try {
-      // Đăng ký tài khoản mới
-      await authApi.register({ email, password, full_name: name || undefined });
-      // Tự động đăng nhập sau khi đăng ký thành công
-      await login(email, password);
-      navigate('/app', { replace: true });
+      const response = await authApi.register({ email, password, full_name: name || undefined });
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`, {
+        replace: true,
+        state: {
+          message: response.message,
+          resendAvailableInSeconds: response.resend_available_in_seconds,
+        },
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('đã tồn tại') || msg.includes('already')) {
@@ -65,18 +88,12 @@ const Signup = () => {
           <div className="max-w-md">
             {/* Logo */}
             <Link to="/" className="inline-flex items-center gap-2.5 mb-12 group">
-              <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                <Sparkles className="w-6 h-6 text-accent-foreground" />
-              </div>
+              <BrandIcon className="w-10 h-10 shadow-lg transition-transform group-hover:-translate-y-0.5" />
               <span className="font-bold text-2xl text-white">invera</span>
             </Link>
 
-            <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-              {language === 'vi' ? 'Bắt đầu hành trình phỏng vấn của bạn' : 'Start your interview journey'}
-            </h2>
-            <p className="text-white/90 text-lg mb-10 leading-relaxed">
-              {language === 'vi' ? 'Nhận luyện tập và phản hồi cá nhân hóa để có được công việc mơ ước.' : 'Get personalized practice and feedback to land your dream job.'}
-            </p>
+            <h2 className="text-4xl font-bold text-white mb-6 leading-tight">{copy.heroTitle}</h2>
+            <p className="text-white/90 text-lg mb-10 leading-relaxed">{copy.heroBody}</p>
             
             <ul className="space-y-5">
               {benefits.map((benefit, index) => (
@@ -97,9 +114,7 @@ const Signup = () => {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <Link to="/" className="flex lg:hidden items-center gap-2.5 mb-8">
-            <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-md">
-              <Sparkles className="w-6 h-6 text-accent-foreground" />
-            </div>
+            <BrandIcon className="w-10 h-10 shadow-md" />
             <span className="font-bold text-2xl text-foreground">invera</span>
           </Link>
 
@@ -111,7 +126,7 @@ const Signup = () => {
                 {t('signup', 'title')}
               </h1>
               <p className="text-base text-muted-foreground leading-relaxed">
-                {language === 'vi' ? 'Bắt đầu luyện tập miễn phí. Không cần thẻ tín dụng.' : 'Start practicing for free. No credit card required.'}
+                {copy.signupBody}
               </p>
             </div>
 
@@ -132,7 +147,7 @@ const Signup = () => {
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Nguyễn Văn A"
+                  placeholder={copy.namePlaceholder}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -147,7 +162,7 @@ const Signup = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="ban@example.com"
+                  placeholder={copy.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -179,7 +194,7 @@ const Signup = () => {
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground/80 mt-2">
-                  Phải có ít nhất 8 ký tự
+                  {copy.passwordHint}
                 </p>
               </div>
 
@@ -213,16 +228,18 @@ const Signup = () => {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-3 py-1 text-muted-foreground/70 font-medium">
-                    Hoặc tiếp tục với
+                    {copy.continueWith}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Button 
+                  type="button"
                   variant="outline" 
                   size="lg" 
                   className="h-12 border-border/80 hover:bg-accent/5 hover:border-accent/50 transition-all"
+                  onClick={() => authApi.oauthRedirect('google')}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -233,9 +250,11 @@ const Signup = () => {
                   <span className="font-medium">Google</span>
                 </Button>
                 <Button 
+                  type="button"
                   variant="outline" 
                   size="lg" 
                   className="h-12 border-border/80 hover:bg-accent/5 hover:border-accent/50 transition-all"
+                  onClick={() => authApi.oauthRedirect('github')}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -259,21 +278,21 @@ const Signup = () => {
             </p>
 
             <p className="text-xs text-muted-foreground/70 leading-relaxed px-4">
-              Bằng cách tạo tài khoản, bạn đồng ý với{' '}
+              {copy.agreementPrefix}{' '}
               <Link 
                 to="/terms" 
                 className="text-muted-foreground hover:text-foreground underline transition-colors"
               >
-                Điều khoản
+                {copy.terms}
               </Link>
-              {' '}và{' '}
+              {' '}{copy.and}{' '}
               <Link 
                 to="/privacy" 
                 className="text-muted-foreground hover:text-foreground underline transition-colors"
               >
-                Chính sách bảo mật
+                {copy.privacy}
               </Link>
-              {' '}của chúng tôi
+              {copy.agreementSuffix ? ` ${copy.agreementSuffix}` : ''}
             </p>
           </div>
         </div>

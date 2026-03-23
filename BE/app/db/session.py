@@ -1,11 +1,7 @@
 import asyncpg
 from typing import Optional
-import os
-from dotenv import load_dotenv
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(dotenv_path=BASE_DIR.parent / ".env")
+from app.core.config import settings
 
 _pool: Optional[asyncpg.Pool] = None
 
@@ -14,11 +10,11 @@ async def create_pool():
     global _pool
     if _pool is None:
         _pool = await asyncpg.create_pool(
-            host=os.getenv("PG_HOST"),
-            port=int(os.getenv("PG_PORT", 5432)),
-            database=os.getenv("PG_DBNAME"),
-            user=os.getenv("PG_USER"),
-            password=os.getenv("PG_PASSWORD"),
+            host=settings.pg_host,
+            port=settings.pg_port,
+            database=settings.pg_dbname,
+            user=settings.pg_user,
+            password=settings.pg_password,
             min_size=5,
             max_size=20,
             timeout=30,

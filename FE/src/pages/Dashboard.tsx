@@ -9,13 +9,19 @@ import {
   Target,
   ChevronRight,
   Calendar,
-  Loader2
+  Loader2,
+  Sparkles,
+  BookOpen,
+  Zap
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { sessionsApi, SessionOut } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatPlanLabel, formatPlanStatus } from '@/lib/plans';
 
 const roleLabels: Record<string, { vi: string; en: string }> = {
   frontend: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' },
@@ -31,6 +37,32 @@ const levelLabels: Record<string, { vi: string; en: string }> = {
 
 const Dashboard = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuthContext();
+
+  // Lấy first name từ email (trước dấu @)
+  const firstName = user?.email?.split('@')[0] || '';
+  const canStartNewSession = user?.can_start_new_session ?? true;
+  const needsUpgrade = !user?.is_admin && !canStartNewSession;
+  const copy = {
+    currentPlanCta: language === 'vi' ? 'Nâng cấp gói' : 'Upgrade plan',
+    greeting: (name: string) => (language === 'vi' ? `Xin chào, ${name} 👋` : `Hi, ${name} 👋`),
+    currentPlanLead: language === 'vi' ? 'Gói hiện tại:' : 'Current plan:',
+    trialTitle: language === 'vi' ? 'Bạn đã dùng hết Free trial' : 'Your free trial is exhausted',
+    trialBody: language === 'vi'
+      ? 'Hãy nâng cấp lên Basic hoặc Pro để tiếp tục tạo session mới.'
+      : 'Upgrade to Basic or Pro to continue creating new sessions.',
+    completed: language === 'vi' ? 'Completed' : 'Completed',
+    inProgress: language === 'vi' ? 'In progress' : 'In progress',
+    noSessionsTitle: language === 'vi' ? 'Chưa có session nào — hãy bắt đầu! 🚀' : 'No sessions yet. Let’s get started! 🚀',
+    noSessionsBody: language === 'vi' ? 'Mỗi buổi luyện tập đưa bạn đến gần mục tiêu hơn một bước.' : 'Every practice round moves you one step closer to your target role.',
+    createFirstSession: language === 'vi' ? 'Tạo session đầu tiên' : 'Create your first session',
+    roleTipTitle: language === 'vi' ? 'Chọn role phù hợp' : 'Pick the right role',
+    roleTipBody: language === 'vi' ? 'Frontend, Backend hoặc Fullstack' : 'Frontend, Backend, or Fullstack',
+    answerTipTitle: language === 'vi' ? 'Trả lời cụ thể' : 'Answer with specifics',
+    answerTipBody: language === 'vi' ? 'Dùng ví dụ thực tế + STAR' : 'Use real examples + STAR',
+    practiceTipTitle: language === 'vi' ? 'Luyện đều mỗi ngày' : 'Practice consistently',
+    practiceTipBody: language === 'vi' ? '5 câu mỗi ngày là đủ' : 'Five questions a day is enough',
+  };
 
   const { data: sessions = [], isLoading } = useQuery<SessionOut[]>({
     queryKey: ['sessions'],
@@ -62,16 +94,28 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('dashboard', 'title')}</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            {firstName ? copy.greeting(firstName) : t('dashboard', 'title')}
+          </h1>
           <p className="text-muted-foreground">{t('dashboard', 'welcome')}</p>
         </div>
         <Button variant="accent" size="lg" asChild>
-          <Link to="/app/new">
+          <Link to={canStartNewSession ? "/app/new" : "/app/upgrade"}>
             <PlusCircle className="w-5 h-5" />
-            {t('dashboard', 'newSession')}
+            {canStartNewSession ? t('dashboard', 'newSession') : copy.currentPlanCta}
           </Link>
         </Button>
       </div>
+
+      {needsUpgrade && (
+        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+          <AlertTitle>{copy.trialTitle}</AlertTitle>
+          <AlertDescription>
+            {copy.currentPlanLead} <strong>{formatPlanLabel(user, language)}</strong> · {formatPlanStatus(user, language)}.
+            {' '}{copy.trialBody}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       {isLoading ? (
@@ -110,7 +154,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Hoàn thành</p>
+                  <p className="text-sm text-muted-foreground mb-1">{copy.completed}</p>
                   <p className="text-3xl font-bold text-foreground">{completedSessions.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
@@ -188,11 +232,51 @@ const Dashboard = () => {
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
           ) : recentSessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Chưa có session nào.</p>
-              <Button variant="accent" className="mt-4" asChild>
-                <Link to="/app/new">Tạo session đầu tiên</Link>
-              </Button>
+            <div className="py-8 space-y-6">
+              {/* Motivational empty state */}
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-accent-foreground" />
+                </div>
+                <h3 className="font-semibold text-foreground text-lg mb-2">{copy.noSessionsTitle}</h3>
+                <p className="text-muted-foreground text-sm mb-4">{copy.noSessionsBody}</p>
+                <Button variant="accent" size="lg" asChild>
+                  <Link to={canStartNewSession ? "/app/new" : "/app/upgrade"}>
+                    <PlusCircle className="w-5 h-5" />
+                    {canStartNewSession ? copy.createFirstSession : copy.currentPlanCta}
+                  </Link>
+                </Button>
+              </div>
+              {/* Tips */}
+              <div className="grid sm:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="flex gap-3 p-3 rounded-xl bg-muted/50">
+                  <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-4 h-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{copy.roleTipTitle}</p>
+                    <p className="text-xs text-muted-foreground">{copy.roleTipBody}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 p-3 rounded-xl bg-muted/50">
+                  <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-4 h-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{copy.answerTipTitle}</p>
+                    <p className="text-xs text-muted-foreground">{copy.answerTipBody}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 p-3 rounded-xl bg-muted/50">
+                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-4 h-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{copy.practiceTipTitle}</p>
+                    <p className="text-xs text-muted-foreground">{copy.practiceTipBody}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

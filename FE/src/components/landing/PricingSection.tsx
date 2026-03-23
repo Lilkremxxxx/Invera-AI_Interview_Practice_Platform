@@ -1,11 +1,14 @@
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Mic, Crown, Zap } from 'lucide-react';
 import { pricingPlans } from '@/lib/mock-data';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { pricingPlanContent } from '@/lib/pricing-content';
 
-const planIcons: Record<string, React.ReactNode> = {
+const planIcons: Record<string, ReactNode> = {
   free: <Mic className="w-5 h-5" />,
   basic: <Crown className="w-5 h-5" />,
   pro: <Crown className="w-5 h-5 text-yellow-500" />,
@@ -49,22 +52,54 @@ function formatVnd(amount: number | null) {
   return amount.toLocaleString('vi-VN') + 'đ';
 }
 
+const pricingSectionCopy = {
+  badge: { vi: 'Bảng giá', en: 'Pricing' },
+  title: { vi: 'Chọn gói phù hợp với bạn', en: 'Choose the plan that fits you' },
+  description: {
+    vi: 'Bắt đầu miễn phí, nâng cấp khi cần. Không phí ẩn.',
+    en: 'Start free, upgrade when you need more. No hidden fees.',
+  },
+  month: { vi: 'Theo tháng', en: 'Monthly' },
+  year: { vi: 'Theo năm', en: 'Yearly' },
+  saveBadge: { vi: 'Tiết kiệm ~33%', en: 'Save ~33%' },
+  mostPopular: { vi: 'Phổ biến nhất', en: 'Most popular' },
+  chooseIf: { vi: 'Chọn {plan} nếu bạn:', en: 'Choose {plan} if you:' },
+  withFree: { vi: 'Với Free, bạn nhận được:', en: 'With Free, you get:' },
+  withBasic: { vi: 'Tính năng bạn nhận được:', en: 'Included features:' },
+  withPro: { vi: 'Tất cả Basic, cộng thêm:', en: 'Everything in Basic, plus:' },
+  withPremium: { vi: 'Tất cả Pro, cộng thêm:', en: 'Everything in Pro, plus:' },
+  perMonth: { vi: '/tháng', en: '/month' },
+  perYear: { vi: '/năm', en: '/year' },
+  sessionsPerMonth: { vi: 'phiên / tháng', en: 'sessions / month' },
+  tokensPerSession: { vi: 'tokens / phiên', en: 'tokens / session' },
+  extraSession: { vi: 'Phiên thêm', en: 'Extra session' },
+  perSession: { vi: '/phiên', en: '/session' },
+  perYearSession: { vi: '/phiên/năm', en: '/session (yearly)' },
+  note: {
+    vi: '* Giá phiên thêm (/year) áp dụng khi mua gói theo năm. Free plan không hỗ trợ mua thêm phiên theo năm.',
+    en: '* Yearly extra-session pricing applies only to annual purchases. The Free plan does not support yearly extra-session purchases.',
+  },
+} as const;
+
 export const PricingSection = () => {
   const [billing, setBilling] = useState<'month' | 'year'>('month');
+  const { language } = useLanguage();
+
+  const sectionCopy = pricingSectionCopy;
 
   return (
-    <section id="pricing" className="py-20 bg-background">
+    <section id="pricing" className="scroll-mt-24 py-20 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            Bảng giá
+            {sectionCopy.badge[language]}
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
-            Chọn gói phù hợp với bạn
+            {sectionCopy.title[language]}
           </h2>
           <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
-            Bắt đầu miễn phí, nâng cấp khi cần. Không phí ẩn.
+            {sectionCopy.description[language]}
           </p>
         </div>
 
@@ -79,7 +114,7 @@ export const PricingSection = () => {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
-            Theo tháng
+            {sectionCopy.month[language]}
           </button>
           <button
             onClick={() => setBilling('year')}
@@ -90,9 +125,9 @@ export const PricingSection = () => {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
-            Theo năm
+            {sectionCopy.year[language]}
             <span className="ml-2 text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
-              Tiết kiệm ~33%
+              {sectionCopy.saveBadge[language]}
             </span>
           </button>
         </div>
@@ -102,21 +137,22 @@ export const PricingSection = () => {
           {pricingPlans.map((plan) => {
             const colors = planColors[plan.id];
             const price = billing === 'month' ? plan.priceMonth : plan.priceYear;
-            const priceSuffix = billing === 'month' ? '/tháng' : '/năm';
+            const priceSuffix = billing === 'month' ? sectionCopy.perMonth[language] : sectionCopy.perYear[language];
+            const localizedPlan = pricingPlanContent[plan.id as keyof typeof pricingPlanContent];
 
             return (
               <div
                 key={plan.id}
                 className={cn(
-                  'relative rounded-2xl border overflow-hidden transition-all duration-300 flex flex-col',
+                  'relative rounded-2xl border transition-all duration-300 flex flex-col',
                   colors.card,
-                  plan.popular && 'ring-2 ring-violet-500 shadow-xl shadow-violet-200/40 dark:shadow-violet-900/30'
+                  plan.popular && 'ring-2 ring-violet-500 shadow-xl shadow-violet-200/40 dark:shadow-violet-900/30 pt-4'
                 )}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 inset-x-0 flex justify-center">
-                    <span className="-translate-y-1/2 inline-block px-4 py-1 rounded-full bg-accent text-white text-xs font-semibold shadow">
-                      Phổ biến nhất
+                  <div className="absolute -top-3.5 inset-x-0 flex justify-center pointer-events-none">
+                    <span className="inline-block px-4 py-1 rounded-full bg-accent text-white text-xs font-semibold shadow-md">
+                      {sectionCopy.mostPopular[language]}
                     </span>
                   </div>
                 )}
@@ -127,13 +163,13 @@ export const PricingSection = () => {
                     <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
                     <span className="text-foreground/70">{planIcons[plan.id]}</span>
                   </div>
-                  <p className="text-sm text-foreground/60 mb-4 leading-snug">{plan.description}</p>
+                  <p className="text-sm text-foreground/60 mb-4 leading-snug">{localizedPlan.description[language]}</p>
 
                   <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-2">
-                    Chọn <strong className="font-bold text-foreground">{plan.name}</strong> nếu bạn:
+                    {sectionCopy.chooseIf[language].replace('{plan}', plan.name)}
                   </p>
                   <ul className="space-y-1.5 mb-3">
-                    {plan.targetUsers.map((u, i) => (
+                    {localizedPlan.targetUsers[language].map((u, i) => (
                       <li key={i} className="text-sm text-foreground/70 flex items-start gap-1.5">
                         <span className="mt-0.5 text-foreground/40">•</span>
                         <span>{u}</span>
@@ -156,11 +192,18 @@ export const PricingSection = () => {
                       <span className="text-sm text-foreground/50">{priceSuffix}</span>
                     </div>
                     <div className="mt-1.5 text-xs text-foreground/50 space-y-0.5">
-                      <div>{plan.sessionsPerMonth} phiên / tháng &nbsp;·&nbsp; {plan.tokensPerSession.toLocaleString()} tokens / phiên</div>
                       <div>
-                        Phiên thêm: <span className="font-medium text-foreground/70">{formatVnd(plan.extraSessionMonth)}/phiên</span>
+                        {plan.sessionsPerMonth} {sectionCopy.sessionsPerMonth[language]} &nbsp;·&nbsp; {plan.tokensPerSession.toLocaleString()} {sectionCopy.tokensPerSession[language]}
+                      </div>
+                      <div>
+                        {sectionCopy.extraSession[language]}:{' '}
+                        <span className="font-medium text-foreground/70">
+                          {formatVnd(plan.extraSessionMonth)}{sectionCopy.perSession[language]}
+                        </span>
                         {plan.extraSessionYear !== null && (
-                          <span className="ml-1 text-foreground/40">({formatVnd(plan.extraSessionYear)}/phiên/năm)</span>
+                          <span className="ml-1 text-foreground/40">
+                            ({formatVnd(plan.extraSessionYear)}{sectionCopy.perYearSession[language]})
+                          </span>
                         )}
                       </div>
                     </div>
@@ -168,13 +211,13 @@ export const PricingSection = () => {
 
                   {/* Features */}
                   <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-3">
-                    {plan.id === 'free' ? 'Với Free, bạn nhận được:' :
-                      plan.id === 'basic' ? 'Tính năng bạn nhận được:' :
-                      plan.id === 'pro' ? 'Tất cả Basic, cộng thêm:' :
-                      'Tất cả Pro, cộng thêm:'}
+                    {plan.id === 'free' ? sectionCopy.withFree[language] :
+                      plan.id === 'basic' ? sectionCopy.withBasic[language] :
+                      plan.id === 'pro' ? sectionCopy.withPro[language] :
+                      sectionCopy.withPremium[language]}
                   </p>
                   <ul className="space-y-2.5 flex-1">
-                    {plan.features.map((feature, index) => (
+                    {localizedPlan.features[language].map((feature, index) => (
                       <li key={index} className="flex items-start gap-2.5">
                         <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                         <span className="text-sm text-foreground/80">{feature}</span>
@@ -189,7 +232,7 @@ export const PricingSection = () => {
                     size="lg"
                     asChild
                   >
-                    <Link to="/signup">{plan.cta}</Link>
+                    <Link to="/signup">{localizedPlan.cta[language]}</Link>
                   </Button>
                 </div>
               </div>
@@ -199,7 +242,7 @@ export const PricingSection = () => {
 
         {/* Extra session note */}
         <p className="text-center text-xs text-muted-foreground mt-8">
-          * Giá phiên thêm (/year) áp dụng khi mua gói theo năm. Free plan không hỗ trợ mua thêm phiên theo năm.
+          {sectionCopy.note[language]}
         </p>
       </div>
     </section>

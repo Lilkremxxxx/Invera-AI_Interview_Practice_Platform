@@ -1,0 +1,16 @@
+[Unit]
+Description=Invera Cloudflare Tunnel
+After=network-online.target invera-frontend.service invera-backend.service
+Wants=network-online.target invera-frontend.service invera-backend.service
+PartOf=invera.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared --config __HOME__/.config/invera/cloudflared.yml tunnel run
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

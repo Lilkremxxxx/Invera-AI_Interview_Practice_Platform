@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,23 +11,43 @@ import {
   Shield,
   Moon,
   Save,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const { language, setLanguage, t } = useLanguage();
-  const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [dataSharing, setDataSharing] = useState(false);
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    const saved = localStorage.getItem('invera_tts');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [dataSharing, setDataSharing] = useState(() => {
+    const saved = localStorage.getItem('invera_data_sharing');
+    return saved === 'true';
+  });
   const { theme, setTheme, isAuthenticated } = useTheme();
   
   // Determine if dark mode is active (only for authenticated users)
   const isDarkMode = isAuthenticated && theme === 'dark';
   
   const handleDarkModeToggle = (checked: boolean) => {
-    if (!isAuthenticated) {
-      return; // Prevent toggle for non-authenticated users
-    }
+    if (!isAuthenticated) return;
     setTheme(checked ? 'dark' : 'light');
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    localStorage.setItem('invera_tts', String(ttsEnabled));
+    localStorage.setItem('invera_data_sharing', String(dataSharing));
+    await new Promise(r => setTimeout(r, 400));
+    setIsSaving(false);
+    toast({
+      title: language === 'vi' ? 'Đã lưu cài đặt' : 'Settings saved',
+      description: language === 'vi' ? 'Tùy chọn của bạn đã được cập nhật.' : 'Your preferences have been updated.',
+    });
   };
 
   return (
@@ -145,9 +165,9 @@ const Settings = () => {
 
       {/* Save */}
       <div className="flex justify-end">
-        <Button variant="accent" size="lg">
-          <Save className="w-4 h-4" />
-          {t('settings', 'save')}
+        <Button variant="accent" size="lg" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {isSaving ? (language === 'vi' ? 'Đang lưu...' : 'Saving...') : t('settings', 'save')}
         </Button>
       </div>
     </div>

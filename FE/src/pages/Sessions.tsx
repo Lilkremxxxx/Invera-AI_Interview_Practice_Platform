@@ -34,6 +34,12 @@ const levelLabels: Record<string, { vi: string; en: string }> = {
 
 const Sessions = () => {
   const { t, language } = useLanguage();
+  const copy = {
+    loadError: language === 'vi' ? 'Không thể tải sessions. Vui lòng thử lại.' : 'Unable to load sessions. Please try again.',
+    completed: language === 'vi' ? 'Hoàn thành' : 'Completed',
+    inProgress: language === 'vi' ? 'Đang làm' : 'In progress',
+    locale: language === 'vi' ? 'vi-VN' : 'en-US',
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<string | null>(null);
 
@@ -112,7 +118,7 @@ const Sessions = () => {
               <Loader2 className="w-8 h-8 animate-spin text-accent" />
             </div>
           ) : error ? (
-            <div className="text-center py-12 text-destructive">Không thể tải sessions. Vui lòng thử lại.</div>
+            <div className="text-center py-12 text-destructive">{copy.loadError}</div>
           ) : filteredSessions.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
@@ -156,7 +162,7 @@ const Sessions = () => {
                           'font-medium text-xs px-1.5 py-0.5 rounded',
                           session.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
                         )}>
-                          {session.status === 'COMPLETED' ? 'Hoàn thành' : 'Đang làm'}
+                          {session.status === 'COMPLETED' ? copy.completed : copy.inProgress}
                         </span>
                       </div>
                     </div>
@@ -172,7 +178,7 @@ const Sessions = () => {
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {new Date(session.created_at).toLocaleDateString('vi-VN')}
+                        {new Date(session.created_at).toLocaleDateString(copy.locale)}
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" />

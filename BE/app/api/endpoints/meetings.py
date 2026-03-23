@@ -1,18 +1,12 @@
 import os
 import uuid
-from pathlib import Path
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Depends
-from dotenv import load_dotenv
 import asyncpg
 
-from db.session import get_db
-from api.endpoints.auth import get_current_user
-from schemas.user import UserOut
-from services.storage.local import LocalStorageService
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-ENV_PATH = BASE_DIR / ".env"
-load_dotenv(dotenv_path=ENV_PATH)
+from app.db.session import get_db
+from app.api.endpoints.auth import get_current_user
+from app.schemas.user import UserOut
+from app.services.storage.local import LocalStorageService
 
 router = APIRouter()
 

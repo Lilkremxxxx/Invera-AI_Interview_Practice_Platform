@@ -222,7 +222,7 @@ export const translations = {
     features: { vi: 'Tính năng',          en: 'Features' },
     pricing:  { vi: 'Bảng giá',           en: 'Pricing' },
     faq:      { vi: 'Câu hỏi thường gặp', en: 'FAQ' },
-    dashboard:{ vi: 'Bảng điều khiển',    en: 'Dashboard' },
+    dashboard:{ vi: 'Demo dashboard',     en: 'Dashboard demo' },
     company:  { vi: 'Công ty',            en: 'Company' },
     about:    { vi: 'Về chúng tôi',       en: 'About us' },
     contact:  { vi: 'Liên hệ',            en: 'Contact' },
@@ -236,6 +236,7 @@ export const translations = {
     dashboard:  { vi: 'Bảng điều khiển', en: 'Dashboard' },
     newSession:  { vi: 'Phiên mới',       en: 'New session' },
     sessions:   { vi: 'Phiên',           en: 'Sessions' },
+    qna:        { vi: 'Hỏi đáp AI',      en: 'QnA' },
     profile:    { vi: 'Hồ sơ',           en: 'Profile' },
     settings:   { vi: 'Cài đặt',         en: 'Settings' },
     user:       { vi: 'Người dùng',      en: 'User' },
@@ -376,6 +377,23 @@ export const translations = {
     error:        { vi: 'Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại.', en: 'An error occurred while creating your account. Please try again.' },
   },
 
+  verifyEmail: {
+    title:        { vi: 'Xác thực email', en: 'Verify your email' },
+    instruction:  { vi: 'Chúng tôi đã tạo tài khoản cho bạn. Hãy nhập mã xác thực 6 số được gửi đến email để tiếp tục.', en: 'We created your account. Enter the 6-digit verification code sent to your email to continue.' },
+    panelTitle:   { vi: 'Chỉ còn một bước nữa', en: 'One more step' },
+    panelSubtitle:{ vi: 'Xác thực email giúp bảo vệ tài khoản của bạn và kích hoạt đăng nhập bình thường.', en: 'Email verification protects your account and activates normal sign-in.' },
+    email:        { vi: 'Email', en: 'Email' },
+    code:         { vi: 'Mã xác thực', en: 'Verification code' },
+    submit:       { vi: 'Xác thực và đăng nhập', en: 'Verify and continue' },
+    submitting:   { vi: 'Đang xác thực...', en: 'Verifying...' },
+    resend:       { vi: 'Gửi lại mã', en: 'Resend code' },
+    resending:    { vi: 'Đang gửi lại...', en: 'Resending...' },
+    resendError:  { vi: 'Không thể gửi lại mã lúc này. Vui lòng thử lại.', en: 'Unable to resend the code right now. Please try again.' },
+    error:        { vi: 'Không thể xác thực email. Vui lòng thử lại.', en: 'Unable to verify your email. Please try again.' },
+    haveAccount:  { vi: 'Đã có tài khoản?', en: 'Already have an account?' },
+    login:        { vi: 'Đăng nhập', en: 'Log in' },
+  },
+
   // ── Settings ────────────────────────────────────────────────────────────
   settings: {
     title:           { vi: 'Cài đặt',                      en: 'Settings' },
@@ -412,7 +430,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
-    return (localStorage.getItem('invera-language') as Language) || 'vi';
+    return (localStorage.getItem('invera-language') as Language) || 'en';
   });
 
   const handleSetLanguage = (lang: Language) => {

@@ -1,0 +1,18 @@
+# Deprecated reference only.
+# The live public stack currently uses:
+# Cloudflare Tunnel -> FastAPI on 127.0.0.1:9000 -> /api + FE/dist
+# Keep this file only as a future starting point if root-managed local proxying returns.
+
+invera.pp.ua, www.invera.pp.ua {
+    encode gzip zstd
+
+    handle_path /api/* {
+        reverse_proxy 127.0.0.1:9000
+    }
+
+    handle {
+        root * /home/nhatbang/EXE101/PRJ/FE/dist
+        try_files {path} /index.html
+        file_server
+    }
+}

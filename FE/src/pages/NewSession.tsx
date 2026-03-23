@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -16,13 +16,16 @@ import {
 import { roles, levels, answerModes, questionCounts, timeLimits, difficulties } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { sessionsApi } from '@/lib/api';
+import { ApiError, sessionsApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const NewSession = () => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuthContext();
   const [step, setStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -46,6 +49,19 @@ const NewSession = () => {
   );
 
   const selectedRole = mvpRoles.find(r => r.id === config.role);
+  const canStartNewSession = user?.can_start_new_session ?? true;
+  const copy = {
+    createErrorTitle: language === 'vi' ? 'Lỗi tạo session' : 'Unable to create session',
+    createErrorDescription: language === 'vi' ? 'Không thể tạo session. Vui lòng thử lại.' : 'Unable to create the session. Please try again.',
+    blockedTitle: language === 'vi' ? 'Không thể tạo session mới' : 'Unable to create a new session',
+    blockedBody: language === 'vi'
+      ? 'Bạn đã dùng hết session của Free trial. Hãy nâng cấp gói để tiếp tục luyện tập.'
+      : 'You have already used the only session included in Free trial. Upgrade your plan to continue practicing.',
+    upgradePlan: language === 'vi' ? 'Nâng cấp gói' : 'Upgrade plan',
+    viewSessions: language === 'vi' ? 'Xem session hiện có' : 'View existing sessions',
+    creating: language === 'vi' ? 'Đang tạo...' : 'Creating...',
+    questionWord: language === 'vi' ? 'câu hỏi' : 'questions',
+  };
 
   const handleStartInterview = async () => {
     if (!config.role) return;
@@ -61,9 +77,12 @@ const NewSession = () => {
       sessionStorage.setItem(`session_${session.id}`, JSON.stringify(session));
       navigate(`/app/interview/${session.id}`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        navigate('/app/upgrade');
+      }
       toast({
-        title: 'Lỗi tạo session',
-        description: err instanceof Error ? err.message : 'Không thể tạo session. Vui lòng thử lại.',
+        title: copy.createErrorTitle,
+        description: err instanceof Error ? err.message : copy.createErrorDescription,
         variant: 'destructive',
       });
     } finally {
@@ -77,6 +96,25 @@ const NewSession = () => {
         <h1 className="text-3xl font-bold text-foreground mb-2">{t('newSession', 'title')}</h1>
         <p className="text-muted-foreground">{t('newSession', 'subtitle')}</p>
       </div>
+
+      {!canStartNewSession && (
+        <Alert className="mb-8 border-amber-200 bg-amber-50 text-amber-900">
+          <AlertTitle>{copy.blockedTitle}</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>{copy.blockedBody}</p>
+            <div className="flex gap-3">
+              <Button variant="accent" asChild>
+                <Link to="/app/upgrade">{copy.upgradePlan}</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/app/sessions">{copy.viewSessions}</Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {canStartNewSession && (
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Content */}
@@ -146,7 +184,7 @@ const NewSession = () => {
                           <span className="text-2xl">{role.icon}</span>
                           <div>
                             <p className="font-medium text-foreground">{role.name[language]}</p>
-                            <p className="text-xs text-muted-foreground">{role.questions} questions</p>
+                            <p className="text-xs text-muted-foreground">{role.questions} {copy.questionWord}</p>
                           </div>
                         </div>
                       </button>
@@ -300,7 +338,7 @@ const NewSession = () => {
                     disabled={isCreating}
                   >
                     {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isCreating ? 'Đang tạo...' : t('newSession', 'startInterview')}
+                    {isCreating ? copy.creating : t('newSession', 'startInterview')}
                   </Button>
                 )}
               </div>
@@ -355,13 +393,14 @@ const NewSession = () => {
                   disabled={!config.role || isCreating}
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {isCreating ? 'Đang tạo...' : t('newSession', 'startInterview')}
+                  {isCreating ? copy.creating : t('newSession', 'startInterview')}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      )}
     </div>
   );
 };

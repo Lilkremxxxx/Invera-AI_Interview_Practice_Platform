@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { BrandIcon } from '@/components/layout/BrandIcon';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,9 +24,7 @@ export const Navbar = () => {
             to="/" 
             className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-lg"
           >
-            <div className="w-9 h-9 rounded-xl gradient-accent flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <Sparkles className="w-5 h-5 text-accent-foreground" />
-            </div>
+            <BrandIcon className="w-9 h-9 shadow-md transition-transform group-hover:-translate-y-0.5" />
             <span className="font-bold text-xl text-foreground group-hover:text-accent transition-colors">
               invera
             </span>

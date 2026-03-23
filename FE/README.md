@@ -1,73 +1,151 @@
-# Welcome to your Lovable project
+# Invera Frontend — Setup Guide
 
-## Project info
+> **Invera** — AI Interview Practice Platform  
+> Vite 5 + React 18 + TypeScript + Tailwind CSS + Shadcn/ui
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## Prerequisites
 
-There are several ways of editing your application.
+- Node.js ≥ 18
+- npm hoặc bun
+- Backend dev chạy tại `http://localhost:9000/api` (xem `../BE/`)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# 1. Cài dependencies
+cd FE
+npm install
 
-**Use your preferred IDE**
+# 2. Tạo file env (nếu chưa có)
+cp .env.example .env   # hoặc tạo thủ công
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3. Khởi động dev server (port 8080)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Mở trình duyệt tại **http://localhost:8080**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Environment Variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Tạo file `FE/.env` (không commit vào git):
 
-## What technologies are used for this project?
+```env
+VITE_API_BASE_URL=http://localhost:9000/api
+```
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Available Scripts
 
-## How can I deploy this project?
+| Command | Mô tả |
+|---------|-------|
+| `npm run dev` | Dev server tại localhost:8080 |
+| `npm run build` | Production build → `dist/` |
+| `npm run preview` | Preview production build |
+| `npm test` | Chạy unit tests (Vitest) |
+| `npm run lint` | ESLint check |
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Project Structure
 
-Yes, you can!
+```
+FE/src/
+├── pages/           # 11 route pages
+│   ├── Index.tsx        → Landing page (/)
+│   ├── Login.tsx         → /login
+│   ├── Signup.tsx        → /signup
+│   ├── Dashboard.tsx     → /app
+│   ├── NewSession.tsx    → /app/new
+│   ├── InterviewRoom.tsx → /app/interview/:id
+│   ├── Sessions.tsx      → /app/sessions
+│   ├── SessionDetail.tsx → /app/sessions/:id
+│   ├── Profile.tsx       → /app/profile
+│   └── Settings.tsx      → /app/settings
+├── components/
+│   ├── landing/     # 8 landing page sections
+│   ├── layout/      # Navbar, Sidebar, AppLayout, Footer
+│   └── ui/          # 50+ Shadcn/ui components
+├── contexts/
+│   ├── AuthContext.tsx   # JWT auth state (user, login, logout)
+│   └── LanguageContext.tsx # i18n vi/en (100+ keys)
+├── hooks/
+│   ├── use-auth.ts       # Auth hook wrapping AuthContext
+│   ├── use-theme.ts
+│   └── use-toast.ts
+├── lib/
+│   ├── api.ts        # Fetch client (Bearer token + 401 redirect)
+│   ├── mock-data.ts  # Role/level/config data
+│   └── utils.ts
+└── test/
+    ├── setup.ts
+    ├── example.test.ts
+    └── auth.test.tsx
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Authentication Flow
+
+1. User đăng ký/đăng nhập → `POST /api/auth/register` hoặc `POST /api/auth/login`
+2. Token JWT lưu vào `localStorage` (key: `invera_token`)
+3. `AuthContext` validate token qua `GET /auth/me` khi mount
+4. `PrivateRoute` redirect về `/login` nếu `!isAuthenticated`
+5. Token 401 → auto clear + redirect `/login`
+
+---
+
+## Tech Stack
+
+| Thư viện | Version | Mục đích |
+|----------|---------|---------|
+| React | 18 | UI framework |
+| Vite | 5 | Build tool |
+| TypeScript | 5 | Type safety |
+| Tailwind CSS | 3 | Styling |
+| Shadcn/ui | latest | UI components |
+| React Router | v6 | Routing |
+| TanStack Query | v5 | Server state / data fetching |
+| React Hook Form | 7 | Form handling |
+| Zod | 3 | Schema validation |
+| Recharts | 2 | Charts (Dashboard) |
+| Vitest | latest | Unit testing |
+
+---
+
+## API Client (`lib/api.ts`)
+
+```typescript
+import { sessionsApi, authApi } from '@/lib/api';
+
+// Auth
+await authApi.login(email, password);   // → token
+await authApi.register({ email, password });
+await authApi.me();                      // → UserOut
+
+// Sessions
+await sessionsApi.create({ role, level, mode, question_count });
+await sessionsApi.list();
+await sessionsApi.get(id);
+await sessionsApi.submitAnswer(sessionId, { question_id, answer_text });
+await sessionsApi.complete(sessionId);
+```
+
+---
+
+## Running Tests
+
+```bash
+npm test
+# hoặc
+npx vitest run        # single run
+npx vitest --ui       # UI mode
+```
+
+Tests nằm tại `src/test/*.test.{ts,tsx}`.

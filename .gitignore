@@ -27,3 +27,16 @@ dist-ssr
 CLAUDE.md
 .env
 EXE101
+*.md
+output/
+EXE101/
+Scripts/
+Upload/
+uploads/
+__pycache__/
+*.pyc
+.vite/
+BE/.env
+BE/.env*
+FE/.env
+FE/.env*

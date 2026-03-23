@@ -1,0 +1,17 @@
+[Unit]
+Description=Invera frontend build
+After=network-online.target
+Wants=network-online.target
+PartOf=invera.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_ROOT__
+ExecStart=__PROJECT_ROOT__/scripts/publish_frontend.sh
+ExecReload=__PROJECT_ROOT__/scripts/publish_frontend.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

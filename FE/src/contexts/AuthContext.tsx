@@ -6,7 +6,10 @@ interface AuthContextType {
   user: UserOut | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserOut>;
+  loginWithToken: (token: string) => Promise<UserOut>;
+  refreshUser: () => Promise<UserOut | null>;
+  clearAuth: () => void;
   logout: () => void;
 }
 
@@ -17,6 +20,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserOut | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setUser(null);
+      return null;
+    }
+
+    try {
+      const me = await authApi.me();
+      setUser(me);
+      return me;
+    } catch {
+      clearToken();
+      setUser(null);
+      return null;
+    }
+  }, []);
 
   /**
    * Khi mount: kiểm tra token trong localStorage.
@@ -31,8 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        const me = await authApi.me();
-        setUser(me);
+        await refreshUser();
       } catch {
         clearToken();
         setUser(null);
@@ -42,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     validateToken();
-  }, []);
+  }, [refreshUser]);
 
   /**
    * login: gọi POST /auth/login → lưu token → fetch user info.
@@ -53,6 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(response.access_token);
     const me = await authApi.me();
     setUser(me);
+    return me;
+  }, []);
+
+  /**
+   * loginWithToken: Dùng cho OAuth (nhận trực tiếp token từ URL params).
+   */
+  const loginWithToken = useCallback(async (token: string) => {
+    setToken(token);
+    const me = await authApi.me();
+    setUser(me);
+    return me;
+  }, []);
+
+  const clearAuth = useCallback(() => {
+    clearToken();
+    setUser(null);
   }, []);
 
   /**
@@ -71,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         loading,
         login,
+        loginWithToken,
+        refreshUser,
+        clearAuth,
         logout,
       }}
     >

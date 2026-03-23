@@ -197,9 +197,9 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    display: inline;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    display: inline-block;
+    padding-bottom: 0.05em;
+    line-height: 1.2;
   }
 
   /* Light mode specific overrides for better contrast */

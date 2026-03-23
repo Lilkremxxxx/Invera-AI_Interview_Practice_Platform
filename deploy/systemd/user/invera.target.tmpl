@@ -1,0 +1,7 @@
+[Unit]
+Description=Invera full stack
+Wants=invera-frontend.service invera-backend.service cloudflared.service
+After=network-online.target
+
+[Install]
+WantedBy=default.target
