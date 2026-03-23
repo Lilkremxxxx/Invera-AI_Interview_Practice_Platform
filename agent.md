@@ -358,6 +358,7 @@ npm run dev
 [2026-03-23] landing-demo+company-pages | Thay section testimonial trên landing bằng demo dashboard tương tác với dữ liệu giả, đổi footer `Dashboard` thành `Dashboard demo` trỏ về `/#dashboard-demo`, và thêm các public company pages `/about`, `/contact`, `/privacy`, `/terms` để footer không còn link chết/404 | FE/src/components/landing/DashboardDemoSection.tsx, FE/src/components/layout/{Footer,CompanyPageShell}.tsx, FE/src/pages/{Index,About,Contact,Privacy,Terms}.tsx, FE/src/App.tsx, FE/src/contexts/LanguageContext.tsx, tasks.md, agent.md
 [2026-03-23] admin-email-resend | Resent the existing admin-access email to `bangpoca@gmail.com`; the account was already active and admin in the live database, so the resend reused the `/admin/login` existing-login flow instead of creating a new invite | live SMTP runtime, tasks.md, agent.md
 [2026-03-23] repo-commit-prep | Tightened `.gitignore` to broadly exclude markdown/env/output/upload clutter per operator request and fixed another QnA JSON serialization path before the next repository-wide commit/push to `main` | .gitignore, BE/app/api/endpoints/qna.py, tasks.md, agent.md
+[2026-03-23] local-commit-created | Created local commit `5b4c91e feat: refresh invera platform`; push to `origin/main` is still blocked by missing GitHub auth on this machine, and remote `main` is an unrelated history from the working branch | git history, tasks.md, agent.md
 ```
 
 *** 1 số comment để chạy code

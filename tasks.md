@@ -1542,7 +1542,7 @@
 
 - Created: 2026-03-23 18:31 UTC
 - User Request: Commit the current project state with a short, general message, push it to `main`, and tighten `.gitignore` so non-core markdown/env/output/upload folders are ignored.
-- Status: in_progress
+- Status: blocked
 
 ### Plan
 
@@ -1562,3 +1562,21 @@
 - 2026-03-23 18:31 UTC — Started the commit-and-push task and inspected the repo state: current branch is `Bang`, `main` exists locally and on `origin`, and the working tree contains the accumulated FE/BE/runtime changes from prior tasks.
 - 2026-03-23 18:33 UTC — Fixed another QnA backend serialization/runtime issue in `BE/app/api/endpoints/qna.py` so the current tree is closer to a shippable state before committing.
 - 2026-03-23 18:34 UTC — Updated `.gitignore` with the requested broad ignore rules for markdown, env files, output, uploads, and the named non-core folders. Existing tracked files remain tracked unless explicitly removed from git history.
+- 2026-03-23 18:36 UTC — Removed tracked root/FE `.env` files from the git index so the new commit would honor the ignore rules and not carry local secret files into the repository.
+- 2026-03-23 18:36 UTC — Removed generated `__pycache__` artifacts and tracked FE `.vite` metadata from the index so the commit keeps closer to the requested core-only source tree.
+- 2026-03-23 18:37 UTC — Created local commit `5b4c91e` with message `feat: refresh invera platform`.
+- 2026-03-23 18:38 UTC — Tried to move the result onto `main`; a normal merge failed because `Bang` and `main` are unrelated histories, and the fallback push `git push --force-with-lease origin Bang:main` failed because this machine has no usable GitHub auth for non-interactive HTTPS push, `gh` is not installed, and SSH auth is also unavailable.
+
+### Outcome / Result
+
+- The repository changes were committed locally as `5b4c91e feat: refresh invera platform`.
+- `.gitignore` now broadly excludes markdown, env files, output, uploads, `Scripts/`, and `EXE101/`, and the tracked root/FE `.env` plus generated cache artifacts were removed from the new commit.
+- The requested push to `origin/main` could not be completed from this machine because GitHub authentication is not configured in the terminal environment.
+
+### Remaining Follow-Ups
+
+- Authenticate git for `https://github.com/Lilkremxxxx/Invera-AI_Interview_Practice_Platform.git` or switch the remote to a working SSH setup, then run:
+  `git -C /home/nhatbang/EXE101/PRJ push --force-with-lease origin Bang:main`
+- Because `origin/main` is an unrelated history from the working branch, the push path requires replacing remote `main` rather than a clean fast-forward merge.
+
+- Closed: 2026-03-23 18:38 UTC
