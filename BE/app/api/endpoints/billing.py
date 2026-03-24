@@ -12,12 +12,13 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from app.api.endpoints.auth import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
-from app.schemas.billing import CheckoutRequest, CheckoutResponse, PaymentOrderOut
+from app.schemas.billing import CheckoutRequest, CheckoutResponse, PaymentOrderOut, RedeemCodeRequest, RedeemCodeResponse
 from app.schemas.user import UserOut
 from app.services.plans import (
     ACTIVE_STATUS,
     PURCHASABLE_PLAN_TIERS,
     activate_paid_plan,
+    redeem_plan_code,
     resolve_plan_price,
     utcnow,
 )
@@ -252,6 +253,31 @@ async def create_vnpay_checkout(
     return CheckoutResponse(
         payment_url=payment_url,
         order=PaymentOrderOut(**dict(order)),
+    )
+
+
+@router.post("/redeem", response_model=RedeemCodeResponse)
+async def redeem_billing_code(
+    payload: RedeemCodeRequest,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    _require_billing_user(current_user)
+
+    try:
+        snapshot = await redeem_plan_code(
+            db,
+            user_id=current_user.id,
+            code=payload.code,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Redeem code không hợp lệ.") from exc
+
+    return RedeemCodeResponse(
+        message="Redeem code applied successfully.",
+        plan_tier=snapshot["plan_tier"],
+        billing_period=snapshot["plan_billing_period"],
+        plan_expires_at=snapshot["plan_expires_at"],
     )
 
 

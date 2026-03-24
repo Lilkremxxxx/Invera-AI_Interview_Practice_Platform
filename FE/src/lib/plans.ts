@@ -16,6 +16,8 @@ export function formatPlanLabel(user: UserOut | null | undefined, language: Lang
       return language === 'vi' ? 'Gói Basic' : 'Basic';
     case 'pro':
       return language === 'vi' ? 'Gói Pro' : 'Pro';
+    case 'premium':
+      return language === 'vi' ? 'Gói Premium' : 'Premium';
     default:
       return language === 'vi' ? 'Free trial' : 'Free trial';
   }

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle2, CreditCard, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CreditCard, Gift, Loader2, ShieldCheck } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -39,6 +40,8 @@ const copy = {
   vi: {
     title: 'Nâng cấp gói',
     subtitle: 'Mở khóa Basic hoặc Pro để tiếp tục luyện tập ngoài giới hạn Free trial.',
+    qnaLockedTitle: 'QnA đang bị khóa',
+    qnaLockedDescription: 'Gói Free không dùng được QnA. Hãy nâng cấp hoặc nhập redeem code để mở khóa từ Basic trở lên.',
     viewSessions: 'Xem lịch sử session',
     currentStatus: 'Trạng thái hiện tại',
     sessionsUsed: 'Sessions đã dùng',
@@ -49,6 +52,14 @@ const copy = {
     trialExhaustedTitle: 'Free trial đã hết',
     trialExhaustedDescription: 'Bạn đã dùng session miễn phí duy nhất. Hãy chọn Basic hoặc Pro để tiếp tục.',
     choosePlan: 'Chọn gói nâng cấp',
+    redeemTitle: 'Redeem code',
+    redeemDescription: 'Bạn có thể kích hoạt gói theo tháng bằng mã redeem thay vì thanh toán.',
+    redeemPlaceholder: 'Nhập mã, ví dụ Invera_Pro',
+    redeemButton: 'Áp dụng mã',
+    redeeming: 'Đang áp dụng mã',
+    redeemSuccessTitle: 'Redeem code thành công',
+    redeemSuccessDescription: 'Gói của bạn đã được cập nhật bằng redeem code.',
+    redeemErrorTitle: 'Không thể áp dụng redeem code',
     monthly: 'Theo tháng',
     yearly: 'Theo năm',
     perMonth: '/tháng',
@@ -72,7 +83,9 @@ const copy = {
   },
   en: {
     title: 'Upgrade plan',
-    subtitle: 'Unlock Basic or Pro to keep practicing beyond the Free trial limit.',
+    subtitle: 'Unlock Basic, Pro, or Premium to keep practicing beyond the Free trial limit.',
+    qnaLockedTitle: 'QnA is locked',
+    qnaLockedDescription: 'The Free plan cannot use QnA. Upgrade or redeem a code to unlock it from Basic and above.',
     viewSessions: 'View session history',
     currentStatus: 'Current status',
     sessionsUsed: 'Sessions used',
@@ -83,6 +96,14 @@ const copy = {
     trialExhaustedTitle: 'Free trial exhausted',
     trialExhaustedDescription: 'You have used your only free session. Choose Basic or Pro to continue.',
     choosePlan: 'Choose your upgrade',
+    redeemTitle: 'Redeem code',
+    redeemDescription: 'You can activate a monthly plan with a redeem code instead of paying.',
+    redeemPlaceholder: 'Enter a code, for example Invera_Pro',
+    redeemButton: 'Apply code',
+    redeeming: 'Applying code',
+    redeemSuccessTitle: 'Redeem code applied',
+    redeemSuccessDescription: 'Your plan was updated using the redeem code.',
+    redeemErrorTitle: 'Unable to apply redeem code',
     monthly: 'Monthly',
     yearly: 'Yearly',
     perMonth: '/month',
@@ -116,9 +137,11 @@ export default function Upgrade() {
   const locale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [billingPeriod, setBillingPeriod] = useState<'month' | 'year'>('month');
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
 
   const purchasablePlans = useMemo(
-    () => pricingPlans.filter((plan) => plan.id === 'basic' || plan.id === 'pro'),
+    () => pricingPlans.filter((plan) => plan.id === 'basic' || plan.id === 'pro' || plan.id === 'premium'),
     [],
   );
 
@@ -172,7 +195,7 @@ export default function Upgrade() {
     enabled: !user?.is_admin,
   });
 
-  const handleCheckout = async (planId: 'basic' | 'pro') => {
+  const handleCheckout = async (planId: 'basic' | 'pro' | 'premium') => {
     setLoadingPlanId(planId);
     try {
       const response = await billingApi.createCheckout(planId, billingPeriod);
@@ -185,6 +208,29 @@ export default function Upgrade() {
       });
     } finally {
       setLoadingPlanId(null);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (!redeemCode.trim()) return;
+
+    setRedeeming(true);
+    try {
+      await billingApi.redeemCode(redeemCode.trim());
+      await refreshUser();
+      setRedeemCode('');
+      toast({
+        title: text.redeemSuccessTitle,
+        description: text.redeemSuccessDescription,
+      });
+    } catch (error) {
+      toast({
+        title: text.redeemErrorTitle,
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setRedeeming(false);
     }
   };
 
@@ -260,10 +306,48 @@ export default function Upgrade() {
                 <AlertDescription>{text.trialExhaustedDescription}</AlertDescription>
               </Alert>
             )}
+            {user && !user.can_use_qna && (
+              <Alert className="border-sky-200 bg-sky-50 text-sky-900">
+                <AlertTitle>{text.qnaLockedTitle}</AlertTitle>
+                <AlertDescription>{text.qnaLockedDescription}</AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="w-5 h-5" />
+                {text.redeemTitle}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">{text.redeemDescription}</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-col gap-3 md:flex-row">
+                <Input
+                  value={redeemCode}
+                  onChange={(event) => setRedeemCode(event.target.value)}
+                  placeholder={text.redeemPlaceholder}
+                />
+                <Button onClick={handleRedeem} disabled={redeeming || !redeemCode.trim()}>
+                  {redeeming ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {text.redeeming}
+                    </>
+                  ) : (
+                    text.redeemButton
+                  )}
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                `Invera_Basic`, `Invera_Pro`, `Invera_Premium`
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="space-y-4">
               <CardTitle>{text.choosePlan}</CardTitle>
@@ -278,7 +362,7 @@ export default function Upgrade() {
               {purchasablePlans.map((plan) => {
                 const price = billingPeriod === 'month' ? plan.priceMonth : plan.priceYear;
                 const isCurrent = user?.plan_tier === plan.id && user?.plan_status === 'active';
-                const localizedPlan = pricingPlanContent[plan.id as 'basic' | 'pro'];
+                const localizedPlan = pricingPlanContent[plan.id as 'basic' | 'pro' | 'premium'];
                 return (
                   <div key={plan.id} className="rounded-2xl border border-border p-5 bg-card space-y-4">
                     <div className="flex items-start justify-between gap-3">
@@ -305,7 +389,7 @@ export default function Upgrade() {
                     <Button
                       className="w-full"
                       variant={plan.id === 'pro' ? 'accent' : 'outline'}
-                      onClick={() => handleCheckout(plan.id as 'basic' | 'pro')}
+                      onClick={() => handleCheckout(plan.id as 'basic' | 'pro' | 'premium')}
                       disabled={loadingPlanId !== null}
                     >
                       {loadingPlanId === plan.id ? (

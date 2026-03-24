@@ -46,6 +46,7 @@ class UserOut(BaseModel):
     session_limit: Optional[int] = None
     sessions_used: int = 0
     can_start_new_session: bool = True
+    can_use_qna: bool = False
     is_billing_exempt: bool = False
     avatar_url: Optional[str] = None
     resume_uploaded: bool = False

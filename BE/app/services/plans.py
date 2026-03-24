@@ -11,16 +11,18 @@ from app.services.profile_files import avatar_url
 FREE_TRIAL_PLAN = "free_trial"
 BASIC_PLAN = "basic"
 PRO_PLAN = "pro"
+PREMIUM_PLAN = "premium"
 ACTIVE_STATUS = "active"
 EXPIRED_STATUS = "expired"
 TRIAL_EXHAUSTED_STATUS = "trial_exhausted"
 MONTHLY_PERIOD = "month"
 YEARLY_PERIOD = "year"
 
-PURCHASABLE_PLAN_TIERS = {BASIC_PLAN, PRO_PLAN}
+PURCHASABLE_PLAN_TIERS = {BASIC_PLAN, PRO_PLAN, PREMIUM_PLAN}
 PLAN_TIERS = {FREE_TRIAL_PLAN, *PURCHASABLE_PLAN_TIERS}
 PLAN_STATUSES = {ACTIVE_STATUS, EXPIRED_STATUS, TRIAL_EXHAUSTED_STATUS}
 BILLING_PERIODS = {MONTHLY_PERIOD, YEARLY_PERIOD}
+QNA_ENABLED_PLAN_TIERS = {BASIC_PLAN, PRO_PLAN, PREMIUM_PLAN}
 
 TRIAL_SESSION_LIMIT = 1
 
@@ -33,6 +35,16 @@ PLAN_PRICES_VND = {
         MONTHLY_PERIOD: 199_000,
         YEARLY_PERIOD: 1_799_000,
     },
+    PREMIUM_PLAN: {
+        MONTHLY_PERIOD: 299_000,
+        YEARLY_PERIOD: 2_799_000,
+    },
+}
+
+REDEEM_CODE_PLAN_MAP = {
+    "INVERA_BASIC": BASIC_PLAN,
+    "INVERA_PRO": PRO_PLAN,
+    "INVERA_PREMIUM": PREMIUM_PLAN,
 }
 
 
@@ -60,6 +72,17 @@ def normalize_billing_period(value: str | None) -> str | None:
 
 def duration_for_period(period: str) -> timedelta:
     return timedelta(days=365 if period == YEARLY_PERIOD else 30)
+
+
+def normalize_redeem_code(code: str) -> str:
+    return code.strip().upper()
+
+
+def resolve_redeem_code_plan(code: str) -> str:
+    normalized_code = normalize_redeem_code(code)
+    if normalized_code not in REDEEM_CODE_PLAN_MAP:
+        raise ValueError("Invalid redeem code")
+    return REDEEM_CODE_PLAN_MAP[normalized_code]
 
 
 def resolve_plan_price(plan_tier: str, billing_period: str) -> int:
@@ -93,6 +116,7 @@ def compute_entitlement(
             "session_limit": None,
             "sessions_used": sessions_used,
             "can_start_new_session": True,
+            "can_use_qna": True,
             "is_billing_exempt": True,
         }
 
@@ -104,6 +128,7 @@ def compute_entitlement(
             "session_limit": None,
             "sessions_used": sessions_used,
             "can_start_new_session": True,
+            "can_use_qna": normalized_tier in QNA_ENABLED_PLAN_TIERS,
             "is_billing_exempt": False,
         }
 
@@ -115,6 +140,7 @@ def compute_entitlement(
             "session_limit": TRIAL_SESSION_LIMIT,
             "sessions_used": sessions_used,
             "can_start_new_session": sessions_used < TRIAL_SESSION_LIMIT,
+            "can_use_qna": False,
             "is_billing_exempt": False,
         }
 
@@ -126,6 +152,7 @@ def compute_entitlement(
         "session_limit": TRIAL_SESSION_LIMIT,
         "sessions_used": sessions_used,
         "can_start_new_session": sessions_used < TRIAL_SESSION_LIMIT,
+        "can_use_qna": False,
         "is_billing_exempt": False,
     }
 
@@ -229,3 +256,37 @@ async def activate_paid_plan(
         user_id,
     )
     return await get_user_plan_snapshot(db, user_id)
+
+
+async def redeem_plan_code(
+    db: asyncpg.Connection,
+    *,
+    user_id,
+    code: str,
+    redeemed_at: datetime | None = None,
+) -> dict[str, Any]:
+    normalized_code = normalize_redeem_code(code)
+    plan_tier = resolve_redeem_code_plan(normalized_code)
+    activated_at = redeemed_at or utcnow()
+
+    snapshot = await activate_paid_plan(
+        db,
+        user_id=user_id,
+        plan_tier=plan_tier,
+        billing_period=MONTHLY_PERIOD,
+        activated_at=activated_at,
+    )
+
+    await db.execute(
+        """
+        INSERT INTO redeem_code_redemptions (user_id, redeem_code, plan_tier, billing_period, redeemed_at)
+        VALUES ($1, $2, $3, $4, $5)
+        """,
+        user_id,
+        normalized_code,
+        plan_tier,
+        MONTHLY_PERIOD,
+        activated_at,
+    )
+
+    return snapshot

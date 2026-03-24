@@ -170,7 +170,7 @@ export interface UserOut {
   is_admin?: boolean;
   is_primary_admin?: boolean;
   email_verified?: boolean;
-  plan_tier?: 'free_trial' | 'basic' | 'pro';
+  plan_tier?: 'free_trial' | 'basic' | 'pro' | 'premium';
   plan_status?: 'active' | 'expired' | 'trial_exhausted';
   plan_billing_period?: 'month' | 'year' | null;
   plan_started_at?: string | null;
@@ -178,6 +178,7 @@ export interface UserOut {
   session_limit?: number | null;
   sessions_used?: number;
   can_start_new_session?: boolean;
+  can_use_qna?: boolean;
   is_billing_exempt?: boolean;
   avatar_url?: string | null;
   resume_uploaded?: boolean;
@@ -245,6 +246,11 @@ export interface AdminAccessUser extends UserOut {
   provider?: string | null;
 }
 
+export interface AdminManagedUser extends UserOut {
+  provider?: string | null;
+  avg_score?: number | null;
+}
+
 export interface RegisterData {
   email: string;
   password: string;
@@ -285,6 +291,7 @@ export interface AdminQuestionGenerateRequest {
   category?: string;
   prompt?: string;
   tags?: string[];
+  output_language?: 'vi' | 'en';
 }
 
 export interface AnswerOut {
@@ -326,7 +333,7 @@ export interface PaymentOrderOut {
   id: string;
   user_id: string;
   provider: string;
-  plan_tier: 'basic' | 'pro';
+  plan_tier: 'basic' | 'pro' | 'premium';
   billing_period: 'month' | 'year';
   amount_vnd: number;
   status: string;
@@ -341,6 +348,13 @@ export interface PaymentOrderOut {
 export interface CheckoutResponse {
   payment_url: string;
   order: PaymentOrderOut;
+}
+
+export interface RedeemCodeResponse {
+  message: string;
+  plan_tier: 'basic' | 'pro' | 'premium';
+  billing_period: 'month' | 'year';
+  plan_expires_at?: string | null;
 }
 
 export interface QnaStructuredAnswerOut {
@@ -506,13 +520,20 @@ export const sessionsApi = {
 
 export const billingApi = {
   createCheckout: async (
-    plan_tier: 'basic' | 'pro',
+    plan_tier: 'basic' | 'pro' | 'premium',
     billing_period: 'month' | 'year',
   ): Promise<CheckoutResponse> =>
     request<CheckoutResponse>('/billing/vnpay/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan_tier, billing_period }),
+    }),
+
+  redeemCode: async (code: string): Promise<RedeemCodeResponse> =>
+    request<RedeemCodeResponse>('/billing/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
     }),
 
   listOrders: async (): Promise<PaymentOrderOut[]> =>
@@ -576,8 +597,26 @@ export const qnaApi = {
 export const adminApi = {
   getStats: async (): Promise<AdminStats> => request<AdminStats>('/admin/stats'),
   
-  getUsers: async (limit = 50, offset = 0): Promise<AdminUser[]> => 
-    request<AdminUser[]>(`/admin/users?limit=${limit}&offset=${offset}`),
+  getUsers: async (params?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    is_admin?: boolean;
+    plan_tier?: 'free_trial' | 'basic' | 'pro' | 'premium';
+    plan_status?: 'active' | 'expired' | 'trial_exhausted';
+    email_verified?: boolean;
+  }): Promise<AdminManagedUser[]> => {
+    const search = new URLSearchParams();
+    if (typeof params?.limit === 'number') search.set('limit', String(params.limit));
+    if (typeof params?.offset === 'number') search.set('offset', String(params.offset));
+    if (params?.search) search.set('search', params.search);
+    if (typeof params?.is_admin === 'boolean') search.set('is_admin', String(params.is_admin));
+    if (params?.plan_tier) search.set('plan_tier', params.plan_tier);
+    if (params?.plan_status) search.set('plan_status', params.plan_status);
+    if (typeof params?.email_verified === 'boolean') search.set('email_verified', String(params.email_verified));
+    const query = search.toString();
+    return request<AdminManagedUser[]>(`/admin/users${query ? `?${query}` : ''}`);
+  },
 
   getAdminUsers: async (): Promise<AdminAccessUser[]> =>
     request<AdminAccessUser[]>('/admin/admin-users'),
@@ -597,6 +636,16 @@ export const adminApi = {
 
   removeAdmin: async (userId: string): Promise<{ removed: string; email: string }> =>
     request<{ removed: string; email: string }>(`/admin/admin-users/${userId}`, { method: 'DELETE' }),
+
+  updateUserPlan: async (
+    userId: string,
+    payload: { plan_tier: 'free_trial' | 'basic' | 'pro' | 'premium'; billing_period?: 'month' | 'year' },
+  ): Promise<AdminManagedUser> =>
+    request<AdminManagedUser>(`/admin/users/${userId}/plan`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
 
   downloadUserResume: async (userId: string): Promise<{ blob: Blob; filename: string | null }> =>
     requestFile(`/admin/users/${userId}/resume`),

@@ -17,11 +17,23 @@ from fastapi.responses import FileResponse
 from app.api.endpoints.auth import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
-from app.schemas.admin import AdminInviteCreate, AdminInviteOut, AdminUserAccessOut
+from app.schemas.admin import (
+    AdminInviteCreate,
+    AdminInviteOut,
+    AdminManagedUserOut,
+    AdminUserAccessOut,
+    AdminUserPlanUpdateRequest,
+)
 from app.schemas.question import AdminQuestionGenerateRequest, AdminQuestionGenerateResponse, AdminQuestionUpsert
 from app.schemas.user import UserOut
 from app.services.email import send_admin_invite_email
 from app.services.deepseek_client import DeepSeekAPIError, create_chat_completion
+from app.services.plans import (
+    ACTIVE_STATUS,
+    FREE_TRIAL_PLAN,
+    activate_paid_plan,
+    compute_entitlement,
+)
 from app.services.profile_files import resume_file_path
 
 router = APIRouter()
@@ -248,30 +260,208 @@ async def admin_stats(
     return dict(stats)
 
 
-@router.get("/users")
+@router.get("/users", response_model=list[AdminManagedUserOut])
 async def admin_list_users(
     db: asyncpg.Connection = Depends(get_db),
     _: UserOut = Depends(require_admin),
     limit: int = 50,
     offset: int = 0,
+    search: Optional[str] = None,
+    is_admin: Optional[bool] = None,
+    plan_tier: Optional[str] = None,
+    plan_status: Optional[str] = None,
+    email_verified: Optional[bool] = None,
 ):
+    clauses: list[str] = []
+    params: list[object] = []
+
+    if search:
+        params.append(f"%{search.strip().lower()}%")
+        clauses.append(f"(LOWER(u.email) LIKE ${len(params)} OR LOWER(COALESCE(u.full_name, '')) LIKE ${len(params)})")
+    if is_admin is not None:
+        params.append(is_admin)
+        clauses.append(f"u.is_admin = ${len(params)}")
+    if plan_tier:
+        params.append(plan_tier.strip().lower())
+        clauses.append(f"u.plan_tier = ${len(params)}")
+    if plan_status:
+        params.append(plan_status.strip().lower())
+        clauses.append(f"u.plan_status = ${len(params)}")
+    if email_verified is not None:
+        params.append(email_verified)
+        clauses.append(f"u.email_verified = ${len(params)}")
+
+    where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    params.extend([limit, offset])
+
     rows = await db.fetch(
-        """
+        f"""
         SELECT
-            u.id, u.email, u.created_at, u.is_admin, u.provider,
-            COUNT(s.id) AS session_count,
+            u.id,
+            u.email,
+            u.created_at,
+            u.full_name,
+            u.is_admin,
+            u.provider,
+            u.email_verified,
+            u.plan_tier,
+            u.plan_status,
+            u.plan_billing_period,
+            u.plan_started_at,
+            u.plan_expires_at,
+            COUNT(DISTINCT s.id) AS session_count,
             ROUND(AVG(a.score)::numeric, 1) AS avg_score
         FROM users u
         LEFT JOIN sessions s ON s.user_id = u.id
         LEFT JOIN answers a ON a.session_id = s.id AND a.score > 0
-        GROUP BY u.id, u.email, u.created_at, u.is_admin, u.provider
+        {where_sql}
+        GROUP BY
+            u.id, u.email, u.created_at, u.full_name, u.is_admin, u.provider,
+            u.email_verified, u.plan_tier, u.plan_status, u.plan_billing_period,
+            u.plan_started_at, u.plan_expires_at
         ORDER BY u.created_at DESC
-        LIMIT $1 OFFSET $2
+        LIMIT ${len(params) - 1} OFFSET ${len(params)}
         """,
-        limit,
-        offset,
+        *params,
     )
-    return [dict(r) for r in rows]
+    users: list[AdminManagedUserOut] = []
+    for row in rows:
+        sessions_used = int(row["session_count"] or 0)
+        entitlement = compute_entitlement(
+            is_admin=row["is_admin"],
+            plan_tier=row["plan_tier"],
+            plan_status=row["plan_status"],
+            plan_billing_period=row["plan_billing_period"],
+            plan_expires_at=row["plan_expires_at"],
+            sessions_used=sessions_used,
+        )
+        users.append(
+            AdminManagedUserOut(
+                id=row["id"],
+                email=row["email"],
+                created_at=row["created_at"],
+                full_name=row["full_name"],
+                is_admin=row["is_admin"],
+                is_primary_admin=_normalize_email(row["email"]) == "nhatbang6688@gmail.com",
+                provider=row["provider"],
+                email_verified=row["email_verified"],
+                plan_tier=entitlement["plan_tier"],
+                plan_status=entitlement["plan_status"],
+                plan_billing_period=entitlement["plan_billing_period"],
+                plan_started_at=row["plan_started_at"],
+                plan_expires_at=row["plan_expires_at"],
+                sessions_used=sessions_used,
+                session_limit=entitlement["session_limit"],
+                can_start_new_session=entitlement["can_start_new_session"],
+                can_use_qna=entitlement["can_use_qna"],
+                avg_score=float(row["avg_score"]) if row["avg_score"] is not None else None,
+            )
+        )
+    return users
+
+
+@router.put("/users/{user_id}/plan", response_model=AdminManagedUserOut)
+async def admin_update_user_plan(
+    user_id: str,
+    payload: AdminUserPlanUpdateRequest,
+    db: asyncpg.Connection = Depends(get_db),
+    _: UserOut = Depends(require_primary_admin),
+):
+    target = await db.fetchrow(
+        """
+        SELECT id, email, created_at, full_name, is_admin, provider, email_verified
+        FROM users
+        WHERE id = $1
+        """,
+        user_id,
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Không tìm thấy user cần cập nhật gói.")
+
+    if payload.plan_tier == FREE_TRIAL_PLAN:
+        await db.execute(
+            """
+            UPDATE users
+            SET plan_tier = $1,
+                plan_status = $2,
+                plan_billing_period = NULL,
+                plan_started_at = NULL,
+                plan_expires_at = NULL,
+                updated_at = NOW()
+            WHERE id = $3
+            """,
+            FREE_TRIAL_PLAN,
+            ACTIVE_STATUS,
+            user_id,
+        )
+    else:
+        await activate_paid_plan(
+            db,
+            user_id=user_id,
+            plan_tier=payload.plan_tier,
+            billing_period=payload.billing_period,
+        )
+
+    updated = await db.fetchrow(
+        """
+        SELECT
+            u.id,
+            u.email,
+            u.created_at,
+            u.full_name,
+            u.is_admin,
+            u.provider,
+            u.email_verified,
+            u.plan_tier,
+            u.plan_status,
+            u.plan_billing_period,
+            u.plan_started_at,
+            u.plan_expires_at,
+            COUNT(DISTINCT s.id) AS session_count,
+            ROUND(AVG(a.score)::numeric, 1) AS avg_score
+        FROM users u
+        LEFT JOIN sessions s ON s.user_id = u.id
+        LEFT JOIN answers a ON a.session_id = s.id AND a.score > 0
+        WHERE u.id = $1
+        GROUP BY
+            u.id, u.email, u.created_at, u.full_name, u.is_admin, u.provider,
+            u.email_verified, u.plan_tier, u.plan_status, u.plan_billing_period,
+            u.plan_started_at, u.plan_expires_at
+        """,
+        user_id,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Không thể tải lại user sau khi cập nhật gói.")
+
+    sessions_used = int(updated["session_count"] or 0)
+    entitlement = compute_entitlement(
+        is_admin=updated["is_admin"],
+        plan_tier=updated["plan_tier"],
+        plan_status=updated["plan_status"],
+        plan_billing_period=updated["plan_billing_period"],
+        plan_expires_at=updated["plan_expires_at"],
+        sessions_used=sessions_used,
+    )
+    return AdminManagedUserOut(
+        id=updated["id"],
+        email=updated["email"],
+        created_at=updated["created_at"],
+        full_name=updated["full_name"],
+        is_admin=updated["is_admin"],
+        is_primary_admin=_normalize_email(updated["email"]) == "nhatbang6688@gmail.com",
+        provider=updated["provider"],
+        email_verified=updated["email_verified"],
+        plan_tier=entitlement["plan_tier"],
+        plan_status=entitlement["plan_status"],
+        plan_billing_period=entitlement["plan_billing_period"],
+        plan_started_at=updated["plan_started_at"],
+        plan_expires_at=updated["plan_expires_at"],
+        sessions_used=sessions_used,
+        session_limit=entitlement["session_limit"],
+        can_start_new_session=entitlement["can_start_new_session"],
+        can_use_qna=entitlement["can_use_qna"],
+        avg_score=float(updated["avg_score"]) if updated["avg_score"] is not None else None,
+    )
 
 
 @router.get("/users/{user_id}/resume")
@@ -646,6 +836,8 @@ async def admin_generate_question(
     major, role, level, difficulty = _validate_question_payload(payload)
     requested_tags = _normalize_question_tags(payload.tags)
     normalized_prompt = (payload.prompt or "").strip()
+    output_language = "vi" if str(payload.output_language).strip().lower() == "vi" else "en"
+    language_label = "Vietnamese" if output_language == "vi" else "English"
 
     if normalized_prompt:
         existing_from_prompt = await _find_prompt_similar_question(
@@ -680,7 +872,7 @@ Return valid JSON only with these keys:
 - tags
 
 Rules:
-- Write the question and ideal answer in Vietnamese.
+- Write the question and ideal answer in {language_label}.
 - Keep domain terminology in English only when it is the natural term used in interviews.
 - Match the requested major, role, level, and difficulty exactly.
 - If the admin prompt asks for a specific concept or stack detail, reflect it directly in the generated question.
@@ -688,7 +880,7 @@ Rules:
 - The ideal answer must be concrete, structured, and interview-ready.
 - tags must be a JSON array of 3 to 6 short lowercase kebab-case tags.
 - Do not include markdown, commentary, or extra keys.
-""".strip()
+""".strip().format(language_label=language_label)
 
     user_prompt = f"""
 Generate one interview question-bank entry for this context:
@@ -696,6 +888,7 @@ Generate one interview question-bank entry for this context:
 - role: {role}
 - level: {level}
 - difficulty: {difficulty}
+- output_language: {output_language}
 - preferred_category: {payload.category or 'auto'}
 - preferred_tags: {requested_tags or ['auto']}
 - admin_prompt: {normalized_prompt or 'none'}
@@ -703,7 +896,7 @@ Generate one interview question-bank entry for this context:
 The output should fit Invera's current question bank style:
 - concise but serious interview wording
 - strong ideal answer with direct explanation, examples, and practical points
-- suitable for Vietnamese learners preparing for role-specific interviews
+- suitable for learners preparing for role-specific interviews
 """.strip()
 
     try:

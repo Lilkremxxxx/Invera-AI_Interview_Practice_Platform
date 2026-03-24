@@ -7,20 +7,24 @@ import uuid
 from pydantic import BaseModel
 
 
-PlanTier = Literal["free_trial", "basic", "pro"]
+PlanTier = Literal["free_trial", "basic", "pro", "premium"]
 BillingPeriod = Literal["month", "year"]
 
 
 class CheckoutRequest(BaseModel):
-    plan_tier: Literal["basic", "pro"]
+    plan_tier: Literal["basic", "pro", "premium"]
     billing_period: BillingPeriod
+
+
+class RedeemCodeRequest(BaseModel):
+    code: str
 
 
 class PaymentOrderOut(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     provider: str
-    plan_tier: Literal["basic", "pro"]
+    plan_tier: Literal["basic", "pro", "premium"]
     billing_period: BillingPeriod
     amount_vnd: int
     status: str
@@ -35,3 +39,10 @@ class PaymentOrderOut(BaseModel):
 class CheckoutResponse(BaseModel):
     payment_url: str
     order: PaymentOrderOut
+
+
+class RedeemCodeResponse(BaseModel):
+    message: str
+    plan_tier: Literal["basic", "pro", "premium"]
+    billing_period: BillingPeriod
+    plan_expires_at: Optional[datetime] = None

@@ -130,6 +130,7 @@ function emptyGenerateForm(): AdminQuestionGenerateRequest {
     category: '',
     prompt: '',
     tags: [],
+    output_language: 'en',
   };
 }
 
@@ -436,6 +437,7 @@ export function AdminQuestionBank() {
         ...generatorForm,
         prompt: generatorForm.prompt?.trim() || undefined,
         tags: parseTagInput(generatorTagsInput),
+        output_language: language,
       });
       if (draft.duplicate_found) {
         setDuplicateDraft({

@@ -139,3 +139,77 @@ def assistant_preview_text(structured_payload: dict[str, Any]) -> str:
         return str(direct_answer[0]).strip()
 
     return "QnA response"
+
+
+def fallback_qna_answer(
+    *,
+    user_message: str,
+    quoted_text: str | None,
+    attachment_name: str | None,
+    fallback_language: str | None = None,
+) -> dict[str, Any]:
+    language = fallback_language or _preferred_language("\n".join(filter(None, [user_message, quoted_text or ""])))
+
+    if language == "vi":
+        summary = "AI tạm thời chưa phản hồi ổn định, nên Invera trả về bản hướng dẫn ngắn để bạn tiếp tục làm việc."
+        direct_answer = [
+            "Mình đã nhận được câu hỏi của bạn nhưng dịch vụ AI hiện chưa phản hồi ổn định.",
+            f"Câu hỏi hiện tại: {user_message.strip()}" if user_message.strip() else "Bạn đang yêu cầu phân tích một nội dung trong QnA.",
+        ]
+        key_points = [
+            "Xác định đúng trọng tâm câu hỏi trước khi trả lời.",
+            "Trình bày theo cấu trúc: khái niệm, cách hoạt động, ví dụ, và khi nào dùng.",
+            "Nếu đây là câu hỏi phỏng vấn, luôn gắn câu trả lời với trade-off và tình huống thực tế.",
+        ]
+        common_gaps = [
+            "Trả lời quá ngắn và thiếu ví dụ cụ thể.",
+            "Nêu khái niệm nhưng không giải thích vì sao nó quan trọng.",
+        ]
+        better_answer = [
+            "Mở đầu bằng định nghĩa ngắn gọn.",
+            "Giải thích cơ chế hoạt động bằng ngôn ngữ đơn giản.",
+            "Kết thúc bằng một ví dụ thực tế hoặc lưu ý khi áp dụng.",
+        ]
+        follow_up = [
+            "Hãy thử gửi lại sau ít phút để nhận bản phân tích AI đầy đủ.",
+            "Bạn cũng có thể hỏi lại theo dạng: định nghĩa, ví dụ, và cách trả lời trong phỏng vấn.",
+        ]
+        title = "Temporary QnA fallback"
+    else:
+        summary = "The AI service is temporarily unavailable, so Invera returned a short fallback coaching response."
+        direct_answer = [
+            "Your question was received, but the AI service is not responding reliably right now.",
+            f"Current question: {user_message.strip()}" if user_message.strip() else "You are asking for QnA analysis.",
+        ]
+        key_points = [
+            "Identify the exact interview question before answering.",
+            "Structure the answer as concept, mechanism, example, and trade-off.",
+            "Tie the answer back to practical interview communication.",
+        ]
+        common_gaps = [
+            "Answering too briefly without a concrete example.",
+            "Explaining what it is without explaining why it matters.",
+        ]
+        better_answer = [
+            "Start with a short definition.",
+            "Explain how it works in simple language.",
+            "Finish with a practical example or trade-off.",
+        ]
+        follow_up = [
+            "Try sending the question again in a few minutes for the full AI answer.",
+            "You can also rewrite the prompt to ask for definition, example, and interview framing.",
+        ]
+        title = "Temporary QnA fallback"
+
+    return {
+        "language": language,
+        "title": title,
+        "summary": summary,
+        "direct_answer": direct_answer,
+        "key_points": key_points,
+        "common_gaps": common_gaps,
+        "better_answer": better_answer,
+        "follow_up": follow_up,
+        "quoted_text": quoted_text or None,
+        "attachment_name": attachment_name or None,
+    }

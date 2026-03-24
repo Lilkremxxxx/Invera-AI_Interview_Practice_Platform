@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FileText,
   Loader2,
@@ -49,6 +50,9 @@ const copy = {
     loadingThread: 'Đang tải hội thoại QnA...',
     sendFailed: 'Không thể gửi câu hỏi lúc này.',
     inputRequired: 'Hãy nhập câu hỏi hoặc đính kèm một file DOCX.',
+    lockedTitle: 'QnA đã bị khóa',
+    lockedBody: 'Gói Free không dùng được QnA. Hãy nâng cấp lên Basic, Pro hoặc Premium hoặc nhập redeem code để mở khóa.',
+    unlockNow: 'Mở khóa ngay',
     followUpTemplate: 'Giải thích rõ hơn đoạn này theo rubric Invera và chỉ ra mình nên trả lời tốt hơn như thế nào:',
     user: 'Bạn',
     ai: 'Invera AI',
@@ -75,6 +79,9 @@ const copy = {
     loadingThread: 'Loading your QnA thread...',
     sendFailed: 'Unable to send your question right now.',
     inputRequired: 'Enter a question or attach a DOCX file first.',
+    lockedTitle: 'QnA is locked',
+    lockedBody: 'The Free plan cannot use QnA. Upgrade to Basic, Pro, or Premium, or redeem a code to unlock it.',
+    unlockNow: 'Unlock now',
     followUpTemplate: 'Explain this excerpt in Invera rubric style and show how I should answer it better:',
     user: 'You',
     ai: 'Invera AI',
@@ -108,11 +115,16 @@ export default function Qna() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const canUseQna = user?.can_use_qna ?? false;
 
   const hasComposerPayload = message.trim().length > 0 || !!docxFile;
 
   useEffect(() => {
     const loadThread = async () => {
+      if (!canUseQna) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const thread = await qnaApi.getThread();
@@ -130,7 +142,7 @@ export default function Qna() {
     };
 
     void loadThread();
-  }, [text.sendFailed, toast]);
+  }, [canUseQna, text.sendFailed, toast]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -163,6 +175,7 @@ export default function Qna() {
   };
 
   const handleAskAboutSelection = (selectedText: string) => {
+    if (!canUseQna) return;
     setQuotedText(selectedText);
     setMessage((current) => current.trim() ? current : `${text.followUpTemplate}\n\n"${selectedText}"`);
     window.setTimeout(() => composerRef.current?.focus(), 0);
@@ -170,6 +183,10 @@ export default function Qna() {
   };
 
   const handleSend = async () => {
+    if (!canUseQna) {
+      toast({ title: text.lockedTitle, description: text.lockedBody, variant: 'destructive' });
+      return;
+    }
     if (!hasComposerPayload) {
       toast({ title: text.inputRequired, variant: 'destructive' });
       return;
@@ -246,6 +263,19 @@ export default function Qna() {
                   <Skeleton className="h-24 w-3/5 rounded-[28px]" />
                   <Skeleton className="ml-auto h-20 w-2/5 rounded-[28px]" />
                   <Skeleton className="h-64 w-full rounded-[32px]" />
+                </div>
+              ) : !canUseQna ? (
+                <div className="flex h-full min-h-[360px] items-center justify-center">
+                  <div className="max-w-lg rounded-[32px] border border-dashed border-border bg-muted/20 px-8 py-10 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
+                      <MessageSquareText className="h-6 w-6 text-accent" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground">{text.lockedTitle}</h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{text.lockedBody}</p>
+                    <Button asChild className="mt-5 rounded-full px-5">
+                      <Link to="/app/upgrade">{text.unlockNow}</Link>
+                    </Button>
+                  </div>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex h-full min-h-[360px] items-center justify-center">
@@ -391,6 +421,7 @@ export default function Qna() {
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
                   placeholder={quotedText ? highlightedSelectionTemplate : text.askPlaceholder}
+                  disabled={!canUseQna}
                   className="min-h-[110px] resize-none rounded-[24px] border-0 bg-background/80 px-4 py-4 text-sm leading-7 shadow-inner focus-visible:ring-2 focus-visible:ring-accent"
                 />
 
@@ -407,6 +438,7 @@ export default function Qna() {
                       type="button"
                       variant="outline"
                       className="rounded-full"
+                      disabled={!canUseQna}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Paperclip className="mr-2 h-4 w-4" />
@@ -418,7 +450,7 @@ export default function Qna() {
                   <Button
                     type="button"
                     className="rounded-full px-5"
-                    disabled={!hasComposerPayload || sending}
+                    disabled={!canUseQna || !hasComposerPayload || sending}
                     onClick={handleSend}
                   >
                     {sending ? (

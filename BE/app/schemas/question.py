@@ -33,6 +33,7 @@ class AdminQuestionGenerateRequest(BaseModel):
     category: Optional[str] = None
     prompt: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
+    output_language: str = "en"
 
 
 class AdminQuestionGenerateResponse(BaseModel):

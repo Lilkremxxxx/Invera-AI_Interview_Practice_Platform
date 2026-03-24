@@ -11,11 +11,18 @@ from app.db.session import get_db
 from app.schemas.qna import QnaMessageCreateResult, QnaMessageOut, QnaStructuredAnswerOut, QnaThreadOut
 from app.schemas.user import UserOut
 from app.services.deepseek_client import DeepSeekAPIError
-from app.services.qna import answer_qna, assistant_preview_text
+from app.services.plans import get_user_plan_snapshot
+from app.services.qna import answer_qna, assistant_preview_text, fallback_qna_answer
 from app.services.qna_docx import QnaDocxValidationError, extract_docx_text
 
 
 router = APIRouter()
+
+
+QNA_ACCESS_DENIED_MESSAGE = (
+    "QnA chỉ khả dụng từ gói Basic trở lên. "
+    "Vui lòng nâng cấp gói hoặc nhập redeem code để tiếp tục."
+)
 
 
 async def _ensure_thread(db: asyncpg.Connection, user_id: str) -> asyncpg.Record:
@@ -60,6 +67,10 @@ async def get_qna_thread(
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
+    snapshot = await get_user_plan_snapshot(db, current_user.id)
+    if not snapshot["can_use_qna"]:
+        raise HTTPException(status_code=403, detail=QNA_ACCESS_DENIED_MESSAGE)
+
     thread = await _ensure_thread(db, str(current_user.id))
     rows = await db.fetch(
         """
@@ -85,6 +96,10 @@ async def create_qna_message(
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
+    snapshot = await get_user_plan_snapshot(db, current_user.id)
+    if not snapshot["can_use_qna"]:
+        raise HTTPException(status_code=403, detail=QNA_ACCESS_DENIED_MESSAGE)
+
     clean_message = message.strip()
     clean_selected = selected_text.strip() or None
 
@@ -138,10 +153,12 @@ async def create_qna_message(
                 attachment_text=attachment_text,
                 conversation_history=conversation_history,
             )
-        except DeepSeekAPIError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-        except (ValueError, KeyError) as exc:
-            raise HTTPException(status_code=502, detail="The AI returned an invalid QnA payload.") from exc
+        except (DeepSeekAPIError, ValueError, KeyError):
+            structured_payload = fallback_qna_answer(
+                user_message=clean_message,
+                quoted_text=clean_selected,
+                attachment_name=attachment_name,
+            )
 
         assistant_row = await db.fetchrow(
             """
