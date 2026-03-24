@@ -28,6 +28,7 @@ CLAUDE.md
 .env
 EXE101
 *.md
+!README.md
 Caddyfile
 output/
 EXE101/
