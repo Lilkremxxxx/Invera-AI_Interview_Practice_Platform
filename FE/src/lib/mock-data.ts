@@ -1,24 +1,37 @@
 // Dữ liệu mẫu cho ứng dụng phỏng vấn AI
 
 export const roles = [
-  { id: 'frontend', name: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' }, icon: '💻', questions: 45 },
-  { id: 'backend', name: { vi: 'Lập trình viên Backend', en: 'Backend Developer' }, icon: '⚙️', questions: 52 },
-  { id: 'fullstack', name: { vi: 'Lập trình viên Full Stack', en: 'Full Stack Developer' }, icon: '🔧', questions: 68 },
-  { id: 'data', name: { vi: 'Nhà khoa học dữ liệu', en: 'Data Scientist' }, icon: '📊', questions: 38 },
-  { id: 'ml', name: { vi: 'Kỹ sư học máy', en: 'Machine Learning Engineer' }, icon: '🤖', questions: 42 },
-  { id: 'devops', name: { vi: 'Kỹ sư DevOps', en: 'DevOps Engineer' }, icon: '🚀', questions: 35 },
-  { id: 'product', name: { vi: 'Quản lý sản phẩm', en: 'Product Manager' }, icon: '📋', questions: 40 },
-  { id: 'marketing', name: { vi: 'Quản lý Marketing', en: 'Marketing Manager' }, icon: '📢', questions: 32 },
-  { id: 'sales', name: { vi: 'Nhân viên kinh doanh', en: 'Sales Representative' }, icon: '💼', questions: 28 },
-  { id: 'design', name: { vi: 'Nhà thiết kế UX', en: 'UX Designer' }, icon: '🎨', questions: 36 },
+  { id: 'frontend', name: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' }, icon: '💻', questions: 45, major: 'technology' },
+  { id: 'backend', name: { vi: 'Lập trình viên Backend', en: 'Backend Developer' }, icon: '⚙️', questions: 52, major: 'technology' },
+  { id: 'fullstack', name: { vi: 'Lập trình viên Full Stack', en: 'Full Stack Developer' }, icon: '🔧', questions: 68, major: 'technology' },
+  { id: 'data_scientist', name: { vi: 'Nhà khoa học dữ liệu', en: 'Data Scientist' }, icon: '📊', questions: 38, major: 'technology' },
+  { id: 'machine_learning_engineer', name: { vi: 'Kỹ sư học máy', en: 'Machine Learning Engineer' }, icon: '🤖', questions: 42, major: 'technology' },
+  { id: 'devops_engineer', name: { vi: 'Kỹ sư DevOps', en: 'DevOps Engineer' }, icon: '🚀', questions: 35, major: 'technology' },
+  { id: 'product_manager', name: { vi: 'Quản lý sản phẩm', en: 'Product Manager' }, icon: '📋', questions: 40, major: 'technology' },
+  { id: 'marketing_manager', name: { vi: 'Quản lý Marketing', en: 'Marketing Manager' }, icon: '📢', questions: 32, major: 'technology' },
+  { id: 'sales_representative', name: { vi: 'Nhân viên kinh doanh', en: 'Sales Representative' }, icon: '💼', questions: 28, major: 'technology' },
+  { id: 'ux_designer', name: { vi: 'Nhà thiết kế UX', en: 'UX Designer' }, icon: '🎨', questions: 36, major: 'technology' },
+  { id: 'financial_analyst', name: { vi: 'Chuyên viên phân tích tài chính', en: 'Financial Analyst' }, icon: '📈', questions: 24, major: 'finance' },
+  { id: 'accountant', name: { vi: 'Kế toán', en: 'Accountant' }, icon: '🧾', questions: 24, major: 'finance' },
+  { id: 'auditor', name: { vi: 'Kiểm toán viên', en: 'Auditor' }, icon: '📚', questions: 20, major: 'finance' },
+  { id: 'investment_banking_analyst', name: { vi: 'Chuyên viên phân tích ngân hàng đầu tư', en: 'Investment Banking Analyst' }, icon: '🏦', questions: 18, major: 'finance' },
+  { id: 'business_analyst', name: { vi: 'Business Analyst', en: 'Business Analyst' }, icon: '📌', questions: 20, major: 'business' },
+  { id: 'operations_analyst', name: { vi: 'Chuyên viên phân tích vận hành', en: 'Operations Analyst' }, icon: '🧠', questions: 20, major: 'business' },
+  { id: 'sales_executive', name: { vi: 'Nhân viên kinh doanh', en: 'Sales Executive' }, icon: '🤝', questions: 18, major: 'business' },
+  { id: 'marketing_executive', name: { vi: 'Nhân viên marketing', en: 'Marketing Executive' }, icon: '📣', questions: 18, major: 'business' },
 ];
 
 export const levels = [
   { id: 'intern', name: { vi: 'Thực tập sinh', en: 'Intern' }, description: { vi: 'Cấp độ đầu vào, học các kiến thức cơ bản', en: 'Entry level, learning the basics' } },
+  { id: 'fresher', name: { vi: 'Fresher', en: 'Fresher' }, description: { vi: 'Mới tốt nghiệp hoặc mới bắt đầu đi làm', en: 'Recently graduated or just starting out' } },
   { id: 'junior', name: { vi: 'Junior', en: 'Junior' }, description: { vi: '0-2 năm kinh nghiệm', en: '0-2 years of experience' } },
   { id: 'mid', name: { vi: 'Trung cấp', en: 'Mid-level' }, description: { vi: '2-5 năm kinh nghiệm', en: '2-5 years of experience' } },
   { id: 'senior', name: { vi: 'Senior', en: 'Senior' }, description: { vi: '5+ năm kinh nghiệm', en: '5+ years of experience' } },
 ];
+
+export const roleLabelMap = Object.fromEntries(
+  roles.map((role) => [role.id, role.name]),
+) as Record<string, { vi: string; en: string }>;
 
 export const answerModes = [
   { id: 'text', name: { vi: 'Văn bản', en: 'Text' }, icon: '✍️', description: { vi: 'Nhập câu trả lời của bạn', en: 'Type your answer' } },

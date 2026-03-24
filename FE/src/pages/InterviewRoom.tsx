@@ -23,6 +23,7 @@ import { sessionsApi, SessionDetail, QuestionOut, AnswerOut } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { roleLabelMap } from '@/lib/mock-data';
 
 const InterviewRoom = () => {
   const navigate = useNavigate();
@@ -57,6 +58,13 @@ const InterviewRoom = () => {
     feedback: language === 'vi' ? 'Nhận xét' : 'Feedback',
     nextQuestion: language === 'vi' ? 'Câu tiếp theo' : 'Next question',
     finish: language === 'vi' ? 'Hoàn thành' : 'Finish',
+  };
+  const levelLabels: Record<string, { vi: string; en: string }> = {
+    intern: { vi: 'Thực tập sinh', en: 'Intern' },
+    fresher: { vi: 'Fresher', en: 'Fresher' },
+    junior: { vi: 'Junior', en: 'Junior' },
+    mid: { vi: 'Trung cấp', en: 'Mid-level' },
+    senior: { vi: 'Senior', en: 'Senior' },
   };
 
   const [session, setSession] = useState<SessionDetail | null>(null);
@@ -203,7 +211,7 @@ const InterviewRoom = () => {
               <Progress value={progress} className="h-2" />
             </div>
             <span className="text-xs text-muted-foreground hidden sm:inline capitalize">
-              {session.role} • {session.level}
+              {(roleLabelMap[session.role]?.[language] || session.role)} • {(levelLabels[session.level]?.[language] || session.level)}
             </span>
           </div>
           
@@ -233,7 +241,9 @@ const InterviewRoom = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground text-lg">AI Interviewer</h3>
-                  <p className="text-sm text-muted-foreground capitalize">{session.role} • {session.level}</p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {roleLabelMap[session.role]?.[language] || session.role} • {levelLabels[session.level]?.[language] || session.level}
+                  </p>
                 </div>
               </div>
 

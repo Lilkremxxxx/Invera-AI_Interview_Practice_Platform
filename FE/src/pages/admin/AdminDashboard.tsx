@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { adminApi, AdminQuestionOut, AdminStats, AdminUser } from '@/lib/api';
+import { adminApi, AdminManagedUser, AdminQuestionOut, AdminStats } from '@/lib/api';
 import { Users, FileText, CheckCircle, Target, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,7 +22,7 @@ import {
 export function AdminDashboard() {
   const { language } = useLanguage();
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<AdminManagedUser[]>([]);
   const [questions, setQuestions] = useState<AdminQuestionOut[]>([]);
   const [loading, setLoading] = useState(true);
   const copy = {
@@ -54,7 +54,7 @@ export function AdminDashboard() {
     try {
       const [statsData, usersData, questionsData] = await Promise.all([
         adminApi.getStats(),
-        adminApi.getUsers(24, 0),
+        adminApi.getUsers({ limit: 24, offset: 0 }),
         adminApi.getQuestions(),
       ]);
       setStats(statsData);

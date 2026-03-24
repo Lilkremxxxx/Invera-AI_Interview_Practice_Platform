@@ -22,17 +22,14 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatPlanLabel, formatPlanStatus } from '@/lib/plans';
-
-const roleLabels: Record<string, { vi: string; en: string }> = {
-  frontend: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' },
-  backend: { vi: 'Lập trình viên Backend', en: 'Backend Developer' },
-  fullstack: { vi: 'Lập trình viên Full Stack', en: 'Full Stack Developer' },
-};
+import { roleLabelMap } from '@/lib/mock-data';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
+  fresher: { vi: 'Fresher', en: 'Fresher' },
   junior: { vi: 'Junior', en: 'Junior' },
   mid: { vi: 'Trung cấp', en: 'Mid-level' },
+  senior: { vi: 'Senior', en: 'Senior' },
 };
 
 const Dashboard = () => {
@@ -292,7 +289,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h4 className="font-medium text-foreground">
-                        {roleLabels[session.role]?.[language] || session.role}
+                        {roleLabelMap[session.role]?.[language] || session.role}
                       </h4>
                       <p className="text-sm text-muted-foreground capitalize">
                         {levelLabels[session.level]?.[language] || session.level} • {session.question_count ?? 0} {t('dashboard', 'questions')} • {session.mode}

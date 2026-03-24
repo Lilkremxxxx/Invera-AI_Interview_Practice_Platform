@@ -30,8 +30,27 @@ async def create_session(
         )
 
     # Validate role/level combo
-    valid_roles = {'frontend', 'backend', 'fullstack'}
-    valid_levels = {'intern', 'junior', 'mid'}
+    valid_roles = {
+        'frontend',
+        'backend',
+        'fullstack',
+        'data_scientist',
+        'machine_learning_engineer',
+        'devops_engineer',
+        'product_manager',
+        'marketing_manager',
+        'sales_representative',
+        'ux_designer',
+        'financial_analyst',
+        'accountant',
+        'auditor',
+        'investment_banking_analyst',
+        'business_analyst',
+        'operations_analyst',
+        'sales_executive',
+        'marketing_executive',
+    }
+    valid_levels = {'intern', 'fresher', 'junior', 'mid', 'senior'}
     if body.role not in valid_roles:
         raise HTTPException(status_code=400, detail=f"Role không hợp lệ. Chọn: {valid_roles}")
     if body.level not in valid_levels:

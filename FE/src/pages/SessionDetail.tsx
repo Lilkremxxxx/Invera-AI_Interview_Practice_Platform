@@ -18,17 +18,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { sessionsApi, SessionDetail as SessionDetailType } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
-
-const roleLabels: Record<string, { vi: string; en: string }> = {
-  frontend: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' },
-  backend: { vi: 'Lập trình viên Backend', en: 'Backend Developer' },
-  fullstack: { vi: 'Lập trình viên Full Stack', en: 'Full Stack Developer' },
-};
-
+import { roleLabelMap } from '@/lib/mock-data';
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
+  fresher: { vi: 'Fresher', en: 'Fresher' },
   junior: { vi: 'Junior', en: 'Junior' },
   mid: { vi: 'Trung cấp', en: 'Mid-level' },
+  senior: { vi: 'Senior', en: 'Senior' },
 };
 
 const SessionDetail = () => {
@@ -89,7 +85,7 @@ const SessionDetail = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {roleLabels[session.role]?.[language] || session.role}
+              {roleLabelMap[session.role]?.[language] || session.role}
             </h1>
             <p className="text-muted-foreground">
               {levelLabels[session.level]?.[language] || session.level} • {new Date(session.created_at).toLocaleDateString(copy.locale)} •{' '}

@@ -23,12 +23,15 @@ export function OAuthCallback() {
     
     if (token) {
       // Login with the token received from the backend
-      loginWithToken(token);
+      loginWithToken(token).then((me) => {
+        navigate(me.is_admin ? '/admin' : '/app', { replace: true });
+      }).catch(() => {
+        navigate('/login', { replace: true });
+      });
       toast({
         title: copy.successTitle,
         description: copy.successDescription,
       });
-      navigate('/app', { replace: true });
     } else {
       toast({
         title: copy.errorTitle,

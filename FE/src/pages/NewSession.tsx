@@ -39,16 +39,11 @@ const NewSession = () => {
     difficulty: 'medium',
   });
 
-  // Only MVP roles with questions seeded: frontend, backend, fullstack
-  const mvpRoles = roles.filter(r => ['frontend', 'backend', 'fullstack'].includes(r.id));
-  // Only MVP levels: intern, junior, mid
-  const mvpLevels = levels.filter(l => ['intern', 'junior', 'mid'].includes(l.id));
-
-  const filteredRoles = mvpRoles.filter(role =>
+  const filteredRoles = roles.filter(role =>
     role.name[language].toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedRole = mvpRoles.find(r => r.id === config.role);
+  const selectedRole = roles.find(r => r.id === config.role);
   const canStartNewSession = user?.can_start_new_session ?? true;
   const copy = {
     createErrorTitle: language === 'vi' ? 'Lỗi tạo session' : 'Unable to create session',
@@ -200,7 +195,7 @@ const NewSession = () => {
                   onValueChange={(value) => setConfig({ ...config, level: value })}
                   className="grid gap-3"
                 >
-                  {mvpLevels.map((level) => (
+                  {levels.map((level) => (
                     <Label
                       key={level.id}
                       htmlFor={level.id}

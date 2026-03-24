@@ -32,8 +32,8 @@ const Login = () => {
     setErrorMsg('');
     setIsSubmitting(true);
     try {
-      await login(email, password);
-      navigate('/app', { replace: true });
+      const me = await login(email, password);
+      navigate(me.is_admin ? '/admin' : '/app', { replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : t('login', 'error'));
     } finally {

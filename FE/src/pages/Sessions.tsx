@@ -18,15 +18,11 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { sessionsApi, SessionOut } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-
-const roleLabels: Record<string, { vi: string; en: string }> = {
-  frontend: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' },
-  backend: { vi: 'Lập trình viên Backend', en: 'Backend Developer' },
-  fullstack: { vi: 'Lập trình viên Full Stack', en: 'Full Stack Developer' },
-};
+import { roleLabelMap } from '@/lib/mock-data';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
+  fresher: { vi: 'Fresher', en: 'Fresher' },
   junior: { vi: 'Junior', en: 'Junior' },
   mid: { vi: 'Trung cấp', en: 'Mid-level' },
   senior: { vi: 'Senior', en: 'Senior' },
@@ -49,7 +45,7 @@ const Sessions = () => {
   });
 
   const filteredSessions = sessions.filter(session => {
-    const roleLabel = roleLabels[session.role]?.[language]?.toLowerCase() || session.role;
+    const roleLabel = roleLabelMap[session.role]?.[language]?.toLowerCase() || session.role;
     const matchesSearch = roleLabel.includes(searchQuery.toLowerCase());
     const matchesMode = !filterMode || session.mode === filterMode;
     return matchesSearch && matchesMode;
@@ -146,7 +142,7 @@ const Sessions = () => {
                     </div>
                     <div>
                       <h4 className="font-medium text-foreground group-hover:text-accent transition-colors">
-                        {roleLabels[session.role]?.[language] || session.role}
+                        {roleLabelMap[session.role]?.[language] || session.role}
                       </h4>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span>{levelLabels[session.level]?.[language] || session.level}</span>
