@@ -28,6 +28,7 @@ CLAUDE.md
 .env
 EXE101
 *.md
+Caddyfile
 output/
 EXE101/
 Scripts/
