@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 
 from app.api.endpoints.auth import get_current_user
 from app.core.config import settings
+from app.core.question_bank import QUESTION_BANK_ROLES, VALID_LEVELS, localized_question_dict
 from app.db.session import get_db
 from app.schemas.admin import (
     AdminInviteCreate,
@@ -38,33 +39,6 @@ from app.services.profile_files import resume_file_path
 
 router = APIRouter()
 
-QUESTION_BANK_ROLES: dict[str, set[str]] = {
-    "technology": {
-        "frontend",
-        "backend",
-        "fullstack",
-        "data_scientist",
-        "machine_learning_engineer",
-        "devops_engineer",
-        "product_manager",
-        "marketing_manager",
-        "sales_representative",
-        "ux_designer",
-    },
-    "finance": {
-        "financial_analyst",
-        "accountant",
-        "auditor",
-        "investment_banking_analyst",
-    },
-    "business": {
-        "business_analyst",
-        "operations_analyst",
-        "sales_executive",
-        "marketing_executive",
-    },
-}
-VALID_LEVELS = {"intern", "fresher", "junior", "mid", "senior"}
 VALID_DIFFICULTIES = {"easy", "medium", "hard"}
 
 
@@ -360,7 +334,7 @@ async def admin_list_users(
     return users
 
 
-@router.put("/users/{user_id}/plan", response_model=AdminManagedUserOut)
+@router.api_route("/users/{user_id}/plan", methods=["PUT", "PATCH", "POST"], response_model=AdminManagedUserOut)
 async def admin_update_user_plan(
     user_id: str,
     payload: AdminUserPlanUpdateRequest,
@@ -462,6 +436,34 @@ async def admin_update_user_plan(
         can_use_qna=entitlement["can_use_qna"],
         avg_score=float(updated["avg_score"]) if updated["avg_score"] is not None else None,
     )
+
+
+@router.delete("/users/{user_id}")
+async def admin_delete_user(
+    user_id: str,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(require_primary_admin),
+):
+    target = await db.fetchrow(
+        """
+        SELECT id, email, is_admin
+        FROM users
+        WHERE id = $1
+        """,
+        user_id,
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Không tìm thấy user cần xóa.")
+
+    if str(target["id"]) == str(current_user.id):
+        raise HTTPException(status_code=400, detail="Không thể tự xóa chính tài khoản admin hiện tại.")
+
+    if _normalize_email(target["email"]) in settings.primary_admin_emails:
+        raise HTTPException(status_code=400, detail="Không thể xóa tài khoản admin chính.")
+
+    await db.execute("DELETE FROM users WHERE id = $1", user_id)
+    await db.execute("DELETE FROM admin_invites WHERE email = $1", _normalize_email(target["email"]))
+    return {"deleted": user_id, "email": target["email"]}
 
 
 @router.get("/users/{user_id}/resume")
@@ -760,7 +762,7 @@ async def admin_list_questions(
         f"SELECT * FROM questions {where_sql} ORDER BY major, role, level, id",
         *params,
     )
-    return [dict(r) for r in rows]
+    return [localized_question_dict(r, include_ideal_answer=True) for r in rows]
 
 
 @router.post("/questions")
@@ -786,7 +788,7 @@ async def admin_create_question(
         payload.ideal_answer.strip(),
         tags,
     )
-    return dict(row)
+    return localized_question_dict(row, include_ideal_answer=True)
 
 
 @router.put("/questions/{question_id}")
@@ -824,7 +826,7 @@ async def admin_update_question(
     )
     if not row:
         raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại!")
-    return dict(row)
+    return localized_question_dict(row, include_ideal_answer=True)
 
 
 @router.post("/questions/generate", response_model=AdminQuestionGenerateResponse)

@@ -9,7 +9,11 @@ class QuestionOut(BaseModel):
     role: str
     level: str
     text: str
+    text_en: Optional[str] = None
+    text_vi: Optional[str] = None
     category: str
+    category_en: Optional[str] = None
+    category_vi: Optional[str] = None
     difficulty: str
     tags: list[str] = Field(default_factory=list)
 

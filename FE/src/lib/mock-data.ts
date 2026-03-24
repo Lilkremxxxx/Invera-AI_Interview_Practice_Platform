@@ -1,5 +1,32 @@
 // Dữ liệu mẫu cho ứng dụng phỏng vấn AI
 
+export const sessionMajors = [
+  {
+    id: 'technology',
+    name: { vi: 'Công nghệ', en: 'Technology' },
+    description: {
+      vi: 'Frontend, backend, data, product, UX.',
+      en: 'Frontend, backend, data, product, UX.',
+    },
+  },
+  {
+    id: 'finance',
+    name: { vi: 'Tài chính', en: 'Finance' },
+    description: {
+      vi: 'Financial analyst, accountant, auditor, IB analyst.',
+      en: 'Financial analyst, accountant, auditor, IB analyst.',
+    },
+  },
+  {
+    id: 'business',
+    name: { vi: 'Kinh doanh', en: 'Business' },
+    description: {
+      vi: 'Business analyst, operations, sales, marketing.',
+      en: 'Business analyst, operations, sales, marketing.',
+    },
+  },
+];
+
 export const roles = [
   { id: 'frontend', name: { vi: 'Lập trình viên Frontend', en: 'Frontend Developer' }, icon: '💻', questions: 45, major: 'technology' },
   { id: 'backend', name: { vi: 'Lập trình viên Backend', en: 'Backend Developer' }, icon: '⚙️', questions: 52, major: 'technology' },

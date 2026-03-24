@@ -19,7 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { sessionsApi, SessionDetail, QuestionOut, AnswerOut } from '@/lib/api';
+import { getLocalizedQuestionCategory, getLocalizedQuestionText, sessionsApi, SessionDetail, QuestionOut, AnswerOut } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -258,10 +258,10 @@ const InterviewRoom = () => {
                     )}>
                       {question.difficulty}
                     </span>
-                    <span className="text-xs text-muted-foreground">{question.category}</span>
+                    <span className="text-xs text-muted-foreground">{getLocalizedQuestionCategory(question, language)}</span>
                   </div>
                   <p className="text-foreground text-lg leading-relaxed">
-                    "{question.text}"
+                    "{getLocalizedQuestionText(question, language)}"
                   </p>
                 </div>
               )}

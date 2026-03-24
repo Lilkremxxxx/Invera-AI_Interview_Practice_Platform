@@ -56,6 +56,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
+  headers['X-UI-Language'] = getCurrentLanguage();
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -112,7 +113,9 @@ function parseFilenameFromDisposition(contentDisposition: string | null): string
 
 async function requestFile(path: string): Promise<{ blob: Blob; filename: string | null }> {
   const token = getToken();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'X-UI-Language': getCurrentLanguage(),
+  };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -263,13 +266,19 @@ export interface QuestionOut {
   role: string;
   level: string;
   text: string;
+  text_en?: string | null;
+  text_vi?: string | null;
   category: string;
+  category_en?: string | null;
+  category_vi?: string | null;
   difficulty: string;
   tags?: string[];
 }
 
 export interface AdminQuestionOut extends QuestionOut {
   ideal_answer?: string | null;
+  ideal_answer_en?: string | null;
+  ideal_answer_vi?: string | null;
 }
 
 export interface AdminQuestionUpsert {
@@ -307,6 +316,7 @@ export interface AnswerOut {
 export interface SessionOut {
   id: string;
   user_id: string;
+  major?: string | null;
   role: string;
   level: string;
   mode: string;
@@ -322,7 +332,39 @@ export interface SessionDetail extends SessionOut {
   answers: AnswerOut[];
 }
 
+export interface SessionCatalogRole {
+  major: string;
+  role: string;
+  total_questions: number;
+  counts_by_level: Record<string, number>;
+}
+
+export function getLocalizedQuestionText(question: QuestionOut, language: UiLanguage): string {
+  if (language === 'vi') {
+    return question.text_vi || question.text || '';
+  }
+  return question.text_en || question.text || '';
+}
+
+export function getLocalizedQuestionCategory(question: QuestionOut, language: UiLanguage): string {
+  if (language === 'vi') {
+    return question.category_vi || question.category || '';
+  }
+  return question.category_en || question.category || '';
+}
+
+export function getLocalizedIdealAnswer(
+  question: Pick<AdminQuestionOut, 'ideal_answer' | 'ideal_answer_en' | 'ideal_answer_vi'>,
+  language: UiLanguage,
+): string {
+  if (language === 'vi') {
+    return question.ideal_answer_vi || question.ideal_answer || '';
+  }
+  return question.ideal_answer_en || question.ideal_answer || '';
+}
+
 export interface SessionCreate {
+  major: string;
   role: string;
   level: string;
   mode?: string;
@@ -437,9 +479,9 @@ export const authApi = {
     return request<UserOut>('/auth/me');
   },
 
-  /** Yêu cầu reset password -> trả về token demo. */
-  forgotPassword: async (email: string): Promise<{ message: string; reset_token?: string }> => {
-    return request<{ message: string; reset_token?: string }>('/auth/forgot-password', {
+  /** Yêu cầu gửi email reset password. */
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    return request<{ message: string }>('/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -494,6 +536,11 @@ export const sessionsApi = {
   /** Lấy danh sách sessions của user */
   list: async (): Promise<SessionOut[]> => {
     return request<SessionOut[]>('/sessions');
+  },
+
+  /** Lấy catalog số lượng câu hỏi theo major/role/level */
+  catalog: async (): Promise<SessionCatalogRole[]> => {
+    return request<SessionCatalogRole[]>('/sessions/catalog');
   },
 
   /** Lấy chi tiết session + questions + answers */
@@ -642,9 +689,14 @@ export const adminApi = {
     payload: { plan_tier: 'free_trial' | 'basic' | 'pro' | 'premium'; billing_period?: 'month' | 'year' },
   ): Promise<AdminManagedUser> =>
     request<AdminManagedUser>(`/admin/users/${userId}/plan`, {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+    }),
+
+  deleteUser: async (userId: string): Promise<{ deleted: string; email: string }> =>
+    request<{ deleted: string; email: string }>(`/admin/users/${userId}`, {
+      method: 'DELETE',
     }),
 
   downloadUserResume: async (userId: string): Promise<{ blob: Blob; filename: string | null }> =>

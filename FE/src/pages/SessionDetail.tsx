@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { sessionsApi, SessionDetail as SessionDetailType } from '@/lib/api';
+import { getLocalizedQuestionCategory, getLocalizedQuestionText, sessionsApi, SessionDetail as SessionDetailType } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { roleLabelMap } from '@/lib/mock-data';
@@ -180,9 +180,9 @@ const SessionDetail = () => {
                               )}>
                                 {question.difficulty}
                               </span>
-                              <span className="text-xs text-muted-foreground">{question.category}</span>
+                              <span className="text-xs text-muted-foreground">{getLocalizedQuestionCategory(question, language)}</span>
                             </div>
-                            <p className="text-foreground font-medium mb-3">"{question.text}"</p>
+                            <p className="text-foreground font-medium mb-3">"{getLocalizedQuestionText(question, language)}"</p>
                           </>
                         )}
                         <div className="bg-muted/50 rounded-lg p-3 mb-3">

@@ -147,6 +147,8 @@ async def startup_event():
             "008_add_question_bank_majors.sql",
             "009_add_qna_threads.sql",
             "010_add_redeem_code_redemptions.sql",
+            "011_add_session_question_sets.sql",
+            "012_add_question_localizations.sql",
         ]
         async with pool.acquire() as conn:
             for migration in migrations:

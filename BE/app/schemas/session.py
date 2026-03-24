@@ -8,6 +8,7 @@ from app.schemas.answer import AnswerOut
 
 
 class SessionCreate(BaseModel):
+    major: str = 'technology'
     role: str
     level: str
     mode: str = 'text'
@@ -17,6 +18,7 @@ class SessionCreate(BaseModel):
 class SessionOut(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    major: Optional[str] = None
     role: str
     level: str
     mode: str
@@ -30,3 +32,10 @@ class SessionOut(BaseModel):
 class SessionDetail(SessionOut):
     questions: List[QuestionOut] = []
     answers: List[AnswerOut] = []
+
+
+class SessionCatalogRole(BaseModel):
+    major: str
+    role: str
+    total_questions: int
+    counts_by_level: dict[str, int]

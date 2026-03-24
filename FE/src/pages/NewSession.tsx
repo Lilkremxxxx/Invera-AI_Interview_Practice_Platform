@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +13,10 @@ import {
   Sparkles,
   Loader2
 } from 'lucide-react';
-import { roles, levels, answerModes, questionCounts, timeLimits, difficulties } from '@/lib/mock-data';
+import { sessionMajors, roles, levels, answerModes, questionCounts, timeLimits, difficulties } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ApiError, sessionsApi } from '@/lib/api';
+import { ApiError, sessionsApi, type SessionCatalogRole } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -29,8 +29,10 @@ const NewSession = () => {
   const [step, setStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [catalog, setCatalog] = useState<SessionCatalogRole[]>([]);
   
   const [config, setConfig] = useState({
+    major: 'technology',
     role: '',
     level: 'junior',
     questionCount: 5,
@@ -40,11 +42,24 @@ const NewSession = () => {
   });
 
   const filteredRoles = roles.filter(role =>
+    role.major === config.major &&
     role.name[language].toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  useEffect(() => {
+    sessionsApi.catalog().then(setCatalog).catch(() => {});
+  }, []);
+
+  const catalogByRole = useMemo(() => {
+    return new Map(catalog.map((item) => [`${item.major}:${item.role}`, item] as const));
+  }, [catalog]);
+
+  const selectedMajor = sessionMajors.find((major) => major.id === config.major);
   const selectedRole = roles.find(r => r.id === config.role);
   const selectedLevel = levels.find(level => level.id === config.level);
+  const selectedRoleCatalog = config.role ? catalogByRole.get(`${config.major}:${config.role}`) : undefined;
+  const availableQuestionCount = selectedRoleCatalog?.counts_by_level?.[config.level] ?? 0;
+  const requestedQuestionCount = availableQuestionCount > 0 ? Math.min(config.questionCount, availableQuestionCount) : config.questionCount;
   const canStartNewSession = user?.can_start_new_session ?? true;
   const copy = {
     createErrorTitle: language === 'vi' ? 'Lỗi tạo session' : 'Unable to create session',
@@ -57,17 +72,38 @@ const NewSession = () => {
     viewSessions: language === 'vi' ? 'Xem session hiện có' : 'View existing sessions',
     creating: language === 'vi' ? 'Đang tạo...' : 'Creating...',
     questionWord: language === 'vi' ? 'câu hỏi' : 'questions',
+    chooseMajor: language === 'vi' ? 'Chọn major' : 'Choose a major',
+    availableQuestions: language === 'vi' ? 'Câu hỏi khả dụng' : 'Available questions',
+    unavailableLevel: language === 'vi'
+      ? 'Level này chưa có sẵn câu hỏi. Hệ thống sẽ tự đồng bộ và tạo bộ câu hỏi khi bạn bắt đầu.'
+      : 'This level does not have ready-made questions yet. The system will sync and generate them when you start.',
+    generatingOnDemand: language === 'vi'
+      ? 'Question bank sẽ được tạo tự động cho tổ hợp này.'
+      : 'The question bank will be generated automatically for this combination.',
+    noRoles: language === 'vi'
+      ? 'Không có role phù hợp trong major này. Hãy đổi major hoặc từ khóa tìm kiếm.'
+      : 'No matching roles in this major. Try a different major or search keyword.',
   };
+
+  useEffect(() => {
+    if (availableQuestionCount > 0 && config.questionCount > availableQuestionCount) {
+      setConfig((current) => ({
+        ...current,
+        questionCount: availableQuestionCount >= 15 ? 15 : availableQuestionCount >= 10 ? 10 : availableQuestionCount,
+      }));
+    }
+  }, [availableQuestionCount, config.questionCount]);
 
   const handleStartInterview = async () => {
     if (!config.role) return;
     setIsCreating(true);
     try {
       const session = await sessionsApi.create({
+        major: config.major,
         role: config.role,
         level: config.level,
         mode: config.answerMode,
-        question_count: config.questionCount,
+        question_count: requestedQuestionCount,
       });
       // Store session questions in sessionStorage so InterviewRoom can use them
       sessionStorage.setItem(`session_${session.id}`, JSON.stringify(session));
@@ -155,6 +191,32 @@ const NewSession = () => {
               {/* Step 1: Role Selection */}
               {step === 1 && (
                 <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label className="block">{copy.chooseMajor}</Label>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {sessionMajors.map((major) => (
+                        <button
+                          key={major.id}
+                          onClick={() =>
+                            setConfig((current) => ({
+                              ...current,
+                              major: major.id,
+                              role: current.major === major.id ? current.role : '',
+                            }))
+                          }
+                          className={cn(
+                            "rounded-xl border p-4 text-left transition-all hover:shadow-md",
+                            config.major === major.id
+                              ? "border-accent bg-accent/5 shadow-sm"
+                              : "border-border hover:border-accent/50"
+                          )}
+                        >
+                          <p className="font-medium text-foreground">{major.name[language]}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{major.description[language]}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input 
@@ -170,22 +232,29 @@ const NewSession = () => {
                         key={role.id}
                         onClick={() => setConfig({ ...config, role: role.id })}
                         className={cn(
-                          "p-4 rounded-xl border text-left transition-all hover:shadow-md",
-                          config.role === role.id
-                            ? "border-accent bg-accent/5 shadow-sm"
-                            : "border-border hover:border-accent/50"
-                        )}
+                            "p-4 rounded-xl border text-left transition-all hover:shadow-md",
+                            config.role === role.id
+                              ? "border-accent bg-accent/5 shadow-sm"
+                              : "border-border hover:border-accent/50"
+                          )}
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{role.icon}</span>
                           <div>
                             <p className="font-medium text-foreground">{role.name[language]}</p>
-                            <p className="text-xs text-muted-foreground">{role.questions} {copy.questionWord}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {catalogByRole.get(`${role.major}:${role.id}`)?.total_questions ?? role.questions} {copy.questionWord}
+                            </p>
                           </div>
                         </div>
                       </button>
                     ))}
                   </div>
+                  {filteredRoles.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+                      {copy.noRoles}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -196,7 +265,9 @@ const NewSession = () => {
                   onValueChange={(value) => setConfig({ ...config, level: value })}
                   className="grid gap-3"
                 >
-                  {levels.map((level) => (
+                  {levels.map((level) => {
+                    const levelCount = selectedRoleCatalog?.counts_by_level?.[level.id] ?? 0;
+                    return (
                     <Label
                       key={level.id}
                       htmlFor={level.id}
@@ -210,10 +281,18 @@ const NewSession = () => {
                       <RadioGroupItem value={level.id} id={level.id} />
                       <div>
                         <p className="font-medium text-foreground">{level.name[language]}</p>
-                        <p className="text-sm text-muted-foreground">{level.description[language]}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {level.description[language]}
+                          {config.role
+                            ? levelCount > 0
+                              ? ` · ${levelCount} ${copy.questionWord}`
+                              : ` · ${copy.generatingOnDemand}`
+                            : ''}
+                        </p>
                       </div>
                     </Label>
-                  ))}
+                    );
+                  })}
                 </RadioGroup>
               )}
 
@@ -228,8 +307,10 @@ const NewSession = () => {
                         <button
                           key={count}
                           onClick={() => setConfig({ ...config, questionCount: count })}
+                          disabled={availableQuestionCount > 0 && count > availableQuestionCount}
                           className={cn(
                             "flex-1 py-3 rounded-lg border font-medium transition-all",
+                            availableQuestionCount > 0 && count > availableQuestionCount && "cursor-not-allowed opacity-40",
                             config.questionCount === count
                               ? "border-accent bg-accent text-accent-foreground"
                               : "border-border hover:border-accent/50"
@@ -351,6 +432,12 @@ const NewSession = () => {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{copy.chooseMajor}</span>
+                  <span className="font-medium text-foreground">
+                    {selectedMajor ? selectedMajor.name[language] : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'role')}</span>
                   <span className="font-medium text-foreground">
                     {selectedRole ? selectedRole.name[language] : t('newSession', 'notSelected')}
@@ -364,7 +451,11 @@ const NewSession = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'questions')}</span>
-                  <span className="font-medium text-foreground">{config.questionCount}</span>
+                  <span className="font-medium text-foreground">{requestedQuestionCount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{copy.availableQuestions}</span>
+                  <span className="font-medium text-foreground">{availableQuestionCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'timeLimit')}</span>
@@ -383,6 +474,9 @@ const NewSession = () => {
               </div>
 
               <div className="pt-4 border-t">
+                {config.role && availableQuestionCount === 0 && (
+                  <p className="mb-3 text-sm text-destructive">{copy.unavailableLevel}</p>
+                )}
                 <Button 
                   variant="accent" 
                   size="lg" 

@@ -115,7 +115,7 @@ export default function Qna() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
-  const canUseQna = user?.can_use_qna ?? false;
+  const canUseQna = user?.is_admin || user?.can_use_qna || false;
 
   const hasComposerPayload = message.trim().length > 0 || !!docxFile;
 
@@ -216,8 +216,8 @@ export default function Qna() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="w-full space-y-6">
+      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
         <Card className="rounded-[32px] border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-6 text-white shadow-[0_28px_80px_-40px_rgba(8,145,178,0.55)]">
           <div className="mb-8 flex items-center gap-3">
             <div className="rounded-2xl bg-white/10 p-3">
@@ -242,7 +242,7 @@ export default function Qna() {
         </Card>
 
         <Card className="rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)]">
-          <div className="flex h-[76vh] flex-col">
+          <div className="flex h-[80vh] min-h-[760px] flex-col">
             <div className="border-b border-border/70 px-5 py-4 md:px-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -257,7 +257,7 @@ export default function Qna() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6 xl:px-7">
               {loading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-24 w-3/5 rounded-[28px]" />
@@ -302,7 +302,12 @@ export default function Qna() {
                         </Avatar>
                       )}
 
-                      <div className={cn('max-w-[min(100%,860px)] space-y-2', item.role === 'user' && 'items-end')}>
+                      <div
+                        className={cn(
+                          'space-y-2',
+                          item.role === 'user' ? 'max-w-[min(100%,760px)] items-end' : 'w-full max-w-none'
+                        )}
+                      >
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-medium text-foreground/80">
                             {item.role === 'user' ? text.user : text.ai}
@@ -366,7 +371,7 @@ export default function Qna() {
                           <Sparkles className="h-4 w-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="rounded-[28px] border border-border/70 bg-background px-5 py-4 shadow-sm">
+                      <div className="w-full max-w-none rounded-[28px] border border-border/70 bg-background px-5 py-4 shadow-sm">
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>{text.sending}</span>
@@ -379,7 +384,7 @@ export default function Qna() {
               )}
             </div>
 
-            <div className="border-t border-border/70 px-4 py-4 md:px-6">
+            <div className="border-t border-border/70 px-4 py-4 md:px-6 xl:px-7">
               <div className="space-y-3 rounded-[28px] border border-border/70 bg-muted/15 p-3 md:p-4">
                 {quotedText && (
                   <div className="flex items-start justify-between gap-3 rounded-2xl border border-info/20 bg-info/5 px-4 py-3">

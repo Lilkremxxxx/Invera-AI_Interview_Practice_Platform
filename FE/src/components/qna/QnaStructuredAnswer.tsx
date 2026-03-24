@@ -156,7 +156,7 @@ export function QnaStructuredAnswer({ answer, onAskAboutSelection }: QnaStructur
               )}
             </div>
             {answer.summary && (
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-foreground/85">{answer.summary}</p>
+              <p className="mt-3 w-full text-sm leading-7 text-foreground/85">{answer.summary}</p>
             )}
           </div>
 
