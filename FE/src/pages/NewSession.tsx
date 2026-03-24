@@ -44,6 +44,7 @@ const NewSession = () => {
   );
 
   const selectedRole = roles.find(r => r.id === config.role);
+  const selectedLevel = levels.find(level => level.id === config.level);
   const canStartNewSession = user?.can_start_new_session ?? true;
   const copy = {
     createErrorTitle: language === 'vi' ? 'Lỗi tạo session' : 'Unable to create session',
@@ -357,7 +358,9 @@ const NewSession = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'level')}</span>
-                  <span className="font-medium text-foreground capitalize">{mvpLevels.find(l => l.id === config.level)?.name[language]}</span>
+                  <span className="font-medium text-foreground capitalize">
+                    {selectedLevel?.name[language]}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'questions')}</span>
