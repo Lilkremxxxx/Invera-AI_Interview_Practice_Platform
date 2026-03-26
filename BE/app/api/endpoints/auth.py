@@ -25,7 +25,7 @@ from app.schemas.user import (
     VerifyEmailRequest,
 )
 from app.core.security import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
-from app.services.email import send_verification_email
+from app.services.email import send_password_reset_email, send_verification_email
 from app.services.plans import get_user_plan_snapshot
 
 router = APIRouter()
@@ -116,12 +116,40 @@ def _frontend_redirect(path: str, **params: str) -> str:
     return f"{base}{path}"
 
 
+def _frontend_reset_password_link(token: str) -> str:
+    base = settings.frontend_reset_password_url
+    query = urlencode({"token": token})
+    return f"{base}?{query}"
+
+
+def _normalize_oauth_mode(mode: str | None) -> str:
+    return "signup" if (mode or "").strip().lower() == "signup" else "login"
+
+
+def _oauth_verification_redirect(
+    *,
+    email: str,
+    message: str,
+    resend_available_in_seconds: int,
+) -> RedirectResponse:
+    return RedirectResponse(
+        _frontend_redirect(
+            "/verify-email",
+            email=email,
+            message=message,
+            resend_available_in_seconds=str(resend_available_in_seconds),
+        ),
+        status_code=302,
+    )
+
+
 def _oauth_error_redirect(
     provider: str,
     detail: str,
     *,
     email: str | None = None,
     admin_restricted: bool = False,
+    signup_required: bool = False,
 ) -> RedirectResponse:
     if admin_restricted:
         return RedirectResponse(
@@ -131,6 +159,17 @@ def _oauth_error_redirect(
                 oauth_provider=provider,
                 email=email or "",
                 oauth_error=detail,
+            ),
+            status_code=302,
+        )
+
+    if signup_required:
+        return RedirectResponse(
+            _frontend_redirect(
+                "/signup",
+                notice="oauth-signup-required",
+                oauth_provider=provider,
+                email=email or "",
             ),
             status_code=302,
         )
@@ -352,7 +391,12 @@ async def login(
         "SELECT id, email, password_hash, provider, email_verified FROM users WHERE email = $1",
         normalized_email,
     )
-    if not user or not verify_password(form_data.password, user["password_hash"]):
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Tài khoản chưa tồn tại. Hãy đăng ký trước khi đăng nhập.",
+        )
+    if not verify_password(form_data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng!")
     if user["provider"] == "local" and not user["email_verified"]:
         raise HTTPException(
@@ -402,7 +446,7 @@ async def verify_email(req: VerifyEmailRequest, db: asyncpg.Connection = Depends
         """
         SELECT id, email, created_at, is_admin, email_verified, verification_code, verification_code_expires
         FROM users
-        WHERE email = $1 AND provider = 'local'
+        WHERE email = $1
         """,
         normalized_email,
     )
@@ -467,7 +511,7 @@ async def resend_verification_code(
         """
         SELECT id, email, email_verified, verification_code_sent_at
         FROM users
-        WHERE email = $1 AND provider = 'local'
+        WHERE email = $1
         """,
         normalized_email,
     )
@@ -527,25 +571,35 @@ async def resend_verification_code(
 # 4. Forgot Password (Demo Flow)
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest, db: asyncpg.Connection = Depends(get_db)):
-    user = await db.fetchrow("SELECT id FROM users WHERE email = $1", req.email)
+    normalized_email = _normalize_email(req.email)
+    user = await db.fetchrow(
+        "SELECT id, email FROM users WHERE email = $1 AND provider = 'local'",
+        normalized_email,
+    )
     if not user:
-        # Prevent email enumeration by returning success regardless
-        return {"message": "Nếu email hợp lệ, hướng dẫn khôi phục sẽ được hiển thị."}
-    
+        return {"message": "Nếu email hợp lệ, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn."}
+
     reset_token = secrets.token_urlsafe(32)
     expires = datetime.now(timezone.utc) + timedelta(hours=1)
-    
+    reset_link = _frontend_reset_password_link(reset_token)
+
     await db.execute(
         "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3",
         reset_token, expires, user["id"]
     )
-    
-    # In Demo mode, we return the token in the response so user can copy it
-    # Production would send an email via SMTP
-    return {
-        "message": "Demo Mode: Vui lòng sử dụng token dưới đây để đổi mật khẩu.",
-        "reset_token": reset_token
-    }
+
+    try:
+        await send_password_reset_email(user["email"], reset_link)
+    except Exception:
+        logger.exception("Failed to deliver password reset email for %s", user["email"])
+        return {
+            "message": (
+                "Yêu cầu đặt lại mật khẩu đã được ghi nhận nhưng chưa thể gửi email lúc này. "
+                "Vui lòng kiểm tra cấu hình email và thử lại."
+            )
+        }
+
+    return {"message": "Nếu email hợp lệ, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn."}
 
 
 # 5. Reset Password
@@ -576,7 +630,7 @@ async def reset_password(req: ResetPasswordRequest, db: asyncpg.Connection = Dep
 async def process_oauth_login(
     db: asyncpg.Connection, email: str, provider: str, provider_id: str, full_name: Optional[str] = None
 ) -> str:
-    """Xử lý tạo/lấy user từ OAuth và trả về JWT."""
+    """Chỉ cho OAuth đăng nhập vào account đã tồn tại và trả về JWT."""
     normalized_email = _normalize_email(email)
     if _is_primary_admin_email(normalized_email) or await _pending_admin_invite_exists(db, normalized_email):
         raise HTTPException(
@@ -587,34 +641,33 @@ async def process_oauth_login(
     user = await db.fetchrow("SELECT id, email, is_admin FROM users WHERE email = $1", normalized_email)
     
     if not user:
-        # Create new user
-        # Generate random password for OAuth users because we need a non-null password_hash
-        random_pwd = hash_password(secrets.token_urlsafe(32))
-        user = await db.fetchrow(
-            """INSERT INTO users (email, password_hash, provider, provider_id, email_verified) 
-               VALUES ($1, $2, $3, $4, TRUE) RETURNING id, email""",
-            normalized_email, random_pwd, provider, provider_id
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Tài khoản chưa tồn tại trong hệ thống. "
+                "Vui lòng đăng ký trước, sau đó mới đăng nhập bằng Google hoặc GitHub."
+            ),
         )
-    else:
-        if user["is_admin"]:
-            raise HTTPException(
-                status_code=403,
-                detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
-            )
-        # Update provider info if needed (link account)
-        await db.execute(
-            """
-            UPDATE users
-            SET provider = $1,
-                provider_id = $2,
-                email_verified = TRUE,
-                verification_code = NULL,
-                verification_code_expires = NULL,
-                updated_at = NOW()
-            WHERE id = $3
-            """,
-            provider, provider_id, user["id"]
+    if user["is_admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
         )
+
+    # Update provider info if needed (link account)
+    await db.execute(
+        """
+        UPDATE users
+        SET provider = $1,
+            provider_id = $2,
+            email_verified = TRUE,
+            verification_code = NULL,
+            verification_code_expires = NULL,
+            updated_at = NOW()
+        WHERE id = $3
+        """,
+        provider, provider_id, user["id"]
+    )
 
     # Generate JWT
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
@@ -624,28 +677,133 @@ async def process_oauth_login(
     return access_token
 
 
+async def process_oauth_signup(
+    db: asyncpg.Connection,
+    email: str,
+    provider: str,
+    provider_id: str,
+    full_name: Optional[str] = None,
+) -> dict[str, object]:
+    normalized_email = _normalize_email(email)
+    if _is_primary_admin_email(normalized_email) or await _pending_admin_invite_exists(db, normalized_email):
+        raise HTTPException(
+            status_code=403,
+            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
+        )
+
+    user = await db.fetchrow(
+        """
+        SELECT id, email, is_admin, email_verified, verification_code_sent_at
+        FROM users
+        WHERE email = $1
+        """,
+        normalized_email,
+    )
+
+    if user and user["is_admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
+        )
+
+    if user and user["email_verified"]:
+        access_token = await process_oauth_login(db, normalized_email, provider, provider_id, full_name)
+        return {"action": "login", "access_token": access_token}
+
+    if user is None:
+        generated_password = hash_password(secrets.token_urlsafe(32))
+        user = await db.fetchrow(
+            """
+            INSERT INTO users (
+                email,
+                password_hash,
+                full_name,
+                email_verified,
+                plan_tier,
+                plan_status,
+                provider,
+                provider_id
+            )
+            VALUES ($1, $2, $3, FALSE, 'free_trial', 'active', $4, $5)
+            RETURNING id, email, is_admin, email_verified, verification_code_sent_at
+            """,
+            normalized_email,
+            generated_password,
+            full_name,
+            provider,
+            provider_id,
+        )
+    else:
+        await db.execute(
+            """
+            UPDATE users
+            SET full_name = COALESCE($1, full_name),
+                provider = $2,
+                provider_id = $3,
+                updated_at = NOW()
+            WHERE id = $4
+            """,
+            full_name,
+            provider,
+            provider_id,
+            user["id"],
+        )
+
+    cooldown_remaining = _resend_cooldown_remaining(user["verification_code_sent_at"])
+    if cooldown_remaining > 0:
+        return {
+            "action": "verify",
+            "email": normalized_email,
+            "message": "Mã xác thực gần nhất vẫn còn hiệu lực. Hãy kiểm tra email của bạn để tiếp tục.",
+            "resend_available_in_seconds": cooldown_remaining,
+        }
+
+    code, _ = await _issue_verification_code(db, user_id=user["id"])
+    resend_available_in_seconds = 0
+    message = _verification_delivery_message()
+
+    try:
+        await send_verification_email(normalized_email, code)
+        await _mark_verification_code_sent(db, user_id=user["id"])
+        resend_available_in_seconds = settings.verification_resend_cooldown_seconds
+    except Exception:
+        logger.exception("Failed to deliver verification email for %s during OAuth signup", normalized_email)
+        message = (
+            "Tài khoản đã được tạo nhưng chưa thể gửi email xác thực. "
+            "Vui lòng dùng chức năng gửi lại mã sau khi cấu hình email hoàn tất."
+        )
+
+    return {
+        "action": "verify",
+        "email": normalized_email,
+        "message": message,
+        "resend_available_in_seconds": resend_available_in_seconds,
+    }
+
+
 # Google OAuth
 @router.get("/oauth/google")
-async def google_login():
+async def google_login(mode: str = "login"):
     client_id = settings.google_client_id
     if not client_id:
         raise HTTPException(status_code=500, detail="Google Client ID chưa được cấu hình")
-        
+    oauth_mode = _normalize_oauth_mode(mode)
     redirect_uri = f"{settings.api_public_url}/auth/oauth/google/callback"
     scope = "openid email profile"
     auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code"
-        f"&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}"
+        f"&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={oauth_mode}"
     )
     return {"url": auth_url}
 
 
 @router.get("/oauth/google/callback")
-async def google_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
+async def google_callback(code: str, state: str = "login", db: asyncpg.Connection = Depends(get_db)):
     client_id = settings.google_client_id
     client_secret = settings.google_client_secret
     redirect_uri = f"{settings.api_public_url}/auth/oauth/google/callback"
     provider_email: str | None = None
+    oauth_mode = _normalize_oauth_mode(state)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -674,6 +832,20 @@ async def google_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
         if not provider_email:
             raise HTTPException(status_code=400, detail="Không lấy được email từ Google")
 
+        if oauth_mode == "signup":
+            signup_result = await process_oauth_signup(
+                db, provider_email, "google", user_info["id"], user_info.get("name")
+            )
+            if signup_result["action"] == "login":
+                return RedirectResponse(
+                    f"{settings.frontend_public_url}/oauth/callback?token={signup_result['access_token']}"
+                )
+            return _oauth_verification_redirect(
+                email=str(signup_result["email"]),
+                message=str(signup_result["message"]),
+                resend_available_in_seconds=int(signup_result["resend_available_in_seconds"]),
+            )
+
         access_token = await process_oauth_login(
             db, provider_email, "google", user_info["id"], user_info.get("name")
         )
@@ -685,6 +857,7 @@ async def google_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
             detail,
             email=provider_email,
             admin_restricted="admin" in detail.lower(),
+            signup_required=exc.status_code == 404,
         )
     except Exception:
         logger.exception("Unexpected Google OAuth callback failure")
@@ -693,26 +866,27 @@ async def google_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
 
 # GitHub OAuth
 @router.get("/oauth/github")
-async def github_login():
+async def github_login(mode: str = "login"):
     client_id = settings.github_client_id
     if not client_id:
         raise HTTPException(status_code=500, detail="GitHub Client ID chưa được cấu hình")
-        
+    oauth_mode = _normalize_oauth_mode(mode)
     redirect_uri = f"{settings.api_public_url}/auth/oauth/github/callback"
     scope = "user:email"
     auth_url = (
         f"https://github.com/login/oauth/authorize"
-        f"?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}"
+        f"?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={oauth_mode}"
     )
     return {"url": auth_url}
 
 
 @router.get("/oauth/github/callback")
-async def github_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
+async def github_callback(code: str, state: str = "login", db: asyncpg.Connection = Depends(get_db)):
     client_id = settings.github_client_id
     client_secret = settings.github_client_secret
     redirect_uri = f"{settings.api_public_url}/auth/oauth/github/callback"
     email: str | None = None
+    oauth_mode = _normalize_oauth_mode(state)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -754,6 +928,24 @@ async def github_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
         if not email:
             raise HTTPException(status_code=400, detail="Không lấy được email từ GitHub")
 
+        if oauth_mode == "signup":
+            signup_result = await process_oauth_signup(
+                db,
+                email,
+                "github",
+                str(user_info["id"]),
+                user_info.get("name"),
+            )
+            if signup_result["action"] == "login":
+                return RedirectResponse(
+                    f"{settings.frontend_public_url}/oauth/callback?token={signup_result['access_token']}"
+                )
+            return _oauth_verification_redirect(
+                email=str(signup_result["email"]),
+                message=str(signup_result["message"]),
+                resend_available_in_seconds=int(signup_result["resend_available_in_seconds"]),
+            )
+
         access_token = await process_oauth_login(
             db, email, "github", str(user_info["id"]), user_info.get("name")
         )
@@ -765,6 +957,7 @@ async def github_callback(code: str, db: asyncpg.Connection = Depends(get_db)):
             detail,
             email=email,
             admin_restricted="admin" in detail.lower(),
+            signup_required=exc.status_code == 404,
         )
     except Exception:
         logger.exception("Unexpected GitHub OAuth callback failure")

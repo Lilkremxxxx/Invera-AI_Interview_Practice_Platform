@@ -65,6 +65,10 @@ export function AdminAccess() {
     userUpdatedTitle: language === 'vi' ? 'Đã cập nhật gói user' : 'User plan updated',
     userUpdatedDescription: language === 'vi' ? 'Thay đổi đã được lưu trên hệ thống.' : 'The change was saved successfully.',
     userUpdateErrorTitle: language === 'vi' ? 'Không thể cập nhật gói user' : 'Unable to update user plan',
+    userDeletedTitle: language === 'vi' ? 'Đã xóa user' : 'User deleted',
+    userDeletedDescription: language === 'vi' ? 'Tài khoản và dữ liệu liên quan đã được xóa khỏi hệ thống.' : 'The account and related data were deleted.',
+    userDeleteErrorTitle: language === 'vi' ? 'Không thể xóa user' : 'Unable to delete user',
+    deleteUser: language === 'vi' ? 'Xóa user' : 'Delete user',
     noUsers: language === 'vi' ? 'Không có user nào khớp bộ lọc.' : 'No users match the current filters.',
     planLabel: language === 'vi' ? 'Gói' : 'Plan',
     planStatusLabel: language === 'vi' ? 'Trạng thái' : 'Status',
@@ -227,6 +231,23 @@ export function AdminAccess() {
     } catch (err) {
       toast({
         title: copy.userUpdateErrorTitle,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setUpdatingUserId(userId);
+    try {
+      await adminApi.deleteUser(userId);
+      toast({ title: copy.userDeletedTitle, description: copy.userDeletedDescription });
+      await loadData();
+    } catch (err) {
+      toast({
+        title: copy.userDeleteErrorTitle,
         description: err instanceof Error ? err.message : copy.retry,
         variant: 'destructive',
       });
@@ -452,7 +473,7 @@ export function AdminAccess() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2 md:grid-cols-[160px_140px_auto_auto]">
+                      <div className="grid gap-2 md:grid-cols-[160px_140px_auto_auto_auto]">
                         <select
                           className="h-10 rounded-md border border-input bg-background px-3 text-sm"
                           value={draft.plan_tier}
@@ -492,6 +513,13 @@ export function AdminAccess() {
                         </Button>
                         <Button variant="outline" onClick={() => handleCancelPlan(managedUser.id)} disabled={updatingUserId === managedUser.id}>
                           {copy.cancelPlan}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleDeleteUser(managedUser.id)}
+                          disabled={updatingUserId === managedUser.id || managedUser.is_primary_admin}
+                        >
+                          {copy.deleteUser}
                         </Button>
                       </div>
                     </div>

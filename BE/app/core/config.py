@@ -62,6 +62,12 @@ class Settings:
     deepseek_timeout_seconds: float = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "90"))
     deepseek_max_tokens: int = int(os.getenv("DEEPSEEK_MAX_TOKENS", "1800"))
     deepseek_temperature: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.2"))
+    deepseek_scoring_timeout_seconds: float = float(os.getenv("DEEPSEEK_SCORING_TIMEOUT_SECONDS", "20"))
+    deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "800"))
+    deepseek_qna_timeout_seconds: float = float(os.getenv("DEEPSEEK_QNA_TIMEOUT_SECONDS", "30"))
+    deepseek_qna_max_tokens: int = int(os.getenv("DEEPSEEK_QNA_MAX_TOKENS", "1000"))
+    deepseek_question_gen_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUESTION_GEN_TIMEOUT_SECONDS", "18"))
+    deepseek_question_gen_max_tokens: int = int(os.getenv("DEEPSEEK_QUESTION_GEN_MAX_TOKENS", "650"))
     vnpay_payment_url: str = os.getenv(
         "VNPAY_PAYMENT_URL",
         "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
@@ -80,6 +86,10 @@ class Settings:
     frontend_upgrade_url: str = os.getenv(
         "FRONTEND_UPGRADE_URL",
         f"{os.getenv('FRONTEND_URL', 'https://invera.pp.ua')}/app/upgrade",
+    )
+    frontend_reset_password_url: str = os.getenv(
+        "FRONTEND_RESET_PASSWORD_URL",
+        f"{os.getenv('FRONTEND_URL', 'https://invera.pp.ua')}/reset-password",
     )
 
     @cached_property

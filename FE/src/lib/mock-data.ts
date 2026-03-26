@@ -70,9 +70,9 @@ export const questionCounts = [5, 10, 15];
 
 export const timeLimits = [
   { id: 'none', name: { vi: 'Không giới hạn', en: 'No limit' } },
-  { id: '2', name: { vi: '2 phút/câu hỏi', en: '2 min/question' } },
-  { id: '3', name: { vi: '3 phút/câu hỏi', en: '3 min/question' } },
-  { id: '5', name: { vi: '5 phút/câu hỏi', en: '5 min/question' } },
+  { id: '5', name: { vi: '5 phút', en: '5 min' } },
+  { id: '7', name: { vi: '7 phút', en: '7 min' } },
+  { id: '10', name: { vi: '10 phút', en: '10 min' } },
 ];
 
 export const difficulties = [

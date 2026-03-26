@@ -210,3 +210,65 @@ async def send_admin_invite_email(
         raise RuntimeError("SMTP_HOST is not configured")
 
     await asyncio.to_thread(_send_email_sync, recipient, subject, body_text, body_html)
+
+
+async def send_password_reset_email(recipient: str, reset_link: str) -> None:
+    subject = "Reset your Invera password"
+    body_text = (
+        "Hello,\n\n"
+        "We received a request to reset your Invera password.\n"
+        "Open the link below to choose a new password:\n"
+        f"{reset_link}\n\n"
+        "This link stays valid for 60 minutes.\n"
+        "If you did not request a password reset, you can ignore this email.\n"
+    )
+    body_html = (
+        "<!DOCTYPE html>"
+        "<html lang='en'>"
+        "<head>"
+        "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+        "<meta name='color-scheme' content='light'>"
+        "<meta name='supported-color-schemes' content='light'>"
+        "</head>"
+        "<body style='margin:0;padding:0;background:#edf4f7;font-family:Arial,sans-serif;color:#0f172a;'>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#edf4f7' style='background:#edf4f7;padding:24px 12px;'>"
+        "<tr><td align='center'>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#ffffff' style='max-width:640px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #d6e2ea;'>"
+        "<tr><td style='padding:30px 32px 24px;background:#f2fbfb;border-bottom:1px solid #d6eef0;'>"
+        "<div style='font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#0f766e;font-weight:700;margin-bottom:14px;'>Invera</div>"
+        "<div style='font-size:30px;line-height:1.15;font-weight:800;color:#0f172a;margin:0 0 12px;'>Reset your password</div>"
+        "<div style='font-size:16px;line-height:1.7;color:#33536a;'>Use the secure link below to create a new password for your account.</div>"
+        "</td></tr>"
+        "<tr><td style='padding:32px;'>"
+        "<div style='font-size:16px;line-height:1.7;color:#334155;margin-bottom:24px;'>If you asked to reset your password, continue with the button below.</div>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:24px 0 28px;'><tr><td align='center'>"
+        f"<a href='{reset_link}' style='display:inline-block;padding:15px 26px;border-radius:16px;background:#14b8a6;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;'>Reset password</a>"
+        "</td></tr></table>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin-bottom:24px;'><tr><td style='padding:14px 16px;border-radius:16px;background:#f8fbfd;border:1px solid #dbe7ef;font-size:14px;line-height:1.7;color:#475569;'>"
+        "This reset link stays valid for <strong>60 minutes</strong>.<br>"
+        f"If the button does not open correctly, use this fallback link:<br><a href='{reset_link}' style='color:#0f766e;text-decoration:none;font-weight:700;'>Open password reset link</a>"
+        "</td></tr></table>"
+        "<div style='font-size:14px;line-height:1.7;color:#64748b;'>If you did not request this password reset, you can safely ignore this email.</div>"
+        "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.7;color:#94a3b8;'>Invera • Password reset</div>"
+        "</td></tr></table>"
+        "</td></tr></table>"
+        "</body>"
+        "</html>"
+    )
+
+    delivery_mode = settings.email_delivery_mode.lower()
+    if delivery_mode == "disabled":
+        raise RuntimeError("Email delivery is disabled")
+
+    if delivery_mode == "log":
+        logger.warning("Password reset link for %s: %s", recipient, reset_link)
+        return
+
+    if delivery_mode != "smtp":
+        raise RuntimeError(f"Unsupported EMAIL_DELIVERY_MODE: {settings.email_delivery_mode}")
+
+    if not settings.smtp_host:
+        raise RuntimeError("SMTP_HOST is not configured")
+
+    await asyncio.to_thread(_send_email_sync, recipient, subject, body_text, body_html)

@@ -14,7 +14,6 @@ export function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const copy = {
     error: language === 'vi' ? 'Lỗi' : 'Error',
     validEmail: language === 'vi' ? 'Vui lòng nhập email hợp lệ.' : 'Please enter a valid email address.',
@@ -22,14 +21,12 @@ export function ForgotPassword() {
     retryLater: language === 'vi' ? 'Vui lòng thử lại sau.' : 'Please try again later.',
     back: language === 'vi' ? 'Quay lại' : 'Back',
     title: language === 'vi' ? 'Quên mật khẩu' : 'Forgot password',
-    successDescription: language === 'vi' ? 'Yêu cầu của bạn đã được tiếp nhận.' : 'Your request has been received.',
+    successDescription: language === 'vi' ? 'Nếu email hợp lệ, liên kết đặt lại mật khẩu sẽ được gửi.' : 'If the email is valid, a reset link will be sent.',
     prompt: language === 'vi' ? 'Nhập email của bạn để nhận hướng dẫn khôi phục mật khẩu.' : 'Enter your email to receive password reset instructions.',
     submit: language === 'vi' ? 'Gửi yêu cầu' : 'Send request',
-    demoBody: language === 'vi'
-      ? 'Trong hệ thống thực tế, một email nén chứa link khôi phục mật khẩu sẽ được gửi đến email của bạn.'
-      : 'In a real deployment, an email containing the password reset link would be sent to your inbox.',
-    demoToken: language === 'vi' ? 'Demo Mode - Token của bạn là:' : 'Demo mode — your token is:',
-    goReset: language === 'vi' ? 'Đi tới trang Đặt lại mật khẩu' : 'Go to the reset password page',
+    successBody: language === 'vi'
+      ? 'Hãy kiểm tra email để mở liên kết đặt lại mật khẩu. Nếu hệ thống đang ở chế độ log, link cũng sẽ xuất hiện trong backend logs.'
+      : 'Check your inbox for the reset link. If the system is running in log mode, the link will also appear in backend logs.',
     backLogin: language === 'vi' ? 'Trở về trang đăng nhập' : 'Return to the login page',
   };
 
@@ -42,11 +39,8 @@ export function ForgotPassword() {
 
     setIsLoading(true);
     try {
-      const resp = await authApi.forgotPassword(email);
+      await authApi.forgotPassword(email);
       setSuccess(true);
-      if (resp.reset_token) {
-        setResetToken(resp.reset_token);
-      }
     } catch (err) {
       toast({
         title: copy.requestError,
@@ -103,29 +97,11 @@ export function ForgotPassword() {
         ) : (
           <CardContent className="space-y-4">
             <div className="bg-accent/10 p-4 rounded-lg text-sm text-foreground/80 space-y-2 border border-accent/20">
-              <p>{copy.demoBody}</p>
-              {resetToken && (
-                <div className="mt-4">
-                  <p className="font-semibold text-accent mb-1">{copy.demoToken}</p>
-                  <code className="block w-full p-2 bg-background border rounded font-mono text-xs break-all text-muted-foreground select-all">
-                    {resetToken}
-                  </code>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-3" 
-                    onClick={() => navigate(`/reset-password?token=${resetToken}`)}
-                  >
-                    {copy.goReset}
-                  </Button>
-                </div>
-              )}
+              <p>{copy.successBody}</p>
             </div>
-            
-            {!resetToken && (
-              <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>
-                {copy.backLogin}
-              </Button>
-            )}
+            <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>
+              {copy.backLogin}
+            </Button>
           </CardContent>
         )}
       </Card>

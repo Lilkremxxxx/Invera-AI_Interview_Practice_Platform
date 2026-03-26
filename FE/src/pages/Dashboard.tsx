@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatPlanLabel, formatPlanStatus } from '@/lib/plans';
 import { roleLabelMap } from '@/lib/mock-data';
+import { formatScore, getScoreTextClass, SCORE_MAX } from '@/lib/score';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
@@ -70,7 +71,7 @@ const Dashboard = () => {
   const totalSessions = sessions.length;
   const scoresWithData = completedSessions.filter(s => s.avg_score != null);
   const avgScore = scoresWithData.length > 0
-    ? Math.round(scoresWithData.reduce((sum, s) => sum + (s.avg_score ?? 0), 0) / scoresWithData.length)
+    ? Number((scoresWithData.reduce((sum, s) => sum + (s.avg_score ?? 0), 0) / scoresWithData.length).toFixed(1))
     : null;
   const totalQuestions = sessions.reduce((sum, s) => sum + (s.question_count ?? 0), 0);
 
@@ -81,7 +82,7 @@ const Dashboard = () => {
     .slice(-7)
     .map(s => ({
       date: new Date(s.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
-      score: Math.round(s.avg_score ?? 0),
+      score: Number((s.avg_score ?? 0).toFixed(1)),
     }));
 
   const recentSessions = sessions.slice(0, 4);
@@ -138,7 +139,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">{t('dashboard', 'avgScore')}</p>
-                  <p className="text-3xl font-bold text-foreground">{avgScore != null ? `${avgScore}%` : '—'}</p>
+                  <p className="text-3xl font-bold text-foreground">{formatScore(avgScore)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-success" />
@@ -189,8 +190,9 @@ const Dashboard = () => {
                 <LineChart data={progressData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, SCORE_MAX]} tick={{ fontSize: 12 }} />
                   <Tooltip
+                    formatter={(value: number) => [`${Number(value).toFixed(1)}/10`, t('dashboard', 'avgScore')]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -300,10 +302,9 @@ const Dashboard = () => {
                     <div className="text-right">
                       <p className={cn(
                         "font-semibold",
-                        session.avg_score != null && session.avg_score >= 70 ? "text-success" :
-                        session.avg_score != null && session.avg_score >= 40 ? "text-warning" : "text-muted-foreground"
+                        getScoreTextClass(session.avg_score)
                       )}>
-                        {session.avg_score != null ? `${session.avg_score}%` : '—'}
+                        {formatScore(session.avg_score)}
                       </p>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />

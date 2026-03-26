@@ -1,6 +1,7 @@
 import { UserOut } from '@/lib/api';
 
 type Language = 'vi' | 'en';
+export type SessionTimeLimitId = 'none' | '5' | '7' | '10';
 
 export function formatPlanLabel(user: UserOut | null | undefined, language: Language): string {
   if (!user) {
@@ -55,4 +56,37 @@ export function userInitials(user: UserOut | null | undefined): string {
   const source = user.full_name?.trim() || user.email.split('@')[0];
   const parts = source.split(/\s+|[.\-_]/).filter(Boolean);
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || '?';
+}
+
+export function resolveSessionTimeLimitId(user: UserOut | null | undefined): SessionTimeLimitId {
+  if (user?.is_admin) {
+    return 'none';
+  }
+
+  if (user?.plan_status !== 'active') {
+    return '5';
+  }
+
+  switch (user?.plan_tier) {
+    case 'basic':
+      return '7';
+    case 'pro':
+      return '10';
+    case 'premium':
+      return 'none';
+    default:
+      return '5';
+  }
+}
+
+export function canExportSessions(user: UserOut | null | undefined): boolean {
+  if (user?.is_admin) {
+    return true;
+  }
+
+  if (user?.plan_status !== 'active') {
+    return false;
+  }
+
+  return user?.plan_tier === 'pro' || user?.plan_tier === 'premium';
 }

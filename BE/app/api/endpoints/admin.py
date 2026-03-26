@@ -227,7 +227,7 @@ async def admin_stats(
             (SELECT COUNT(*) FROM sessions) AS total_sessions,
             (SELECT COUNT(*) FROM sessions WHERE status = 'COMPLETED') AS completed_sessions,
             (SELECT COUNT(*) FROM answers) AS total_answers,
-            (SELECT ROUND(AVG(score)::numeric, 1) FROM answers WHERE score > 0) AS avg_score,
+            (SELECT ROUND(AVG(score)::numeric, 1)::float FROM answers WHERE score > 0) AS avg_score,
             (SELECT COUNT(*) FROM questions) AS total_questions
         """
     )
@@ -284,7 +284,7 @@ async def admin_list_users(
             u.plan_started_at,
             u.plan_expires_at,
             COUNT(DISTINCT s.id) AS session_count,
-            ROUND(AVG(a.score)::numeric, 1) AS avg_score
+            ROUND(AVG(a.score)::numeric, 1)::float AS avg_score
         FROM users u
         LEFT JOIN sessions s ON s.user_id = u.id
         LEFT JOIN answers a ON a.session_id = s.id AND a.score > 0
@@ -392,7 +392,7 @@ async def admin_update_user_plan(
             u.plan_started_at,
             u.plan_expires_at,
             COUNT(DISTINCT s.id) AS session_count,
-            ROUND(AVG(a.score)::numeric, 1) AS avg_score
+            ROUND(AVG(a.score)::numeric, 1)::float AS avg_score
         FROM users u
         LEFT JOIN sessions s ON s.user_id = u.id
         LEFT JOIN answers a ON a.session_id = s.id AND a.score > 0
@@ -864,45 +864,34 @@ async def admin_generate_question(
                 prompt=normalized_prompt,
             )
 
-    system_prompt = """
-You generate interview question-bank entries for Invera, an AI interview practice platform for Vietnamese students and early-career candidates.
-Return valid JSON only with these keys:
-- text
-- category
-- difficulty
-- ideal_answer
-- tags
+    system_prompt = (
+        "Return JSON only with keys text, category, difficulty, ideal_answer, tags. "
+        f"Write in {language_label}. Match major, role, level, and difficulty exactly. "
+        "Make the question realistic and interview-ready. "
+        "Keep the ideal answer concise, concrete, and structured in 4-6 short points. "
+        "tags must be 3-6 lowercase kebab-case strings. No markdown. No extra keys."
+    )
 
-Rules:
-- Write the question and ideal answer in {language_label}.
-- Keep domain terminology in English only when it is the natural term used in interviews.
-- Match the requested major, role, level, and difficulty exactly.
-- If the admin prompt asks for a specific concept or stack detail, reflect it directly in the generated question.
-- Make the question realistic, role-specific, and useful in a real interview.
-- The ideal answer must be concrete, structured, and interview-ready.
-- tags must be a JSON array of 3 to 6 short lowercase kebab-case tags.
-- Do not include markdown, commentary, or extra keys.
-""".strip().format(language_label=language_label)
-
-    user_prompt = f"""
-Generate one interview question-bank entry for this context:
-- major: {major}
-- role: {role}
-- level: {level}
-- difficulty: {difficulty}
-- output_language: {output_language}
-- preferred_category: {payload.category or 'auto'}
-- preferred_tags: {requested_tags or ['auto']}
-- admin_prompt: {normalized_prompt or 'none'}
-
-The output should fit Invera's current question bank style:
-- concise but serious interview wording
-- strong ideal answer with direct explanation, examples, and practical points
-- suitable for learners preparing for role-specific interviews
-""".strip()
+    user_prompt = (
+        "Generate one interview question-bank entry.\n"
+        f"major={major}\n"
+        f"role={role}\n"
+        f"level={level}\n"
+        f"difficulty={difficulty}\n"
+        f"output_language={output_language}\n"
+        f"category={payload.category or 'auto'}\n"
+        f"tags={requested_tags or ['auto']}\n"
+        f"admin_prompt={normalized_prompt or 'none'}"
+    )
 
     try:
-        response = await create_chat_completion(system_prompt=system_prompt, user_prompt=user_prompt)
+        response = await create_chat_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=settings.deepseek_question_gen_max_tokens,
+            timeout_seconds=settings.deepseek_question_gen_timeout_seconds,
+            temperature=0.1,
+        )
         content = json.loads(response["content"])
     except DeepSeekAPIError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

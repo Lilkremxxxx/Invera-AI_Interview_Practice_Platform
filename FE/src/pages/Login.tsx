@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/use-auth';
-import { authApi } from '@/lib/api';
+import { ApiError, authApi } from '@/lib/api';
 import { BrandIcon } from '@/components/layout/BrandIcon';
 
 const Login = () => {
@@ -19,6 +19,9 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const copy = {
+    signupRequired: t('login', 'noAccount'),
+  };
 
   useEffect(() => {
     const oauthError = searchParams.get('oauth_error');
@@ -35,6 +38,10 @@ const Login = () => {
       const me = await login(email, password);
       navigate(me.is_admin ? '/admin' : '/app', { replace: true });
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        navigate(`/signup?email=${encodeURIComponent(email)}&notice=login-signup-required`, { replace: true });
+        return;
+      }
       setErrorMsg(err instanceof Error ? err.message : t('login', 'error'));
     } finally {
       setIsSubmitting(false);
@@ -191,7 +198,7 @@ const Login = () => {
 
           {/* Footer Link */}
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            {t('login', 'noAccount')}{' '}
+            {copy.signupRequired}{' '}
             <Link 
               to="/signup" 
               className="text-accent hover:text-accent/80 font-semibold hover:underline transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"

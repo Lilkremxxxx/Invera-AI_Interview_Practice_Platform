@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText,
@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { QnaMessageOut, qnaApi } from '@/lib/api';
+import { ApiError, QnaMessageOut, qnaApi } from '@/lib/api';
 import { userInitials } from '@/lib/plans';
 import { cn } from '@/lib/utils';
 import { QnaStructuredAnswer } from '@/components/qna/QnaStructuredAnswer';
@@ -51,7 +51,7 @@ const copy = {
     sendFailed: 'Không thể gửi câu hỏi lúc này.',
     inputRequired: 'Hãy nhập câu hỏi hoặc đính kèm một file DOCX.',
     lockedTitle: 'QnA đã bị khóa',
-    lockedBody: 'Gói Free không dùng được QnA. Hãy nâng cấp lên Basic, Pro hoặc Premium hoặc nhập redeem code để mở khóa.',
+    lockedBody: 'Gói Free không dùng được QnA. Hãy nâng cấp lên Basic, Pro hoặc Premium để mở khóa.',
     unlockNow: 'Mở khóa ngay',
     followUpTemplate: 'Giải thích rõ hơn đoạn này theo rubric Invera và chỉ ra mình nên trả lời tốt hơn như thế nào:',
     user: 'Bạn',
@@ -80,7 +80,7 @@ const copy = {
     sendFailed: 'Unable to send your question right now.',
     inputRequired: 'Enter a question or attach a DOCX file first.',
     lockedTitle: 'QnA is locked',
-    lockedBody: 'The Free plan cannot use QnA. Upgrade to Basic, Pro, or Premium, or redeem a code to unlock it.',
+    lockedBody: 'The Free plan cannot use QnA. Upgrade to Basic, Pro, or Premium to unlock it.',
     unlockNow: 'Unlock now',
     followUpTemplate: 'Explain this excerpt in Invera rubric style and show how I should answer it better:',
     user: 'You',
@@ -97,8 +97,15 @@ function formatDateTime(value: string, locale: string) {
   }).format(new Date(value));
 }
 
+type PersistedQnaState = {
+  threadId: string | null;
+  messages: QnaMessageOut[];
+  draft: string;
+  quotedText: string;
+};
+
 export default function Qna() {
-  const { user } = useAuthContext();
+  const { user, refreshUser } = useAuthContext();
   const { language } = useLanguage();
   const { toast } = useToast();
   const text = copy[language];
@@ -115,34 +122,90 @@ export default function Qna() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const restoredFromCacheRef = useRef(false);
   const canUseQna = user?.is_admin || user?.can_use_qna || false;
+  const coachBadgeLabel = user?.plan_tier === 'pro' ? 'Pro' : 'Rubric coach';
+  const qnaStorageKey = useMemo(
+    () => `invera_qna_state_${user?.id ?? 'guest'}`,
+    [user?.id],
+  );
+
+  const syncQnaAccess = async () => {
+    const latestUser = await refreshUser();
+    return Boolean(latestUser?.is_admin || latestUser?.can_use_qna);
+  };
 
   const hasComposerPayload = message.trim().length > 0 || !!docxFile;
 
   useEffect(() => {
+    restoredFromCacheRef.current = false;
+    let cancelled = false;
     const loadThread = async () => {
-      if (!canUseQna) {
+      const latestCanUseQna = await syncQnaAccess();
+      if (cancelled) return;
+
+      if (!latestCanUseQna) {
         setLoading(false);
         return;
       }
-      setLoading(true);
+
+      try {
+        const cached = sessionStorage.getItem(qnaStorageKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as PersistedQnaState;
+          setThreadId(parsed.threadId ?? null);
+          setMessages(Array.isArray(parsed.messages) ? parsed.messages : []);
+          setMessage(typeof parsed.draft === 'string' ? parsed.draft : '');
+          setQuotedText(typeof parsed.quotedText === 'string' ? parsed.quotedText : '');
+          setLoading(false);
+          restoredFromCacheRef.current = true;
+        }
+      } catch {
+        sessionStorage.removeItem(qnaStorageKey);
+      }
+
+      if (!restoredFromCacheRef.current) {
+        setLoading(true);
+      }
+
       try {
         const thread = await qnaApi.getThread();
+        if (cancelled) return;
         setThreadId(thread.id);
         setMessages(thread.messages);
       } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+          await refreshUser();
+        }
+        if (cancelled) return;
         toast({
           title: text.sendFailed,
           description: error instanceof Error ? error.message : undefined,
           variant: 'destructive',
         });
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     void loadThread();
-  }, [canUseQna, text.sendFailed, toast]);
+    return () => {
+      cancelled = true;
+    };
+  }, [qnaStorageKey, refreshUser, text.sendFailed, toast]);
+
+  useEffect(() => {
+    if (!canUseQna) return;
+    const persisted: PersistedQnaState = {
+      threadId,
+      messages,
+      draft: message,
+      quotedText,
+    };
+    sessionStorage.setItem(qnaStorageKey, JSON.stringify(persisted));
+  }, [canUseQna, message, messages, qnaStorageKey, quotedText, threadId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -183,7 +246,8 @@ export default function Qna() {
   };
 
   const handleSend = async () => {
-    if (!canUseQna) {
+    const latestCanUseQna = await syncQnaAccess();
+    if (!latestCanUseQna) {
       toast({ title: text.lockedTitle, description: text.lockedBody, variant: 'destructive' });
       return;
     }
@@ -205,6 +269,9 @@ export default function Qna() {
       setQuotedText('');
       setDocxFile(null);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        await refreshUser();
+      }
       toast({
         title: text.sendFailed,
         description: error instanceof Error ? error.message : undefined,
@@ -215,34 +282,43 @@ export default function Qna() {
     }
   };
 
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    if (!sending && canUseQna && hasComposerPayload) {
+      void handleSend();
+    }
+  };
+
   return (
-    <div className="w-full space-y-6">
-      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
-        <Card className="rounded-[32px] border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-6 text-white shadow-[0_28px_80px_-40px_rgba(8,145,178,0.55)]">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="rounded-2xl bg-white/10 p-3">
-              <Sparkles className="h-5 w-5 text-cyan-200" />
+    <div className="w-full space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[228px_minmax(0,1fr)] 2xl:grid-cols-[240px_minmax(0,1fr)]">
+        <Card className="rounded-[28px] border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-5 text-white shadow-[0_24px_72px_-40px_rgba(8,145,178,0.5)]">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="rounded-2xl bg-white/10 p-2.5">
+              <Sparkles className="h-4.5 w-4.5 text-cyan-200" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/80">Invera</p>
-              <h1 className="text-2xl font-semibold tracking-tight">{text.title}</h1>
+              <h1 className="text-[1.75rem] font-semibold tracking-tight">{text.title}</h1>
             </div>
           </div>
-          <p className="text-sm leading-7 text-slate-200">{text.subtitle}</p>
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4">
+          <p className="text-sm leading-6 text-slate-200">{text.subtitle}</p>
+          <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
               <MessageSquareText className="h-4 w-4 text-cyan-200" />
               <span>{text.panelTitle}</span>
             </div>
-            <p className="text-sm leading-7 text-slate-300">{text.panelBody}</p>
+            <p className="text-sm leading-6 text-slate-300">{text.panelBody}</p>
           </div>
-          <div className="mt-6 rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm leading-7 text-cyan-50">
+          <div className="mt-4 rounded-[24px] border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm leading-6 text-cyan-50">
             {text.suggestedPrompt}
           </div>
         </Card>
 
         <Card className="rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)]">
-          <div className="flex h-[80vh] min-h-[760px] flex-col">
+          <div className="flex h-[84vh] min-h-[780px] flex-col">
             <div className="border-b border-border/70 px-5 py-4 md:px-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -252,12 +328,12 @@ export default function Qna() {
                   </p>
                 </div>
                 <Badge variant="secondary" className="rounded-full px-3 py-1">
-                  {user?.plan_tier === 'pro' ? 'Pro' : language === 'vi' ? 'Rubric coach' : 'Rubric coach'}
+                  {coachBadgeLabel}
                 </Badge>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6 xl:px-7">
+            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6 xl:px-8">
               {loading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-24 w-3/5 rounded-[28px]" />
@@ -384,7 +460,7 @@ export default function Qna() {
               )}
             </div>
 
-            <div className="border-t border-border/70 px-4 py-4 md:px-6 xl:px-7">
+            <div className="border-t border-border/70 px-4 py-4 md:px-6 xl:px-8">
               <div className="space-y-3 rounded-[28px] border border-border/70 bg-muted/15 p-3 md:p-4">
                 {quotedText && (
                   <div className="flex items-start justify-between gap-3 rounded-2xl border border-info/20 bg-info/5 px-4 py-3">
@@ -425,9 +501,10 @@ export default function Qna() {
                   ref={composerRef}
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
+                  onKeyDown={handleComposerKeyDown}
                   placeholder={quotedText ? highlightedSelectionTemplate : text.askPlaceholder}
                   disabled={!canUseQna}
-                  className="min-h-[110px] resize-none rounded-[24px] border-0 bg-background/80 px-4 py-4 text-sm leading-7 shadow-inner focus-visible:ring-2 focus-visible:ring-accent"
+                  className="min-h-[126px] resize-none rounded-[24px] border-0 bg-background/80 px-4 py-4 text-sm leading-7 shadow-inner focus-visible:ring-2 focus-visible:ring-accent"
                 />
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

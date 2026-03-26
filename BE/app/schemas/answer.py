@@ -14,6 +14,6 @@ class AnswerOut(BaseModel):
     session_id: uuid.UUID
     question_id: int
     answer_text: str
-    score: int
+    score: float
     feedback: str
     submitted_at: datetime

@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -24,24 +23,15 @@ def chunked(items: list[Any], size: int) -> list[list[Any]]:
     return [items[index:index + size] for index in range(0, len(items), size)]
 
 
-def normalize_tags(tags: list[str] | None) -> list[str]:
-    normalized: list[str] = []
-    for tag in tags or []:
-        value = re.sub(r"[^a-z0-9\- ]+", "", str(tag).strip().lower()).replace(" ", "-")
-        if value and value not in normalized:
-            normalized.append(value)
-    return normalized[:8]
-
-
-def normalize_text(text: str) -> str:
-    return re.sub(r"\s+", " ", text.strip().lower())
-
-
 def parse_json_content(content: str) -> dict[str, Any]:
     cleaned = content.strip()
     if cleaned.startswith("```"):
-        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
+        lines = cleaned.splitlines()
+        if lines:
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
     return json.loads(cleaned)
 
 
@@ -154,75 +144,6 @@ async def translate_existing_questions(conn: asyncpg.Connection, batch_size: int
             translated_groups += 1
         print(f"Translated {translated_groups}/{len(groups)} unique question groups", flush=True)
     return translated_groups
-
-
-async def generate_questions_for_combo(
-    *,
-    major: str,
-    role: str,
-    level: str,
-    count: int,
-) -> list[dict[str, Any]]:
-    system_prompt = """
-You generate bilingual interview question-bank entries for Invera.
-
-Return STRICT JSON only with this shape:
-{
-  "questions": [
-    {
-      "text_en": "English question",
-      "text_vi": "Vietnamese question",
-      "category_en": "English category",
-      "category_vi": "Vietnamese category",
-      "difficulty": "easy | medium | hard",
-      "ideal_answer_en": "English ideal answer",
-      "ideal_answer_vi": "Vietnamese ideal answer",
-      "tags": ["tag-one", "tag-two"]
-    }
-  ]
-}
-
-Rules:
-- Generate distinct questions with no duplicates.
-- Match the requested role and seniority exactly.
-- Keep each question realistic for a real interview.
-- Make the ideal answer concrete, structured, and interview-ready.
-- Tags must be lowercase kebab-case.
-- Use 3 to 6 tags per question.
-""".strip()
-
-    user_prompt = f"""
-Generate exactly {count} bilingual interview question-bank entries.
-
-Context:
-- major: {major}
-- role: {role}
-- level: {level}
-
-Difficulty calibration:
-- intern: mostly easy
-- fresher: easy to medium
-- junior: medium with a small amount of easy
-- mid: medium to hard
-- senior: mostly hard
-""".strip()
-
-    last_error: Exception | None = None
-    for _ in range(3):
-        try:
-            response = await create_chat_completion(system_prompt=system_prompt, user_prompt=user_prompt)
-            payload = parse_json_content(response["content"])
-            questions = payload.get("questions")
-            if not isinstance(questions, list) or len(questions) != count:
-                raise ValueError(
-                    f"DeepSeek generated {len(questions) if isinstance(questions, list) else 'invalid'} items for {major}/{role}/{level}."
-                )
-            return questions
-        except (json.JSONDecodeError, ValueError) as exc:
-            last_error = exc
-            await asyncio.sleep(1)
-    raise ValueError(f"DeepSeek generation payload invalid after retries for {major}/{role}/{level}: {last_error}")
-
 
 async def fill_missing_combos(conn: asyncpg.Connection, min_per_combo: int) -> int:
     count_rows = await conn.fetch(

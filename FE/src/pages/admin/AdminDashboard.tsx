@@ -18,6 +18,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatScore } from '@/lib/score';
 
 export function AdminDashboard() {
   const { language } = useLanguage();
@@ -85,7 +86,7 @@ export function AdminDashboard() {
     { title: copy.totalUsers, value: safeStats.total_users, icon: Users, desc: `${safeStats.total_admins} ${copy.admins}` },
     { title: 'Sessions', value: safeStats.total_sessions, icon: FileText, desc: `${safeStats.completed_sessions} ${copy.completed}` },
     { title: 'Questions', value: safeStats.total_questions, icon: Target, desc: copy.questionsAvailable },
-    { title: copy.answers, value: safeStats.total_answers, icon: CheckCircle, desc: `${copy.avgScore}: ${safeStats.avg_score || 0}/100` },
+    { title: copy.answers, value: safeStats.total_answers, icon: CheckCircle, desc: `${copy.avgScore}: ${formatScore(safeStats.avg_score ?? 0)}` },
   ];
 
   const questionRoleData = useMemo(
@@ -192,7 +193,7 @@ export function AdminDashboard() {
                       {u.is_admin && <span className="bg-accent/10 text-accent text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">{copy.adminBadge}</span>}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 text-primary">
-                      {new Date(u.created_at).toLocaleDateString(copy.locale)} · {u.provider} · {u.session_count} sessions {u.avg_score ? `· ${u.avg_score} pt` : ''}
+                      {new Date(u.created_at).toLocaleDateString(copy.locale)} · {u.provider} · {u.sessions_used ?? 0} sessions {u.avg_score != null ? `· ${formatScore(u.avg_score)}` : ''}
                     </p>
                   </div>
                 </div>

@@ -16,9 +16,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { sessionsApi, SessionOut } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { roleLabelMap } from '@/lib/mock-data';
+import { canExportSessions } from '@/lib/plans';
+import { formatScore, getScoreTextClass } from '@/lib/score';
+import { useToast } from '@/hooks/use-toast';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
@@ -29,15 +33,21 @@ const levelLabels: Record<string, { vi: string; en: string }> = {
 };
 
 const Sessions = () => {
+  const { user } = useAuthContext();
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const copy = {
     loadError: language === 'vi' ? 'Không thể tải sessions. Vui lòng thử lại.' : 'Unable to load sessions. Please try again.',
     completed: language === 'vi' ? 'Hoàn thành' : 'Completed',
     inProgress: language === 'vi' ? 'Đang làm' : 'In progress',
+    exportFailed: language === 'vi' ? 'Không thể xuất toàn bộ sessions lúc này.' : 'Unable to export all sessions right now.',
+    exportingAll: language === 'vi' ? 'Đang xuất...' : 'Exporting...',
     locale: language === 'vi' ? 'vi-VN' : 'en-US',
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<string | null>(null);
+  const [isExportingAll, setIsExportingAll] = useState(false);
+  const canExport = canExportSessions(user);
 
   const { data: sessions = [], isLoading, error } = useQuery<SessionOut[]>({
     queryKey: ['sessions'],
@@ -59,6 +69,29 @@ const Sessions = () => {
     }
   };
 
+  const handleExportAll = async () => {
+    setIsExportingAll(true);
+    try {
+      const { blob, filename } = await sessionsApi.downloadAllPdf();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || 'invera-sessions-export.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: copy.exportFailed,
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -66,10 +99,12 @@ const Sessions = () => {
           <h1 className="text-3xl font-bold text-foreground">{t('sessions', 'title')}</h1>
           <p className="text-muted-foreground">{t('sessions', 'subtitle')}</p>
         </div>
-        <Button variant="outline">
-          <Download className="w-4 h-4" />
-          {t('sessions', 'exportAll')}
-        </Button>
+        {canExport && (
+          <Button variant="outline" onClick={handleExportAll} disabled={isExportingAll}>
+            <Download className="w-4 h-4" />
+            {isExportingAll ? copy.exportingAll : t('sessions', 'exportAll')}
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -167,10 +202,9 @@ const Sessions = () => {
                     <div className="text-right">
                       <div className={cn(
                         "text-lg font-semibold",
-                        session.avg_score != null && session.avg_score >= 70 ? "text-success" :
-                        session.avg_score != null && session.avg_score >= 40 ? "text-warning" : "text-muted-foreground"
+                        getScoreTextClass(session.avg_score)
                       )}>
-                        {session.avg_score != null ? `${session.avg_score}%` : '—'}
+                        {formatScore(session.avg_score)}
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />

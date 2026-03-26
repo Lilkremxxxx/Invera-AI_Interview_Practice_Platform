@@ -1,7 +1,9 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 
 from app.db.session import get_db
 from app.api.endpoints.auth import get_current_user
@@ -12,16 +14,53 @@ from app.core.question_bank import (
     localized_question_field,
     resolve_ui_language,
 )
+from app.core.text_processing import sanitize_user_text
 from app.schemas.user import UserOut
 from app.schemas.session import SessionCatalogRole, SessionCreate, SessionOut, SessionDetail
 from app.schemas.question import QuestionOut
 from app.schemas.answer import AnswerSubmit, AnswerOut
 from app.services.deepseek_client import DeepSeekAPIError
-from app.services.plans import get_user_plan_snapshot
+from app.services.plans import can_export_sessions, get_user_plan_snapshot, resolve_session_time_limit_minutes
+from app.services.session_pdf import build_session_pdf_filename, build_sessions_pdf
 from app.services.question_bank_seed import ensure_question_bank_minimum
 from app.services.scoring import ScoringRequest, score_answer
 
 router = APIRouter()
+
+LEVEL_LABELS = {
+    "intern": {"vi": "Thực tập sinh", "en": "Intern"},
+    "fresher": {"vi": "Fresher", "en": "Fresher"},
+    "junior": {"vi": "Junior", "en": "Junior"},
+    "mid": {"vi": "Trung cấp", "en": "Mid-level"},
+    "senior": {"vi": "Senior", "en": "Senior"},
+}
+MODE_LABELS = {
+    "text": {"vi": "Văn bản", "en": "Text"},
+    "voice": {"vi": "Giọng nói", "en": "Voice"},
+    "video": {"vi": "Video", "en": "Video"},
+}
+
+
+async def _require_export_access(
+    *,
+    db: asyncpg.Connection,
+    user_id,
+    language: str,
+):
+    entitlement = await get_user_plan_snapshot(db, user_id)
+    if can_export_sessions(
+        is_admin=bool(entitlement.get("is_admin")),
+        plan_tier=entitlement.get("plan_tier"),
+        plan_status=entitlement.get("plan_status"),
+    ):
+        return
+
+    detail = (
+        "Tính năng export chỉ khả dụng với gói Pro hoặc Premium."
+        if language == "vi"
+        else "Export is only available on the Pro or Premium plan."
+    )
+    raise HTTPException(status_code=403, detail=detail)
 
 
 async def _fetch_session_questions(
@@ -44,6 +83,130 @@ async def _fetch_session_questions(
         """,
         major, role, level, count,
     )
+
+
+def _humanize_role_label(role: str) -> str:
+    return role.replace("_", " ").title()
+
+
+def _serialize_answer_row(answer_row) -> AnswerOut:
+    return AnswerOut(
+        id=answer_row["id"],
+        session_id=answer_row["session_id"],
+        question_id=answer_row["question_id"],
+        answer_text=sanitize_user_text(answer_row["answer_text"]),
+        score=float(answer_row["score"]),
+        feedback=answer_row["feedback"],
+        submitted_at=answer_row["submitted_at"],
+    )
+
+
+async def _load_session_bundle(
+    db: asyncpg.Connection,
+    *,
+    session_id: uuid.UUID,
+    user_id,
+):
+    session_row = await db.fetchrow(
+        "SELECT * FROM sessions WHERE id = $1 AND user_id = $2",
+        session_id, user_id,
+    )
+    if not session_row:
+        return None
+
+    answers_rows = await db.fetch(
+        """
+        SELECT a.id, a.session_id, a.question_id, a.answer_text,
+               a.score::float AS score, a.feedback, a.submitted_at
+        FROM answers a
+        WHERE a.session_id = $1
+        ORDER BY a.submitted_at
+        """,
+        session_id,
+    )
+
+    questions_rows = await db.fetch(
+        """
+        SELECT q.id, q.major, q.role, q.level, q.text, q.text_en, q.text_vi,
+               q.category, q.category_en, q.category_vi,
+               q.difficulty, q.tags
+        FROM session_question_sets sq
+        JOIN questions q ON q.id = sq.question_id
+        WHERE sq.session_id = $1
+        ORDER BY sq.position ASC, q.id ASC
+        """,
+        session_id,
+    )
+
+    if not questions_rows:
+        questions_rows = await db.fetch(
+            """
+            SELECT DISTINCT q.id, q.major, q.role, q.level, q.text, q.text_en, q.text_vi,
+                   q.category, q.category_en, q.category_vi,
+                   q.difficulty, q.tags
+            FROM questions q
+            LEFT JOIN answers a ON a.question_id = q.id AND a.session_id = $1
+            WHERE q.role = $2 AND q.level = $3
+              AND ($4::text IS NULL OR q.major = $4)
+            ORDER BY a.submitted_at NULLS LAST, q.id
+            LIMIT 15
+            """,
+            session_id, session_row["role"], session_row["level"], session_row["major"],
+        )
+
+    avg_score = None
+    if answers_rows:
+        avg_score = round(sum(float(a["score"]) for a in answers_rows) / len(answers_rows), 1)
+
+    return {
+        "session_row": session_row,
+        "answers_rows": answers_rows,
+        "questions_rows": questions_rows,
+        "avg_score": avg_score,
+    }
+
+
+def _session_pdf_payload(bundle: dict, language: str) -> dict:
+    session_row = bundle["session_row"]
+    locale = "vi-VN" if language == "vi" else "en-US"
+    questions = [
+        {
+            "id": question["id"],
+            "text": localized_question_field(question, "text", language),
+            "category": localized_question_field(question, "category", language),
+            "difficulty": question["difficulty"],
+        }
+        for question in bundle["questions_rows"]
+    ]
+    answers = [
+        {
+            **dict(answer),
+            "answer_text": sanitize_user_text(answer["answer_text"]),
+            "feedback": answer["feedback"],
+        }
+        for answer in bundle["answers_rows"]
+    ]
+    role_label = _humanize_role_label(session_row["role"])
+    level_label = LEVEL_LABELS.get(session_row["level"], {}).get(language, session_row["level"])
+    mode_label = MODE_LABELS.get(session_row["mode"], {}).get(language, session_row["mode"])
+
+    return {
+        "id": str(session_row["id"]),
+        "role_label": role_label,
+        "level_label": level_label,
+        "status": session_row["status"],
+        "mode": mode_label,
+        "created_at_label": session_row["created_at"].astimezone().strftime("%Y-%m-%d %H:%M"),
+        "completed_at_label": (
+            session_row["completed_at"].astimezone().strftime("%Y-%m-%d %H:%M")
+            if session_row["completed_at"] is not None
+            else None
+        ),
+        "avg_score_label": f"{bundle['avg_score']:.1f}/10" if bundle["avg_score"] is not None else None,
+        "question_count": len(questions),
+        "questions": questions,
+        "answers": answers,
+    }
 
 
 # ─── POST /sessions ──────────────────────────────────────────────────────────
@@ -74,6 +237,29 @@ async def create_session(
         raise HTTPException(status_code=400, detail=f"Level không hợp lệ. Chọn: {VALID_LEVELS}")
 
     count = max(1, min(body.question_count, 15))
+    ui_language = resolve_ui_language(request)
+    allowed_time_limit = resolve_session_time_limit_minutes(
+        is_admin=bool(entitlement.get("is_admin")),
+        plan_tier=entitlement.get("plan_tier"),
+        plan_status=entitlement.get("plan_status"),
+    )
+    requested_time_limit = allowed_time_limit if body.time_limit_minutes is None else body.time_limit_minutes
+
+    if body.time_limit_minutes not in {None, 5, 7, 10}:
+        detail = (
+            "Giới hạn thời gian không hợp lệ. Chỉ hỗ trợ No limit, 5, 7 hoặc 10 phút."
+            if ui_language == "vi"
+            else "Invalid time limit. Only No limit, 5, 7, or 10 minutes are supported."
+        )
+        raise HTTPException(status_code=400, detail=detail)
+
+    if requested_time_limit != allowed_time_limit:
+        detail = (
+            "Giới hạn thời gian không phù hợp với gói hiện tại của bạn."
+            if ui_language == "vi"
+            else "This time limit is not available for your current plan."
+        )
+        raise HTTPException(status_code=400, detail=detail)
 
     # Lấy ngẫu nhiên câu hỏi cho major+role+level
     questions = await _fetch_session_questions(
@@ -95,7 +281,6 @@ async def create_session(
             )
         except (DeepSeekAPIError, RuntimeError) as exc:
             if not questions:
-                ui_language = resolve_ui_language(request)
                 detail = (
                     f"Chưa thể chuẩn bị question bank cho major={major}, role={role}, level={level}. "
                     "Vui lòng thử lại sau ít phút."
@@ -122,11 +307,11 @@ async def create_session(
     async with db.transaction():
         session_row = await db.fetchrow(
             """
-            INSERT INTO sessions (user_id, major, role, level, mode, status)
-            VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS')
-            RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at
+            INSERT INTO sessions (user_id, major, role, level, mode, status, time_limit_minutes)
+            VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', $6)
+            RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes
             """,
-            current_user.id, major, role, level, body.mode,
+            current_user.id, major, role, level, body.mode, requested_time_limit,
         )
         await db.executemany(
             """
@@ -147,6 +332,7 @@ async def create_session(
         status=session_row["status"],
         created_at=session_row["created_at"],
         completed_at=session_row["completed_at"],
+        time_limit_minutes=session_row["time_limit_minutes"],
         questions=[QuestionOut(**localized_question_dict(q)) for q in questions],
         answers=[],
     )
@@ -200,7 +386,7 @@ async def list_sessions(
         """
         SELECT
             s.id, s.user_id, s.major, s.role, s.level, s.mode, s.status,
-            s.created_at, s.completed_at,
+            s.created_at, s.completed_at, s.time_limit_minutes,
             COUNT(DISTINCT sq.question_id)::int AS question_count,
             AVG(a.score)::float         AS avg_score
         FROM sessions s
@@ -226,9 +412,64 @@ async def list_sessions(
             completed_at=r["completed_at"],
             question_count=r["question_count"],
             avg_score=round(r["avg_score"], 1) if r["avg_score"] is not None else None,
+            time_limit_minutes=r["time_limit_minutes"],
         )
         for r in rows
     ]
+
+
+@router.get("/exports/all-pdf")
+async def export_all_sessions_pdf(
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    language = resolve_ui_language(request)
+    await _require_export_access(db=db, user_id=current_user.id, language=language)
+    session_ids = await db.fetch(
+        "SELECT id FROM sessions WHERE user_id = $1 ORDER BY created_at DESC",
+        current_user.id,
+    )
+    bundles = []
+    for row in session_ids:
+        bundle = await _load_session_bundle(db, session_id=row["id"], user_id=current_user.id)
+        if bundle is not None:
+            bundles.append(_session_pdf_payload(bundle, language))
+
+    pdf_bytes = build_sessions_pdf(sessions=bundles, language=language, export_all=True)
+    filename = build_session_pdf_filename("sessions", "all", True)
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{session_id}/export-pdf")
+async def export_session_pdf(
+    session_id: uuid.UUID,
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    language = resolve_ui_language(request)
+    await _require_export_access(db=db, user_id=current_user.id, language=language)
+    bundle = await _load_session_bundle(db, session_id=session_id, user_id=current_user.id)
+    if bundle is None:
+        raise HTTPException(status_code=404, detail="Session không tồn tại")
+
+    session_payload = _session_pdf_payload(bundle, language)
+    pdf_bytes = build_sessions_pdf(sessions=[session_payload], language=language, export_all=False)
+    filename = build_session_pdf_filename(
+        bundle["session_row"]["role"],
+        str(bundle["session_row"]["id"]),
+        False,
+    )
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ─── GET /sessions/{id} ───────────────────────────────────────────────────────
@@ -238,59 +479,13 @@ async def get_session(
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
-    session_row = await db.fetchrow(
-        "SELECT * FROM sessions WHERE id = $1 AND user_id = $2",
-        session_id, current_user.id,
-    )
-    if not session_row:
+    bundle = await _load_session_bundle(db, session_id=session_id, user_id=current_user.id)
+    if bundle is None:
         raise HTTPException(status_code=404, detail="Session không tồn tại")
-
-    # Lấy answers đã nộp và join với questions để biết câu hỏi nào đã trả lời
-    answers_rows = await db.fetch(
-        """
-        SELECT a.id, a.session_id, a.question_id, a.answer_text,
-               a.score, a.feedback, a.submitted_at
-        FROM answers a
-        WHERE a.session_id = $1
-        ORDER BY a.submitted_at
-        """,
-        session_id,
-    )
-
-    # Lấy câu hỏi đã chốt cho session. Session cũ sẽ fallback xuống role/level/major.
-    questions_rows = await db.fetch(
-        """
-        SELECT q.id, q.major, q.role, q.level, q.text, q.text_en, q.text_vi,
-               q.category, q.category_en, q.category_vi,
-               q.difficulty, q.tags
-        FROM session_question_sets sq
-        JOIN questions q ON q.id = sq.question_id
-        WHERE sq.session_id = $1
-        ORDER BY sq.position ASC, q.id ASC
-        """,
-        session_id,
-    )
-
-    # Fallback cho session cũ chưa có mapping session_question_sets.
-    if not questions_rows:
-        questions_rows = await db.fetch(
-            """
-            SELECT DISTINCT q.id, q.major, q.role, q.level, q.text, q.text_en, q.text_vi,
-                   q.category, q.category_en, q.category_vi,
-                   q.difficulty, q.tags
-            FROM questions
-            LEFT JOIN answers a ON a.question_id = q.id AND a.session_id = $1
-            WHERE q.role = $2 AND q.level = $3
-              AND ($4::text IS NULL OR q.major = $4)
-            ORDER BY a.submitted_at NULLS LAST, q.id
-            LIMIT 15
-            """,
-            session_id, session_row["role"], session_row["level"], session_row["major"],
-        )
-
-    avg_score = None
-    if answers_rows:
-        avg_score = round(sum(a["score"] for a in answers_rows) / len(answers_rows), 1)
+    session_row = bundle["session_row"]
+    answers_rows = bundle["answers_rows"]
+    questions_rows = bundle["questions_rows"]
+    avg_score = bundle["avg_score"]
 
     return SessionDetail(
         id=session_row["id"],
@@ -304,8 +499,9 @@ async def get_session(
         completed_at=session_row["completed_at"],
         avg_score=avg_score,
         question_count=len(questions_rows),
+        time_limit_minutes=session_row["time_limit_minutes"],
         questions=[QuestionOut(**localized_question_dict(q)) for q in questions_rows],
-        answers=[AnswerOut(**dict(a)) for a in answers_rows],
+        answers=[_serialize_answer_row(a) for a in answers_rows],
     )
 
 
@@ -320,13 +516,36 @@ async def submit_answer(
 ):
     # Verify session belongs to user and is still IN_PROGRESS
     session_row = await db.fetchrow(
-        "SELECT id, status, major, role, level FROM sessions WHERE id = $1 AND user_id = $2",
+        """
+        SELECT id, status, major, role, level, created_at, time_limit_minutes
+        FROM sessions
+        WHERE id = $1 AND user_id = $2
+        """,
         session_id, current_user.id,
     )
     if not session_row:
         raise HTTPException(status_code=404, detail="Session không tồn tại")
     if session_row["status"] != "IN_PROGRESS":
         raise HTTPException(status_code=400, detail="Session đã hoàn thành, không thể nộp thêm câu trả lời")
+
+    if session_row["time_limit_minutes"] is not None:
+        deadline = session_row["created_at"] + timedelta(minutes=int(session_row["time_limit_minutes"]))
+        if datetime.now(timezone.utc) >= deadline:
+            await db.execute(
+                """
+                UPDATE sessions
+                SET status = 'COMPLETED', completed_at = COALESCE(completed_at, NOW())
+                WHERE id = $1 AND status = 'IN_PROGRESS'
+                """,
+                session_id,
+            )
+            ui_language = resolve_ui_language(request)
+            detail = (
+                "Đã hết thời gian của session này."
+                if ui_language == "vi"
+                else "This session has reached its time limit."
+            )
+            raise HTTPException(status_code=400, detail=detail)
 
     # Get ideal_answer for scoring
     question_row = await db.fetchrow(
@@ -355,17 +574,19 @@ async def submit_answer(
         raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại")
 
     ui_language = resolve_ui_language(request)
+    cleaned_answer_text = sanitize_user_text(body.answer_text)
 
     # Score the answer
     score, feedback = await score_answer(
         ScoringRequest(
-            answer_text=body.answer_text,
+            answer_text=cleaned_answer_text,
             ideal_answer=localized_question_field(question_row, "ideal_answer", ui_language),
             question_text=localized_question_field(question_row, "text", ui_language),
             role=session_row["role"],
             level=session_row["level"],
             category=localized_question_field(question_row, "category", ui_language),
             difficulty=question_row["difficulty"],
+            preferred_language=ui_language,
         )
     )
 
@@ -381,21 +602,21 @@ async def submit_answer(
             UPDATE answers
             SET answer_text = $1, score = $2, feedback = $3, submitted_at = NOW()
             WHERE session_id = $4 AND question_id = $5
-            RETURNING id, session_id, question_id, answer_text, score, feedback, submitted_at
+            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, submitted_at
             """,
-            body.answer_text, score, feedback, session_id, body.question_id,
+            cleaned_answer_text, score, feedback, session_id, body.question_id,
         )
     else:
         answer_row = await db.fetchrow(
             """
             INSERT INTO answers (session_id, question_id, answer_text, score, feedback)
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, session_id, question_id, answer_text, score, feedback, submitted_at
+            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, submitted_at
             """,
-            session_id, body.question_id, body.answer_text, score, feedback,
+            session_id, body.question_id, cleaned_answer_text, score, feedback,
         )
 
-    return AnswerOut(**dict(answer_row))
+    return _serialize_answer_row(answer_row)
 
 
 # ─── PUT /sessions/{id}/complete ─────────────────────────────────────────────
@@ -417,7 +638,7 @@ async def complete_session(
         UPDATE sessions
         SET status = 'COMPLETED', completed_at = NOW()
         WHERE id = $1
-        RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at
+        RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes
         """,
         session_id,
     )
@@ -440,6 +661,7 @@ async def complete_session(
         completed_at=updated["completed_at"],
         avg_score=round(avg_row["avg_score"], 1) if avg_row["avg_score"] else None,
         question_count=avg_row["cnt"],
+        time_limit_minutes=updated["time_limit_minutes"],
     )
 
 

@@ -41,7 +41,7 @@ const copy = {
     title: 'Nâng cấp gói',
     subtitle: 'Mở khóa Basic hoặc Pro để tiếp tục luyện tập ngoài giới hạn Free trial.',
     qnaLockedTitle: 'QnA đang bị khóa',
-    qnaLockedDescription: 'Gói Free không dùng được QnA. Hãy nâng cấp hoặc nhập redeem code để mở khóa từ Basic trở lên.',
+    qnaLockedDescription: 'Gói Free không dùng được QnA. Hãy nâng cấp hoặc nhập redeem code để mở khóa.',
     viewSessions: 'Xem lịch sử session',
     currentStatus: 'Trạng thái hiện tại',
     sessionsUsed: 'Sessions đã dùng',
@@ -53,8 +53,8 @@ const copy = {
     trialExhaustedDescription: 'Bạn đã dùng session miễn phí duy nhất. Hãy chọn Basic hoặc Pro để tiếp tục.',
     choosePlan: 'Chọn gói nâng cấp',
     redeemTitle: 'Redeem code',
-    redeemDescription: 'Bạn có thể kích hoạt gói theo tháng bằng mã redeem thay vì thanh toán.',
-    redeemPlaceholder: 'Nhập mã, ví dụ Invera_Pro',
+    redeemDescription: 'Bạn có thể kích hoạt gói bằng redeem code thay vì thanh toán.',
+    redeemPlaceholder: 'Nhập redeem code',
     redeemButton: 'Áp dụng mã',
     redeeming: 'Đang áp dụng mã',
     redeemSuccessTitle: 'Redeem code thành công',
@@ -85,7 +85,7 @@ const copy = {
     title: 'Upgrade plan',
     subtitle: 'Unlock Basic, Pro, or Premium to keep practicing beyond the Free trial limit.',
     qnaLockedTitle: 'QnA is locked',
-    qnaLockedDescription: 'The Free plan cannot use QnA. Upgrade or redeem a code to unlock it from Basic and above.',
+    qnaLockedDescription: 'The Free plan cannot use QnA. Upgrade or enter a redeem code to unlock it.',
     viewSessions: 'View session history',
     currentStatus: 'Current status',
     sessionsUsed: 'Sessions used',
@@ -97,8 +97,8 @@ const copy = {
     trialExhaustedDescription: 'You have used your only free session. Choose Basic or Pro to continue.',
     choosePlan: 'Choose your upgrade',
     redeemTitle: 'Redeem code',
-    redeemDescription: 'You can activate a monthly plan with a redeem code instead of paying.',
-    redeemPlaceholder: 'Enter a code, for example Invera_Pro',
+    redeemDescription: 'You can activate a plan with a redeem code instead of paying.',
+    redeemPlaceholder: 'Enter your redeem code',
     redeemButton: 'Apply code',
     redeeming: 'Applying code',
     redeemSuccessTitle: 'Redeem code applied',
@@ -153,6 +153,11 @@ export default function Upgrade() {
       navigate('/app', { replace: true });
     }
   }, [navigate, user?.is_admin]);
+
+  useEffect(() => {
+    if (!user || user.is_admin) return;
+    void refreshUser();
+  }, [refreshUser, user?.id, user?.is_admin]);
 
   useEffect(() => {
     if (!paymentState) return;
@@ -341,9 +346,6 @@ export default function Upgrade() {
                     text.redeemButton
                   )}
                 </Button>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                `Invera_Basic`, `Invera_Pro`, `Invera_Premium`
               </div>
             </CardContent>
           </Card>

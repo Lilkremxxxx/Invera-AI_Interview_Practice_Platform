@@ -47,6 +47,14 @@ REDEEM_CODE_PLAN_MAP = {
     "INVERA_PREMIUM": PREMIUM_PLAN,
 }
 
+PLAN_SESSION_TIME_LIMITS = {
+    FREE_TRIAL_PLAN: 5,
+    BASIC_PLAN: 7,
+    PRO_PLAN: 10,
+    PREMIUM_PLAN: None,
+}
+EXPORT_ENABLED_PLAN_TIERS = {PRO_PLAN, PREMIUM_PLAN}
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -91,6 +99,38 @@ def resolve_plan_price(plan_tier: str, billing_period: str) -> int:
     if normalized_tier not in PURCHASABLE_PLAN_TIERS or normalized_period is None:
         raise ValueError("Unsupported plan tier or billing period")
     return PLAN_PRICES_VND[normalized_tier][normalized_period]
+
+
+def resolve_session_time_limit_minutes(
+    *,
+    is_admin: bool,
+    plan_tier: str | None,
+    plan_status: str | None,
+) -> int | None:
+    if is_admin:
+        return None
+
+    normalized_tier = normalize_plan_tier(plan_tier)
+    normalized_status = normalize_plan_status(plan_status)
+
+    if normalized_status != ACTIVE_STATUS:
+        return PLAN_SESSION_TIME_LIMITS[FREE_TRIAL_PLAN]
+
+    return PLAN_SESSION_TIME_LIMITS.get(normalized_tier, PLAN_SESSION_TIME_LIMITS[FREE_TRIAL_PLAN])
+
+
+def can_export_sessions(
+    *,
+    is_admin: bool,
+    plan_tier: str | None,
+    plan_status: str | None,
+) -> bool:
+    if is_admin:
+        return True
+
+    normalized_tier = normalize_plan_tier(plan_tier)
+    normalized_status = normalize_plan_status(plan_status)
+    return normalized_status == ACTIVE_STATUS and normalized_tier in EXPORT_ENABLED_PLAN_TIERS
 
 
 def compute_entitlement(

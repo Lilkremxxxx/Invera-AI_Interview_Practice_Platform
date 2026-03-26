@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +16,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getLocalizedQuestionCategory, getLocalizedQuestionText, sessionsApi, SessionDetail as SessionDetailType } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { roleLabelMap } from '@/lib/mock-data';
+import { canExportSessions } from '@/lib/plans';
+import { formatScore, formatScoreValue, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
+import { useToast } from '@/hooks/use-toast';
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Thực tập sinh', en: 'Intern' },
   fresher: { vi: 'Fresher', en: 'Fresher' },
@@ -30,7 +35,11 @@ const levelLabels: Record<string, { vi: string; en: string }> = {
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const { language } = useLanguage();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const canExport = canExportSessions(user);
   const copy = {
     loadError: language === 'vi' ? 'Không thể tải session.' : 'Unable to load this session.',
     back: language === 'vi' ? 'Quay lại' : 'Back',
@@ -45,6 +54,9 @@ const SessionDetail = () => {
     yourAnswer: language === 'vi' ? 'Câu trả lời của bạn:' : 'Your answer:',
     emptyAnswer: language === 'vi' ? '(Không có)' : '(Empty)',
     newSession: language === 'vi' ? 'Tạo session mới' : 'Create new session',
+    exportPdf: language === 'vi' ? 'Xuất PDF' : 'Export PDF',
+    exporting: language === 'vi' ? 'Đang xuất...' : 'Exporting...',
+    exportFailed: language === 'vi' ? 'Không thể xuất PDF lúc này.' : 'Unable to export the PDF right now.',
     locale: language === 'vi' ? 'vi-VN' : 'en-US',
   };
 
@@ -72,6 +84,30 @@ const SessionDetail = () => {
 
   const answerMap = Object.fromEntries(session.answers.map(a => [a.question_id, a]));
   const avgScore = session.avg_score;
+
+  const handleExport = async () => {
+    if (!id) return;
+    setIsExporting(true);
+    try {
+      const { blob, filename } = await sessionsApi.downloadPdf(id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || `invera-session-${id.slice(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: copy.exportFailed,
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -105,10 +141,12 @@ const SessionDetail = () => {
               {copy.continue}
             </Button>
           )}
-          <Button variant="outline" disabled={session.status !== 'COMPLETED'}>
-            <Download className="w-4 h-4" />
-            Export PDF
-          </Button>
+          {canExport && (
+            <Button variant="outline" disabled={isExporting} onClick={handleExport}>
+              <Download className="w-4 h-4" />
+              {isExporting ? copy.exporting : copy.exportPdf}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -118,16 +156,16 @@ const SessionDetail = () => {
           <CardContent className="p-6 text-center">
             <div className={cn(
               "w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3",
-              avgScore != null && avgScore >= 70 ? 'bg-success/10' : avgScore != null && avgScore >= 40 ? 'bg-warning/10' : 'bg-muted'
+              getScoreBgClass(avgScore)
             )}>
               <span className={cn(
                 "text-xl font-bold",
-                avgScore != null && avgScore >= 70 ? 'text-success' : avgScore != null && avgScore >= 40 ? 'text-warning' : 'text-muted-foreground'
+                getScoreTextClass(avgScore)
               )}>
-                {avgScore != null ? `${avgScore}%` : '—'}
+                {avgScore != null ? formatScoreValue(avgScore) : '—'}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">{copy.averageScore}</p>
+            <p className="text-sm text-muted-foreground">{copy.averageScore} /10</p>
           </CardContent>
         </Card>
         <Card>
@@ -190,10 +228,12 @@ const SessionDetail = () => {
                           <p className="text-sm text-foreground">{answer.answer_text || copy.emptyAnswer}</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          {answer.score >= 70 ? (
+                          {answer.score >= 7 ? (
                             <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          ) : (
+                          ) : answer.score >= 4 ? (
                             <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
                           )}
                           <div className="min-w-0 flex-1">
                             <StructuredFeedback feedback={answer.feedback} />
@@ -202,13 +242,13 @@ const SessionDetail = () => {
                       </div>
                       <div className={cn(
                         "text-xl font-bold flex-shrink-0",
-                        answer.score >= 70 ? "text-success" : answer.score >= 40 ? "text-warning" : "text-destructive"
+                        getScoreTextClass(answer.score)
                       )}>
-                        {answer.score}%
+                        {formatScore(answer.score)}
                       </div>
                     </div>
                     <div className="ml-12">
-                      <Progress value={answer.score} className="h-1.5" />
+                      <Progress value={toScoreProgress(answer.score)} className="h-1.5" />
                     </div>
                   </div>
                 );

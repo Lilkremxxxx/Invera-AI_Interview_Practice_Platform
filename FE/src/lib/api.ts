@@ -325,6 +325,7 @@ export interface SessionOut {
   completed_at: string | null;
   avg_score: number | null;
   question_count: number | null;
+  time_limit_minutes?: number | null;
 }
 
 export interface SessionDetail extends SessionOut {
@@ -369,6 +370,7 @@ export interface SessionCreate {
   level: string;
   mode?: string;
   question_count?: number;
+  time_limit_minutes?: number | null;
 }
 
 export interface PaymentOrderOut {
@@ -514,8 +516,8 @@ export const authApi = {
   },
 
   /** Gọi để lấy URL đăng nhập OAuth từ Backend rồi redirect browser. */
-  oauthRedirect: async (provider: 'google' | 'github'): Promise<void> => {
-    const res = await request<{ url: string }>(`/auth/oauth/${provider}`);
+  oauthRedirect: async (provider: 'google' | 'github', mode: 'login' | 'signup' = 'login'): Promise<void> => {
+    const res = await request<{ url: string }>(`/auth/oauth/${provider}?mode=${mode}`);
     if (res.url) {
       window.location.href = res.url;
     }
@@ -546,6 +548,14 @@ export const sessionsApi = {
   /** Lấy chi tiết session + questions + answers */
   get: async (id: string): Promise<SessionDetail> => {
     return request<SessionDetail>(`/sessions/${id}`);
+  },
+
+  downloadPdf: async (id: string): Promise<{ blob: Blob; filename: string | null }> => {
+    return requestFile(`/sessions/${id}/export-pdf`);
+  },
+
+  downloadAllPdf: async (): Promise<{ blob: Blob; filename: string | null }> => {
+    return requestFile('/sessions/exports/all-pdf');
   },
 
   /** Nộp câu trả lời cho 1 câu hỏi, nhận về score + feedback */

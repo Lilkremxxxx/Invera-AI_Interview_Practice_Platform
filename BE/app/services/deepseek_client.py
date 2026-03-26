@@ -12,21 +12,30 @@ class DeepSeekAPIError(RuntimeError):
     pass
 
 
-async def create_chat_completion(*, system_prompt: str, user_prompt: str) -> dict[str, Any]:
+async def create_chat_completion(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    timeout_seconds: float | None = None,
+    temperature: float | None = None,
+) -> dict[str, Any]:
     if not settings.deepseek_api_key:
         raise DeepSeekAPIError("DeepSeek API key is not configured.")
 
+    resolved_model = model or settings.deepseek_model
     payload = {
-        "model": settings.deepseek_model,
+        "model": resolved_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "max_tokens": settings.deepseek_max_tokens,
+        "max_tokens": max_tokens or settings.deepseek_max_tokens,
         "response_format": {"type": "json_object"},
     }
-    if settings.deepseek_model != "deepseek-reasoner":
-        payload["temperature"] = settings.deepseek_temperature
+    if resolved_model != "deepseek-reasoner":
+        payload["temperature"] = settings.deepseek_temperature if temperature is None else temperature
 
     headers = {
         "Authorization": f"Bearer {settings.deepseek_api_key}",
@@ -36,7 +45,7 @@ async def create_chat_completion(*, system_prompt: str, user_prompt: str) -> dic
     endpoint = settings.deepseek_api_base_url.rstrip("/") + "/chat/completions"
 
     try:
-        async with httpx.AsyncClient(timeout=settings.deepseek_timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=timeout_seconds or settings.deepseek_timeout_seconds) as client:
             response = await client.post(endpoint, headers=headers, json=payload)
             response.raise_for_status()
     except httpx.HTTPStatusError as exc:

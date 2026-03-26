@@ -35,14 +35,16 @@ export function VerifyEmail() {
 
   const locationState = location.state as VerifyEmailLocationState | null;
   const initialEmail = searchParams.get('email') ?? '';
+  const queryMessage = searchParams.get('message') ?? '';
+  const queryResendCooldown = Number(searchParams.get('resend_available_in_seconds') ?? '0');
 
   const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [infoMsg, setInfoMsg] = useState(locationState?.message ?? '');
+  const [infoMsg, setInfoMsg] = useState(locationState?.message ?? queryMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(locationState?.resendAvailableInSeconds ?? 0);
+  const [resendCooldown, setResendCooldown] = useState(locationState?.resendAvailableInSeconds ?? queryResendCooldown);
   const redirectTo = locationState?.redirectTo ?? '/app';
   const loginPath = locationState?.loginPath ?? '/login';
   const isAdminVerify = locationState?.mode === 'admin';

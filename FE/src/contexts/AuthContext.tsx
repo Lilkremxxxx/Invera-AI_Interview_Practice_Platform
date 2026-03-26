@@ -64,6 +64,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     validateToken();
   }, [refreshUser]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const syncUserFromDatabase = () => {
+      void refreshUser();
+    };
+
+    const handleFocus = () => {
+      syncUserFromDatabase();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncUserFromDatabase();
+      }
+    };
+
+    const intervalId = window.setInterval(syncUserFromDatabase, 10000);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshUser, user?.id]);
+
   /**
    * login: gọi POST /auth/login → lưu token → fetch user info.
    * Throw error nếu sai email/password để caller hiển thị message.
