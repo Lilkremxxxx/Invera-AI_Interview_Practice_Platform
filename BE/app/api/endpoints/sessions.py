@@ -1,12 +1,15 @@
 import uuid
+import asyncio
+import subprocess
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.db.session import get_db
 from app.api.endpoints.auth import get_current_user
+from app.core.config import settings
 from app.core.question_bank import (
     QUESTION_BANK_ROLES,
     VALID_LEVELS,
@@ -18,14 +21,27 @@ from app.core.text_processing import sanitize_user_text
 from app.schemas.user import UserOut
 from app.schemas.session import SessionCatalogRole, SessionCreate, SessionOut, SessionDetail
 from app.schemas.question import QuestionOut
-from app.schemas.answer import AnswerSubmit, AnswerOut
+from app.schemas.answer import AnswerSubmit, AnswerOut, AnswerTranscriptOut, AnswerTtsOut
 from app.services.deepseek_client import DeepSeekAPIError
-from app.services.plans import can_export_sessions, get_user_plan_snapshot, resolve_session_time_limit_minutes
+from app.services.interview_stt import InterviewSttRuntimeError, transcribe_audio_bytes
+from app.services.plans import can_export_sessions, get_user_plan_snapshot
 from app.services.session_pdf import build_session_pdf_filename, build_sessions_pdf
 from app.services.question_bank_seed import ensure_question_bank_minimum
 from app.services.scoring import ScoringRequest, score_answer
+from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
 
 router = APIRouter()
+
+ALLOWED_STT_CONTENT_TYPES = {
+    "audio/webm",
+    "video/webm",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/ogg",
+    "application/octet-stream",
+}
 
 LEVEL_LABELS = {
     "intern": {"vi": "Thực tập sinh", "en": "Intern"},
@@ -39,6 +55,7 @@ MODE_LABELS = {
     "voice": {"vi": "Giọng nói", "en": "Voice"},
     "video": {"vi": "Video", "en": "Video"},
 }
+ALLOWED_SESSION_MODES = {"text", "voice"}
 
 
 async def _require_export_access(
@@ -89,7 +106,7 @@ def _humanize_role_label(role: str) -> str:
     return role.replace("_", " ").title()
 
 
-def _serialize_answer_row(answer_row) -> AnswerOut:
+def _serialize_answer_row(answer_row, *, tts_script: str | None = None, tts_audio_url: str | None = None) -> AnswerOut:
     return AnswerOut(
         id=answer_row["id"],
         session_id=answer_row["session_id"],
@@ -97,6 +114,8 @@ def _serialize_answer_row(answer_row) -> AnswerOut:
         answer_text=sanitize_user_text(answer_row["answer_text"]),
         score=float(answer_row["score"]),
         feedback=answer_row["feedback"],
+        tts_script=tts_script,
+        tts_audio_url=tts_audio_url,
         submitted_at=answer_row["submitted_at"],
     )
 
@@ -209,6 +228,11 @@ def _session_pdf_payload(bundle: dict, language: str) -> dict:
     }
 
 
+def _validate_stt_upload(upload: UploadFile):
+    if upload.content_type and upload.content_type not in ALLOWED_STT_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Định dạng audio chưa được hỗ trợ cho STT.")
+
+
 # ─── POST /sessions ──────────────────────────────────────────────────────────
 @router.post("", response_model=SessionDetail)
 async def create_session(
@@ -237,29 +261,17 @@ async def create_session(
         raise HTTPException(status_code=400, detail=f"Level không hợp lệ. Chọn: {VALID_LEVELS}")
 
     count = max(1, min(body.question_count, 15))
+    mode = body.mode.strip().lower()
     ui_language = resolve_ui_language(request)
-    allowed_time_limit = resolve_session_time_limit_minutes(
-        is_admin=bool(entitlement.get("is_admin")),
-        plan_tier=entitlement.get("plan_tier"),
-        plan_status=entitlement.get("plan_status"),
-    )
-    requested_time_limit = allowed_time_limit if body.time_limit_minutes is None else body.time_limit_minutes
-
-    if body.time_limit_minutes not in {None, 5, 7, 10}:
+    if mode not in ALLOWED_SESSION_MODES:
         detail = (
-            "Giới hạn thời gian không hợp lệ. Chỉ hỗ trợ No limit, 5, 7 hoặc 10 phút."
+            "Mode trả lời không hợp lệ. Chỉ hỗ trợ Văn bản hoặc Giọng nói."
             if ui_language == "vi"
-            else "Invalid time limit. Only No limit, 5, 7, or 10 minutes are supported."
+            else "Invalid answer mode. Only Text or Voice are supported."
         )
         raise HTTPException(status_code=400, detail=detail)
 
-    if requested_time_limit != allowed_time_limit:
-        detail = (
-            "Giới hạn thời gian không phù hợp với gói hiện tại của bạn."
-            if ui_language == "vi"
-            else "This time limit is not available for your current plan."
-        )
-        raise HTTPException(status_code=400, detail=detail)
+    requested_time_limit = count * 5
 
     # Lấy ngẫu nhiên câu hỏi cho major+role+level
     questions = await _fetch_session_questions(
@@ -311,7 +323,7 @@ async def create_session(
             VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', $6)
             RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes
             """,
-            current_user.id, major, role, level, body.mode, requested_time_limit,
+            current_user.id, major, role, level, mode, requested_time_limit,
         )
         await db.executemany(
             """
@@ -505,6 +517,54 @@ async def get_session(
     )
 
 
+@router.post("/{session_id}/stt", response_model=AnswerTranscriptOut)
+async def transcribe_session_audio(
+    session_id: uuid.UUID,
+    audio: UploadFile = File(...),
+    language: str | None = Form(None),
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    session_row = await db.fetchrow(
+        """
+        SELECT id, status
+        FROM sessions
+        WHERE id = $1 AND user_id = $2
+        """,
+        session_id, current_user.id,
+    )
+    if not session_row:
+        raise HTTPException(status_code=404, detail="Session không tồn tại")
+    if session_row["status"] != "IN_PROGRESS":
+        raise HTTPException(status_code=400, detail="Session đã hoàn thành, không thể dùng STT nữa.")
+
+    _validate_stt_upload(audio)
+    raw_bytes = await audio.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="File audio trống.")
+
+    max_bytes = settings.interview_stt_max_upload_mb * 1024 * 1024
+    if len(raw_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File audio vượt quá giới hạn {settings.interview_stt_max_upload_mb}MB.",
+        )
+
+    try:
+        transcript = transcribe_audio_bytes(
+            audio_bytes=raw_bytes,
+            original_filename=audio.filename or "recording.webm",
+            language=language,
+        )
+    except InterviewSttRuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or "Không thể chuyển audio thành transcript lúc này."
+        raise HTTPException(status_code=500, detail=detail) from exc
+
+    return AnswerTranscriptOut(text=transcript)
+
+
 # ─── POST /sessions/{id}/answers ─────────────────────────────────────────────
 @router.post("/{session_id}/answers", response_model=AnswerOut)
 async def submit_answer(
@@ -586,6 +646,7 @@ async def submit_answer(
             level=session_row["level"],
             category=localized_question_field(question_row, "category", ui_language),
             difficulty=question_row["difficulty"],
+            major=session_row["major"],
             preferred_language=ui_language,
         )
     )
@@ -616,7 +677,40 @@ async def submit_answer(
             session_id, body.question_id, cleaned_answer_text, score, feedback,
         )
 
-    return _serialize_answer_row(answer_row)
+    tts_script = build_feedback_tts_script(score=score, feedback=feedback)
+    return _serialize_answer_row(answer_row, tts_script=tts_script)
+
+
+@router.post("/{session_id}/answers/{answer_id}/tts", response_model=AnswerTtsOut)
+async def synthesize_answer_feedback_tts(
+    session_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    answer_row = await db.fetchrow(
+        """
+        SELECT a.id, a.score::float AS score, a.feedback
+        FROM answers a
+        JOIN sessions s ON s.id = a.session_id
+        WHERE a.id = $1 AND a.session_id = $2 AND s.user_id = $3
+        """,
+        answer_id, session_id, current_user.id,
+    )
+    if not answer_row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy câu trả lời")
+
+    tts_script = build_feedback_tts_script(
+        score=float(answer_row["score"]),
+        feedback=answer_row["feedback"],
+    )
+    tts_audio_url = await asyncio.to_thread(
+        synthesize_feedback_audio,
+        answer_id=str(answer_row["id"]),
+        script=tts_script,
+    )
+
+    return AnswerTtsOut(tts_script=tts_script, tts_audio_url=tts_audio_url)
 
 
 # ─── PUT /sessions/{id}/complete ─────────────────────────────────────────────

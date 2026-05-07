@@ -310,7 +310,18 @@ export interface AnswerOut {
   answer_text: string;
   score: number;
   feedback: string;
+  tts_script?: string | null;
+  tts_audio_url?: string | null;
   submitted_at: string;
+}
+
+export interface AnswerTranscriptOut {
+  text: string;
+}
+
+export interface AnswerTtsOut {
+  tts_script: string;
+  tts_audio_url?: string | null;
 }
 
 export interface SessionOut {
@@ -368,9 +379,8 @@ export interface SessionCreate {
   major: string;
   role: string;
   level: string;
-  mode?: string;
+  mode?: 'text' | 'voice';
   question_count?: number;
-  time_limit_minutes?: number | null;
 }
 
 export interface PaymentOrderOut {
@@ -564,6 +574,22 @@ export const sessionsApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+    });
+  },
+
+  transcribeAnswer: async (sessionId: string, audioFile: File): Promise<AnswerTranscriptOut> => {
+    const formData = new FormData();
+    formData.append('audio', audioFile);
+    formData.append('language', 'auto');
+    return request<AnswerTranscriptOut>(`/sessions/${sessionId}/stt`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  synthesizeFeedbackAudio: async (sessionId: string, answerId: string): Promise<AnswerTtsOut> => {
+    return request<AnswerTtsOut>(`/sessions/${sessionId}/answers/${answerId}/tts`, {
+      method: 'POST',
     });
   },
 

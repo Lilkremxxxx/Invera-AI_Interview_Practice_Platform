@@ -63,7 +63,7 @@ class Settings:
     deepseek_max_tokens: int = int(os.getenv("DEEPSEEK_MAX_TOKENS", "1800"))
     deepseek_temperature: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.2"))
     deepseek_scoring_timeout_seconds: float = float(os.getenv("DEEPSEEK_SCORING_TIMEOUT_SECONDS", "20"))
-    deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "800"))
+    deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "1200"))
     deepseek_qna_timeout_seconds: float = float(os.getenv("DEEPSEEK_QNA_TIMEOUT_SECONDS", "30"))
     deepseek_qna_max_tokens: int = int(os.getenv("DEEPSEEK_QNA_MAX_TOKENS", "1000"))
     deepseek_question_gen_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUESTION_GEN_TIMEOUT_SECONDS", "18"))
@@ -91,6 +91,17 @@ class Settings:
         "FRONTEND_RESET_PASSWORD_URL",
         f"{os.getenv('FRONTEND_URL', 'https://invera.pp.ua')}/reset-password",
     )
+    interview_stt_enabled: bool = os.getenv("INTERVIEW_STT_ENABLED", "true").lower() == "true"
+    whisper_model_name: str = os.getenv("WHISPER_MODEL_NAME", "small")
+    whisper_en_model_name: str = os.getenv("WHISPER_EN_MODEL_NAME", "small.en")
+    interview_stt_language: str = os.getenv("INTERVIEW_STT_LANGUAGE", "auto")
+    interview_stt_max_upload_mb: int = int(os.getenv("INTERVIEW_STT_MAX_UPLOAD_MB", "25"))
+    whisper_runtime_root_raw: str | None = os.getenv("WHISPER_RUNTIME_ROOT")
+    interview_tts_enabled: bool = os.getenv("INTERVIEW_TTS_ENABLED", "true").lower() == "true"
+    kitten_tts_voice: str = os.getenv("KITTEN_TTS_VOICE", "expr-voice-2-f")
+    kitten_tts_speed: float = float(os.getenv("KITTEN_TTS_SPEED", "1.25"))
+    kitten_tts_sample_rate: int = int(os.getenv("KITTEN_TTS_SAMPLE_RATE", "24000"))
+    kitten_tts_max_chars: int = int(os.getenv("KITTEN_TTS_MAX_CHARS", "900"))
 
     @cached_property
     def uploads_dir(self) -> Path:
@@ -107,6 +118,40 @@ class Settings:
     @cached_property
     def primary_admin_emails(self) -> list[str]:
         return [email.lower() for email in _split_csv(self.primary_admin_emails_raw)]
+
+    @cached_property
+    def whisper_runtime_root(self) -> Path:
+        if self.whisper_runtime_root_raw:
+            return Path(self.whisper_runtime_root_raw)
+        return self.project_root / ".runtime" / "whisper.cpp"
+
+    @cached_property
+    def whisper_repo_dir(self) -> Path:
+        return self.whisper_runtime_root / "repo"
+
+    @cached_property
+    def whisper_cli_path(self) -> Path:
+        return self.whisper_repo_dir / "build" / "bin" / "whisper-cli"
+
+    @cached_property
+    def whisper_models_dir(self) -> Path:
+        return self.whisper_repo_dir / "models"
+
+    @cached_property
+    def whisper_model_path(self) -> Path:
+        return self.whisper_models_dir / f"ggml-{self.whisper_model_name}.bin"
+
+    @cached_property
+    def whisper_en_model_path(self) -> Path:
+        return self.whisper_models_dir / f"ggml-{self.whisper_en_model_name}.bin"
+
+    @cached_property
+    def interview_stt_temp_dir(self) -> Path:
+        return self.project_root / "tmp" / "interview-stt"
+
+    @cached_property
+    def interview_tts_dir(self) -> Path:
+        return self.uploads_dir / "interview-tts"
 
     @cached_property
     def cors_allowed_origins(self) -> list[str]:

@@ -16,4 +16,15 @@ class AnswerOut(BaseModel):
     answer_text: str
     score: float
     feedback: str
+    tts_script: Optional[str] = None
+    tts_audio_url: Optional[str] = None
     submitted_at: datetime
+
+
+class AnswerTranscriptOut(BaseModel):
+    text: str
+
+
+class AnswerTtsOut(BaseModel):
+    tts_script: str
+    tts_audio_url: Optional[str] = None

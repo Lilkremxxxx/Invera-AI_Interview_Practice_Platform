@@ -11,13 +11,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Volume2, 
-  ArrowRight, 
+  ArrowRight,
   ArrowLeft,
-  X, 
+  X,
   Mic, 
   MicOff, 
   Video,
@@ -26,6 +26,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Lightbulb,
+  Volume2,
+  Pause,
+  Play,
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,6 +38,52 @@ import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { roleLabelMap } from '@/lib/mock-data';
 import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
+
+const RECORDING_LIMIT_SECONDS = 120;
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0: { transcript: string };
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+};
+
+function resolveFeedbackAudioUrl(audioUrl: string): string {
+  if (/^(https?:|blob:|data:)/i.test(audioUrl)) {
+    return audioUrl;
+  }
+
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+  if (audioUrl.startsWith('/media') && /^https?:\/\//i.test(apiBase)) {
+    return `${new URL(apiBase).origin}${audioUrl}`;
+  }
+
+  return audioUrl;
+}
 
 const InterviewRoom = () => {
   const navigate = useNavigate();
@@ -67,6 +116,15 @@ const InterviewRoom = () => {
       ? 'Nhập câu trả lời của bạn... Hãy cụ thể và dùng ví dụ từ kinh nghiệm thực tế.'
       : 'Type your answer... Be specific and use examples from your real experience.',
     stop: language === 'vi' ? 'Dừng' : 'Stop',
+    voice: language === 'vi' ? 'Ghi âm' : 'Voice',
+    recording: language === 'vi' ? 'Đang ghi âm...' : 'Recording...',
+    recordingLimit: language === 'vi' ? 'Tự dừng sau' : 'Auto-stop in',
+    recordingLimitReached: language === 'vi' ? 'Đã chạm giới hạn ghi âm, đang chuyển sang văn bản.' : 'Recording limit reached, transcribing now.',
+    transcribing: language === 'vi' ? 'Đang chuyển giọng nói thành văn bản...' : 'Transcribing your recording...',
+    liveTranscript: language === 'vi' ? 'Transcript realtime' : 'Live transcript',
+    sttUnavailable: language === 'vi' ? 'Trình duyệt này không hỗ trợ ghi âm.' : 'This browser does not support audio recording.',
+    sttPermissionDenied: language === 'vi' ? 'Không thể truy cập microphone.' : 'Unable to access the microphone.',
+    sttFailed: language === 'vi' ? 'Không thể chuyển giọng nói thành văn bản.' : 'Unable to transcribe the recording.',
     submit: language === 'vi' ? 'Nộp câu trả lời' : 'Submit answer',
     grading: language === 'vi' ? 'Đang chấm bài...' : 'Scoring your answer...',
     takeSeconds: language === 'vi' ? 'Thường mất khoảng 15-30 giây' : 'Usually takes about 15-30 seconds',
@@ -76,7 +134,12 @@ const InterviewRoom = () => {
       ? 'Session đã tự kết thúc vì vượt quá giới hạn thời gian.'
       : 'The session ended automatically because the time limit was reached.',
     score: language === 'vi' ? 'Điểm số' : 'Score',
+    submittedAnswer: language === 'vi' ? 'Câu trả lời của bạn' : 'Your answer',
     feedback: language === 'vi' ? 'Nhận xét' : 'Feedback',
+    listenFeedback: language === 'vi' ? 'Nghe phản hồi' : 'Listen to feedback',
+    pauseFeedback: language === 'vi' ? 'Tạm dừng' : 'Pause',
+    resumeFeedback: language === 'vi' ? 'Nghe tiếp' : 'Resume',
+    preparingFeedbackAudio: language === 'vi' ? 'Đang tạo giọng đọc...' : 'Preparing voice...',
     nextQuestion: language === 'vi' ? 'Câu tiếp theo' : 'Next question',
     finish: language === 'vi' ? 'Hoàn thành' : 'Finish',
     outOfTen: language === 'vi' ? '/10' : '/10',
@@ -93,8 +156,13 @@ const InterviewRoom = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSynthesizingFeedback, setIsSynthesizingFeedback] = useState(false);
+  const [isFeedbackAudioPlaying, setIsFeedbackAudioPlaying] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
@@ -102,6 +170,12 @@ const InterviewRoom = () => {
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const autoCompletedRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const liveFinalTranscriptRef = useRef('');
+  const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Load session from sessionStorage (set by NewSession after create)
   useEffect(() => {
@@ -180,6 +254,38 @@ const InterviewRoom = () => {
     toast,
   ]);
 
+  useEffect(() => {
+    return () => {
+      mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      speechRecognitionRef.current?.stop();
+      feedbackAudioRef.current?.pause();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isRecording) {
+      setRecordingSeconds(0);
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRecordingSeconds((current) => Math.min(RECORDING_LIMIT_SECONDS, current + 1));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isRecording]);
+
+  useEffect(() => {
+    if (!isRecording || recordingSeconds < RECORDING_LIMIT_SECONDS) return;
+
+    handleStopRecording();
+    toast({
+      title: copy.recordingLimitReached,
+      description: copy.transcribing,
+    });
+  }, [copy.recordingLimitReached, copy.transcribing, isRecording, recordingSeconds, toast]);
+
   if (loadError) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -219,6 +325,7 @@ const InterviewRoom = () => {
   const question = questions[currentQuestion];
   const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
   const isTimeUp = session.time_limit_minutes != null && remainingSeconds === 0;
+  const recordingSecondsLeft = Math.max(0, RECORDING_LIMIT_SECONDS - recordingSeconds);
 
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -248,12 +355,209 @@ const InterviewRoom = () => {
     }
   };
 
+  const playFeedbackAudio = (audioUrl?: string | null) => {
+    if (!audioUrl || typeof Audio === 'undefined') return;
+
+    feedbackAudioRef.current?.pause();
+    const audio = new Audio(resolveFeedbackAudioUrl(audioUrl));
+    audio.onended = () => setIsFeedbackAudioPlaying(false);
+    audio.onpause = () => setIsFeedbackAudioPlaying(false);
+    audio.onplay = () => setIsFeedbackAudioPlaying(true);
+    feedbackAudioRef.current = audio;
+    void audio
+      .play()
+      .then(() => setIsFeedbackAudioPlaying(true))
+      .catch(() => setIsFeedbackAudioPlaying(false));
+  };
+
+  const handleListenFeedback = async () => {
+    if (!currentAnswer || !id || isSynthesizingFeedback) return;
+    const existingAudio = feedbackAudioRef.current;
+    if (existingAudio) {
+      if (isFeedbackAudioPlaying) {
+        existingAudio.pause();
+        setIsFeedbackAudioPlaying(false);
+        return;
+      }
+      void existingAudio
+        .play()
+        .then(() => setIsFeedbackAudioPlaying(true))
+        .catch(() => setIsFeedbackAudioPlaying(false));
+      return;
+    }
+
+    if (currentAnswer.tts_audio_url) {
+      playFeedbackAudio(currentAnswer.tts_audio_url);
+      return;
+    }
+
+    setIsSynthesizingFeedback(true);
+    try {
+      const result = await sessionsApi.synthesizeFeedbackAudio(id, currentAnswer.id);
+      setCurrentAnswer((existing) => existing
+        ? {
+            ...existing,
+            tts_script: result.tts_script,
+            tts_audio_url: result.tts_audio_url,
+          }
+        : existing);
+      playFeedbackAudio(result.tts_audio_url);
+    } catch (err) {
+      toast({
+        title: copy.submitError,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSynthesizingFeedback(false);
+    }
+  };
+
+  const stopRecordingTracks = () => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  };
+
+  const appendTranscript = (transcript: string) => {
+    setAnswer((current) => {
+      const trimmedCurrent = current.trim();
+      if (!trimmedCurrent) return transcript;
+      return `${current}${/\s$/.test(current) ? '' : ' '}${transcript}`;
+    });
+  };
+
+  const startLiveSpeechRecognition = () => {
+    const speechWindow = window as SpeechRecognitionWindow;
+    const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!Recognition) return;
+
+    try {
+      const recognition = new Recognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = language === 'vi' ? 'vi-VN' : 'en-US';
+      recognition.onresult = (event) => {
+        let interim = '';
+        let finalText = '';
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          if (result.isFinal) {
+            finalText += result[0].transcript;
+          } else {
+            interim += result[0].transcript;
+          }
+        }
+        if (finalText.trim()) {
+          liveFinalTranscriptRef.current = `${liveFinalTranscriptRef.current} ${finalText}`.trim();
+          appendTranscript(finalText.trim());
+        }
+        setLiveTranscript(interim.trim());
+      };
+      recognition.onerror = () => {
+        speechRecognitionRef.current = null;
+        setLiveTranscript('');
+      };
+      recognition.onend = () => {
+        speechRecognitionRef.current = null;
+        setLiveTranscript('');
+      };
+      recognition.start();
+      speechRecognitionRef.current = recognition;
+    } catch {
+      speechRecognitionRef.current = null;
+    }
+  };
+
+  const stopLiveSpeechRecognition = () => {
+    const recognition = speechRecognitionRef.current;
+    speechRecognitionRef.current = null;
+    recognition?.stop();
+    setLiveTranscript('');
+  };
+
+  const handleStartRecording = async () => {
+    if (isTimeUp || isTranscribing) return;
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      toast({
+        title: copy.sttUnavailable,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      liveFinalTranscriptRef.current = '';
+
+      const preferredMimeType = typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : undefined;
+      const recorder = preferredMimeType
+        ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+        : new MediaRecorder(stream);
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        stopLiveSpeechRecognition();
+        stopRecordingTracks();
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        audioChunksRef.current = [];
+        if (!audioBlob.size || !id) return;
+        if (liveFinalTranscriptRef.current.trim()) return;
+
+        setIsTranscribing(true);
+        try {
+          const audioFile = new File([audioBlob], `session-${id}.webm`, { type: 'audio/webm' });
+          const result = await sessionsApi.transcribeAnswer(id, audioFile);
+          appendTranscript(result.text);
+        } catch (err) {
+          toast({
+            title: copy.sttFailed,
+            description: err instanceof Error ? err.message : copy.retry,
+            variant: 'destructive',
+          });
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      setRecordingSeconds(0);
+      recorder.start();
+      startLiveSpeechRecognition();
+      setIsRecording(true);
+    } catch (err) {
+      stopRecordingTracks();
+      toast({
+        title: copy.sttPermissionDenied,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleStopRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+    mediaRecorderRef.current = null;
+    recorder.stop();
+  };
+
   const handleNextQuestion = async () => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer('');
       setShowFeedback(false);
       setCurrentAnswer(null);
+      feedbackAudioRef.current?.pause();
+      feedbackAudioRef.current = null;
+      setIsFeedbackAudioPlaying(false);
     } else {
       // Last question — complete the session
       setIsCompleting(true);
@@ -409,7 +713,7 @@ const InterviewRoom = () => {
                   placeholder={copy.answerPlaceholder}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  disabled={isTimeUp}
+                  disabled={isTimeUp || isTranscribing}
                   className="min-h-[200px] resize-none text-base"
                 />
 
@@ -418,21 +722,40 @@ const InterviewRoom = () => {
                     <Button
                       variant={isRecording ? "destructive" : "outline"}
                       size="sm"
-                      onClick={() => setIsRecording(!isRecording)}
+                      onClick={isRecording ? handleStopRecording : handleStartRecording}
+                      disabled={isTimeUp || isTranscribing}
                     >
                       {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                      {isRecording ? copy.stop : 'Voice'}
+                      {isRecording ? copy.stop : copy.voice}
                     </Button>
                   </div>
                   <Button 
                     variant="accent" 
                     onClick={handleSubmitAnswer}
-                    disabled={!answer.trim() || isTimeUp}
+                    disabled={!answer.trim() || isTimeUp || isRecording || isTranscribing}
                   >
                     {copy.submit}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
+                {(isRecording || isTranscribing) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-sm">
+                    <Badge variant="secondary" className="rounded-full border border-accent/20 bg-background/80 px-3 py-1 text-foreground">
+                      {isRecording ? <Mic className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {isRecording ? copy.recording : copy.transcribing}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {isRecording
+                        ? `${copy.recordingLimit} ${formatCountdown(recordingSecondsLeft)}`
+                        : copy.takeSeconds}
+                    </span>
+                    {liveTranscript && (
+                      <span className="basis-full text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">{copy.liveTranscript}:</span> {liveTranscript}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -474,18 +797,51 @@ const InterviewRoom = () => {
                   </div>
                 </div>
 
+                <div className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+                  <p className="mb-2 text-sm font-semibold text-foreground">{copy.submittedAnswer}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+                    {currentAnswer.answer_text}
+                  </p>
+                </div>
+
                 {/* Feedback */}
                 <div>
-                  <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    {currentAnswer.score >= 7 ? (
-                      <CheckCircle2 className="w-5 h-5 text-success" />
-                    ) : currentAnswer.score >= 4 ? (
-                      <AlertCircle className="w-5 h-5 text-warning" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-destructive" />
-                    )}
-                    {copy.feedback}
-                  </h5>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <h5 className="font-semibold text-foreground flex items-center gap-2">
+                      {currentAnswer.score >= 7 ? (
+                        <CheckCircle2 className="w-5 h-5 text-success" />
+                      ) : currentAnswer.score >= 4 ? (
+                        <AlertCircle className="w-5 h-5 text-warning" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-destructive" />
+                      )}
+                      {copy.feedback}
+                    </h5>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isSynthesizingFeedback}
+                      onClick={() => void handleListenFeedback()}
+                    >
+                      {isSynthesizingFeedback ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : isFeedbackAudioPlaying ? (
+                        <Pause className="w-4 h-4" />
+                      ) : feedbackAudioRef.current ? (
+                        <Play className="w-4 h-4" />
+                      ) : (
+                        <Volume2 className="w-4 h-4" />
+                      )}
+                      {isSynthesizingFeedback
+                        ? copy.preparingFeedbackAudio
+                        : isFeedbackAudioPlaying
+                          ? copy.pauseFeedback
+                          : feedbackAudioRef.current
+                            ? copy.resumeFeedback
+                            : copy.listenFeedback}
+                    </Button>
+                  </div>
                   <StructuredFeedback feedback={currentAnswer.feedback} />
                 </div>
 
