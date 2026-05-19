@@ -105,6 +105,7 @@ app.include_router(admin_router, prefix=f"{settings.api_prefix}/admin", tags=["a
 
 settings.uploads_dir.mkdir(exist_ok=True)
 settings.private_uploads_dir.mkdir(exist_ok=True)
+settings.interview_tts_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(settings.uploads_dir)), name="media")
 
 
@@ -151,6 +152,7 @@ async def startup_event():
             "012_add_question_localizations.sql",
             "013_convert_answer_scores_to_ten_scale.sql",
             "014_add_session_time_limit.sql",
+            "015_update_session_time_limit_constraint.sql",
         ]
         async with pool.acquire() as conn:
             for migration in migrations:

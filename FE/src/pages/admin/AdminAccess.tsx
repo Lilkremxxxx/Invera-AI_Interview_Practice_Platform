@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, MailPlus, ShieldCheck, ShieldX, Trash2, Users } from 'lucide-react';
+import { Download, Loader2, MailPlus, ShieldCheck, ShieldX, Trash2, Users } from 'lucide-react';
 
 import { adminApi, AdminAccessUser, AdminInviteOut, AdminManagedUser } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
@@ -77,6 +77,11 @@ export function AdminAccess() {
     no: language === 'vi' ? 'Không' : 'No',
     expiresLabel: language === 'vi' ? 'Hết hạn' : 'Expires',
     sessionUsage: language === 'vi' ? 'Session' : 'Sessions',
+    resumeLabel: language === 'vi' ? 'Resume' : 'Resume',
+    resumeUploaded: language === 'vi' ? 'Đã tải lên' : 'Uploaded',
+    resumeMissing: language === 'vi' ? 'Chưa có' : 'Not uploaded',
+    downloadResume: language === 'vi' ? 'Tải resume' : 'Download resume',
+    downloadResumeFailed: language === 'vi' ? 'Không thể tải resume của user này.' : 'Unable to download this user resume.',
     inviteListDescription: language === 'vi'
       ? 'Pending là email chưa có tài khoản nên còn chờ tạo tài khoản admin. Activated là email đã có tài khoản xác thực và đã được cấp quyền admin.'
       : 'Pending means the email still needs to create an admin account. Activated means the email already had a verified account and has been granted admin access.',
@@ -99,6 +104,7 @@ export function AdminAccess() {
   const [planStatusFilter, setPlanStatusFilter] = useState<'all' | 'active' | 'expired' | 'trial_exhausted'>('all');
   const [planDrafts, setPlanDrafts] = useState<Record<string, { plan_tier: 'free_trial' | 'basic' | 'pro' | 'premium'; billing_period: 'month' | 'year' }>>({});
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [downloadingResumeUserId, setDownloadingResumeUserId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     const rows = await adminApi.getUsers({
@@ -253,6 +259,29 @@ export function AdminAccess() {
       });
     } finally {
       setUpdatingUserId(null);
+    }
+  };
+
+  const handleDownloadResume = async (managedUser: AdminManagedUser) => {
+    setDownloadingResumeUserId(managedUser.id);
+    try {
+      const { blob, filename } = await adminApi.downloadUserResume(managedUser.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || managedUser.resume_filename || `${managedUser.email}-resume.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast({
+        title: copy.downloadResumeFailed,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingResumeUserId(null);
     }
   };
 
@@ -471,9 +500,15 @@ export function AdminAccess() {
                             {managedUser.plan_expires_at ? new Date(managedUser.plan_expires_at).toLocaleString(copy.locale) : '-'}
                           </strong> · {formatBillingPeriod(managedUser.plan_billing_period ?? null, language)}
                         </div>
+                        <div className="text-sm text-muted-foreground">
+                          {copy.resumeLabel}:{' '}
+                          <strong className="text-foreground">
+                            {managedUser.resume_uploaded ? (managedUser.resume_filename || copy.resumeUploaded) : copy.resumeMissing}
+                          </strong>
+                        </div>
                       </div>
 
-                      <div className="grid gap-2 md:grid-cols-[160px_140px_auto_auto_auto]">
+                      <div className="grid gap-2 md:grid-cols-[160px_140px_auto_auto_auto_auto]">
                         <select
                           className="h-10 rounded-md border border-input bg-background px-3 text-sm"
                           value={draft.plan_tier}
@@ -513,6 +548,14 @@ export function AdminAccess() {
                         </Button>
                         <Button variant="outline" onClick={() => handleCancelPlan(managedUser.id)} disabled={updatingUserId === managedUser.id}>
                           {copy.cancelPlan}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDownloadResume(managedUser)}
+                          disabled={!managedUser.resume_uploaded || downloadingResumeUserId === managedUser.id}
+                        >
+                          {downloadingResumeUserId === managedUser.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                          {copy.downloadResume}
                         </Button>
                         <Button
                           variant="destructive"

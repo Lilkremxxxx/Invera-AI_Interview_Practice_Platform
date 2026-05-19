@@ -57,6 +57,29 @@ class FakeMediaRecorder {
   start() {}
 }
 
+class FakeSpeechRecognition {
+  static instances: FakeSpeechRecognition[] = [];
+
+  public continuous = false;
+  public interimResults = false;
+  public lang = "";
+  public onresult: ((event: {
+    resultIndex: number;
+    results: {
+      length: number;
+      [index: number]: { isFinal: boolean; 0: { transcript: string } };
+    };
+  }) => void) | null = null;
+  public onerror: (() => void) | null = null;
+  public onend: (() => void) | null = null;
+  public start = vi.fn();
+  public stop = vi.fn();
+
+  constructor() {
+    FakeSpeechRecognition.instances.push(this);
+  }
+}
+
 describe("InterviewRoom STT", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -72,6 +95,8 @@ describe("InterviewRoom STT", () => {
     });
     FakeMediaRecorder.instances = [];
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+    FakeSpeechRecognition.instances = [];
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
     Object.defineProperty(globalThis.navigator, "mediaDevices", {
       configurable: true,
       value: {
@@ -128,13 +153,114 @@ describe("InterviewRoom STT", () => {
     const textbox = await screen.findByRole("textbox");
     fireEvent.change(textbox, { target: { value: "typed intro" } });
 
-    fireEvent.click(screen.getByRole("button", { name: /voice/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /stop/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^voice$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^stop$/i }));
 
     await waitFor(() => {
       expect(transcribeAnswer).toHaveBeenCalledTimes(1);
+      expect(transcribeAnswer).toHaveBeenCalledWith(
+        "session-1",
+        expect.objectContaining({ name: "session-session-1.webm" }),
+        "vi",
+        1,
+      );
       expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("typed intro");
       expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("transcribed answer");
+    });
+  });
+
+  it("uses backend Vietnamese STT even when browser speech recognition returns a final transcript", async () => {
+    transcribeAnswer.mockResolvedValue({ text: "EventListener là API để lắng nghe sự kiện." });
+
+    render(
+      <MemoryRouter initialEntries={["/app/interview/session-1"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /^voice$/i }));
+
+    await waitFor(() => {
+      expect(FakeSpeechRecognition.instances[0]?.lang).toBe("vi-VN");
+    });
+
+    act(() => {
+      FakeSpeechRecognition.instances[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 1,
+          0: {
+            isFinal: true,
+            0: { transcript: "EventListener is a line in JavaScript." },
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /^stop$/i }));
+
+    await waitFor(() => {
+      expect(transcribeAnswer).toHaveBeenCalledWith(
+        "session-1",
+        expect.objectContaining({ name: "session-session-1.webm" }),
+        "vi",
+        1,
+      );
+      expect(screen.getByRole("textbox")).toHaveValue("EventListener là API để lắng nghe sự kiện.");
+    });
+  });
+
+  it("lets the user switch voice recognition to English for the next recording", async () => {
+    transcribeAnswer.mockResolvedValue({ text: "EventListener is an API for listening to events." });
+    submitAnswer.mockResolvedValue({
+      id: "answer-1",
+      session_id: "session-1",
+      question_id: 1,
+      answer_text: "EventListener is an API for listening to events.",
+      score: 7.4,
+      feedback: "Detailed rubric feedback",
+      submitted_at: "2026-05-05T00:00:00Z",
+      tts_script: "English feedback.",
+      tts_audio_url: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/app/interview/session-1"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /english voice input/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^voice$/i }));
+
+    await waitFor(() => {
+      expect(FakeSpeechRecognition.instances[0]?.lang).toBe("en-US");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /^stop$/i }));
+
+    await waitFor(() => {
+      expect(transcribeAnswer).toHaveBeenCalledWith(
+        "session-1",
+        expect.objectContaining({ name: "session-session-1.webm" }),
+        "en",
+        1,
+      );
+      expect(screen.getByRole("textbox")).toHaveValue("EventListener is an API for listening to events.");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    await waitFor(() => {
+      expect(submitAnswer).toHaveBeenCalledWith("session-1", {
+        question_id: 1,
+        answer_text: "EventListener is an API for listening to events.",
+        output_language: "en",
+      });
     });
   });
 
@@ -156,7 +282,7 @@ describe("InterviewRoom STT", () => {
 
     await screen.findByRole("textbox");
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /voice/i }));
+      fireEvent.click(screen.getByRole("button", { name: /^voice$/i }));
       await Promise.resolve();
     });
 
@@ -176,15 +302,7 @@ describe("InterviewRoom STT", () => {
     });
   });
 
-  it("keeps the submitted answer visible and only plays TTS after the user clicks", async () => {
-    const play = vi.fn().mockResolvedValue(undefined);
-    const pause = vi.fn();
-    const audioConstructor = vi.fn().mockImplementation(() => ({
-      play,
-      pause,
-      currentTime: 0,
-    }));
-    vi.stubGlobal("Audio", audioConstructor);
+  it("keeps the submitted answer visible and only prepares TTS after the user clicks", async () => {
     submitAnswer.mockResolvedValue({
       id: "answer-1",
       session_id: "session-1",
@@ -215,30 +333,18 @@ describe("InterviewRoom STT", () => {
       expect(screen.getByText("Detailed rubric feedback")).toBeInTheDocument();
     });
 
-    expect(audioConstructor).not.toHaveBeenCalled();
-    expect(play).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/feedback audio player/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /listen to feedback/i }));
 
     await waitFor(() => {
       expect(synthesizeFeedbackAudio).toHaveBeenCalledWith("session-1", "answer-1");
-      expect(audioConstructor).toHaveBeenCalledWith("/media/interview-tts/answer-1.wav");
-      expect(play).toHaveBeenCalledTimes(1);
+      expect(screen.getByLabelText(/feedback audio player/i)).toHaveAttribute("controls");
+      expect(screen.getByLabelText(/feedback audio player/i)).toHaveAttribute("src", "/media/interview-tts/answer-1.wav");
     });
   });
 
-  it("toggles feedback audio between play pause and resume", async () => {
-    const play = vi.fn().mockResolvedValue(undefined);
-    const pause = vi.fn();
-    const audioConstructor = vi.fn().mockImplementation(() => ({
-      play,
-      pause,
-      currentTime: 0,
-      onended: null,
-      onpause: null,
-      onplay: null,
-    }));
-    vi.stubGlobal("Audio", audioConstructor);
+  it("renders native controls for an existing feedback audio URL", async () => {
     submitAnswer.mockResolvedValue({
       id: "answer-1",
       session_id: "session-1",
@@ -248,7 +354,7 @@ describe("InterviewRoom STT", () => {
       feedback: "Detailed rubric feedback",
       submitted_at: "2026-05-05T00:00:00Z",
       tts_script: "English feedback. Vietnamese feedback.",
-      tts_audio_url: null,
+      tts_audio_url: "/media/interview-tts/answer-1.wav",
     });
 
     render(
@@ -262,26 +368,11 @@ describe("InterviewRoom STT", () => {
     fireEvent.change(await screen.findByRole("textbox"), { target: { value: "typed answer" } });
     fireEvent.click(screen.getByRole("button", { name: /submit answer/i }));
 
-    fireEvent.click(await screen.findByRole("button", { name: /listen to feedback/i }));
-
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^pause$/i })).toBeInTheDocument();
-      expect(play).toHaveBeenCalledTimes(1);
+      expect(screen.getByLabelText(/feedback audio player/i)).toHaveAttribute("controls");
+      expect(screen.getByLabelText(/feedback audio player/i)).toHaveAttribute("src", "/media/interview-tts/answer-1.wav");
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /^pause$/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /resume/i })).toBeInTheDocument();
-      expect(pause).toHaveBeenCalledTimes(1);
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /resume/i }));
-
-    await waitFor(() => {
-      expect(play).toHaveBeenCalledTimes(2);
-      expect(audioConstructor).toHaveBeenCalledTimes(1);
-      expect(synthesizeFeedbackAudio).toHaveBeenCalledTimes(1);
-    });
+    expect(synthesizeFeedbackAudio).not.toHaveBeenCalled();
   });
 });

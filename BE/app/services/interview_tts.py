@@ -55,7 +55,17 @@ def _vietnamese_score_message(score: float) -> str:
     return "Câu trả lời hiện còn yếu cho phỏng vấn. Hãy trả lời trực tiếp câu hỏi trước, rồi thêm một ví dụ cụ thể."
 
 
-def build_feedback_tts_script(*, score: float, feedback: str) -> str:
+def _detect_feedback_language(feedback: str) -> str:
+    lowered = feedback.lower()
+    if re.search(r"[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]", lowered):
+        return "vi"
+    if any(marker in lowered for marker in ("tóm tắt:", "điểm tốt:", "ưu tiên cải thiện", "tiêu chí chấm")):
+        return "vi"
+    return "en"
+
+
+def build_feedback_tts_script(*, score: float, feedback: str, language: str | None = None) -> str:
+    script_language = "vi" if str(language or _detect_feedback_language(feedback)).strip().lower() == "vi" else "en"
     score_text = f"{score:.1f}"
     improvement = _extract_priority_improvement(feedback)
     english_improvement = f"One priority improvement: {improvement}." if improvement else "Review the written rubric feedback for the next concrete improvement."
@@ -64,19 +74,27 @@ def build_feedback_tts_script(*, score: float, feedback: str) -> str:
         if improvement
         else "Hãy xem phần nhận xét theo rubric để biết bước cải thiện cụ thể tiếp theo."
     )
+    vietnamese_parts = [
+        f"Điểm rubric của bạn là {score_text} trên 10.",
+        _vietnamese_score_message(score),
+        vietnamese_improvement,
+    ]
+
+    english_parts = [
+        f"Your rubric score is {score_text} out of 10.",
+        _english_score_message(score),
+        english_improvement,
+    ]
+
+    if getattr(settings, "interview_tts_script_language", "vi") != "bilingual":
+        return _clamp_script(" ".join(vietnamese_parts if script_language == "vi" else english_parts))
 
     return _clamp_script(
         " ".join(
-            [
-                "English feedback.",
-                f"Your rubric score is {score_text} out of 10.",
-                _english_score_message(score),
-                english_improvement,
-                "Vietnamese feedback.",
-                f"Điểm rubric của bạn là {score_text} trên 10.",
-                _vietnamese_score_message(score),
-                vietnamese_improvement,
-            ]
+            ["Vietnamese feedback."]
+            + vietnamese_parts
+            + ["English feedback."]
+            + english_parts
         )
     )
 
@@ -90,7 +108,36 @@ def _load_kitten_model():
             "KittenTTS is not installed. Install the self-host package to enable interview TTS."
         ) from exc
 
-    return KittenTTS("KittenML/kitten-tts-nano-0.2")
+    return KittenTTS(getattr(settings, "kitten_tts_model", "KittenML/kitten-tts-nano-0.8"))
+
+
+@lru_cache(maxsize=1)
+def _load_vieneu_model():
+    try:
+        from vieneu import Vieneu  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError(
+            "VieNeu-TTS is not installed. Install `vieneu` to enable Vietnamese interview TTS."
+        ) from exc
+
+    return Vieneu(mode=getattr(settings, "vieneu_tts_mode", "turbo"))
+
+
+@lru_cache(maxsize=1)
+def _load_kokoro_model():
+    model_path = getattr(settings, "kokoro_tts_model_path")
+    voices_path = getattr(settings, "kokoro_tts_voices_path")
+    if not model_path.exists() or not voices_path.exists():
+        raise RuntimeError(
+            f"Kokoro model files are missing. Expected {model_path} and {voices_path}."
+        )
+
+    try:
+        from kokoro_onnx import Kokoro  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("kokoro-onnx is not installed. Install `kokoro-onnx` to enable English Kokoro TTS.") from exc
+
+    return Kokoro(str(model_path), str(voices_path))
 
 
 def _kitten_generate_to_file(text: str, output_path: Path) -> None:
@@ -102,6 +149,52 @@ def _kitten_generate_to_file(text: str, output_path: Path) -> None:
         speed=settings.kitten_tts_speed,
         sample_rate=settings.kitten_tts_sample_rate,
     )
+
+
+def _vieneu_generate_to_file(text: str, output_path: Path) -> None:
+    model = _load_vieneu_model()
+    voice_id = getattr(settings, "vieneu_tts_voice", None)
+    voice = model.get_preset_voice(voice_id) if voice_id else None
+    audio = model.infer(text=text, voice=voice, show_progress=False)
+    model.save(audio, str(output_path))
+
+
+def _kokoro_generate_to_file(text: str, output_path: Path) -> None:
+    import soundfile as sf
+
+    model = _load_kokoro_model()
+    samples, sample_rate = model.create(
+        text,
+        voice=getattr(settings, "kokoro_tts_voice", "af_sarah"),
+        speed=getattr(settings, "kokoro_tts_speed", 1.0),
+        lang=getattr(settings, "kokoro_tts_language", "en-us"),
+    )
+    sf.write(str(output_path), samples, sample_rate)
+
+
+def _get_default_generator() -> TtsGenerator:
+    engine = getattr(settings, "interview_tts_engine", "kitten").lower()
+    if engine == "vieneu":
+        def generate_with_fallback(text: str, output_path: Path) -> None:
+            try:
+                _vieneu_generate_to_file(text, output_path)
+            except Exception:
+                logger.exception("VieNeu-TTS failed; falling back to KittenTTS.")
+                _kitten_generate_to_file(text, output_path)
+
+        return generate_with_fallback
+
+    return _kitten_generate_to_file
+
+
+def _get_generator_for_language(language: str) -> TtsGenerator:
+    engine = getattr(settings, "interview_tts_engine", "kitten").lower()
+    english_engine = getattr(settings, "interview_tts_english_engine", "kitten").lower()
+    if language == "en" and english_engine == "kokoro":
+        return _kokoro_generate_to_file
+    if language == "en" and engine == "vieneu":
+        return _kitten_generate_to_file
+    return _get_default_generator()
 
 
 def synthesize_feedback_audio(
@@ -124,7 +217,8 @@ def synthesize_feedback_audio(
     output_path = output_dir / f"{safe_answer_id}.wav"
 
     try:
-        (generator or _kitten_generate_to_file)(script, output_path)
+        script_language = _detect_feedback_language(script)
+        (generator or _get_generator_for_language(script_language))(script, output_path)
     except Exception:
         logger.exception("Unable to synthesize interview TTS for answer_id=%s", safe_answer_id)
         return None

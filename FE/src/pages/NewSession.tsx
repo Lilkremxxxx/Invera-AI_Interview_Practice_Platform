@@ -13,22 +13,20 @@ import {
   Sparkles,
   Loader2
 } from 'lucide-react';
-import { sessionMajors, roles, levels, answerModes, questionCounts, timeLimits, difficulties } from '@/lib/mock-data';
+import { sessionMajors, roles, levels, answerModes, questionCounts, difficulties } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ApiError, sessionsApi, type SessionCatalogRole } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { resolveSessionTimeLimitId } from '@/lib/plans';
 
 type SessionConfig = {
   major: string;
   role: string;
   level: string;
   questionCount: number | null;
-  timeLimit: string;
-  answerMode: 'text';
+  answerMode: 'text' | 'voice';
   difficulty: string;
 };
 
@@ -47,7 +45,6 @@ const NewSession = () => {
     role: '',
     level: '',
     questionCount: null,
-    timeLimit: '',
     answerMode: 'text',
     difficulty: '',
   });
@@ -68,7 +65,6 @@ const NewSession = () => {
   const selectedMajor = sessionMajors.find((major) => major.id === config.major);
   const selectedRole = roles.find(r => r.id === config.role);
   const selectedLevel = levels.find(level => level.id === config.level);
-  const allowedTimeLimitId = resolveSessionTimeLimitId(user);
   const selectedRoleCatalog = config.role ? catalogByRole.get(`${config.major}:${config.role}`) : undefined;
   const availableQuestionCount = selectedRoleCatalog?.counts_by_level?.[config.level] ?? 0;
   const requestedQuestionCount = config.questionCount == null
@@ -77,13 +73,11 @@ const NewSession = () => {
       ? Math.min(config.questionCount, availableQuestionCount)
       : config.questionCount;
   const canStartNewSession = user?.can_start_new_session ?? true;
-  const textAnswerMode = answerModes.find((mode) => mode.id === 'text');
-  const selectedTimeLimit = timeLimits.find((limit) => limit.id === config.timeLimit);
-  const selectedTimeLimitMinutes = config.timeLimit === 'none' ? null : Number(config.timeLimit);
+  const estimatedTimeMinutes = requestedQuestionCount == null ? null : requestedQuestionCount * 5;
   const selectedDifficulty = difficulties.find((difficulty) => difficulty.id === config.difficulty);
   const isStep1Complete = Boolean(config.role);
   const isStep2Complete = Boolean(config.level);
-  const isStep3Complete = config.questionCount != null && Boolean(config.timeLimit) && Boolean(config.difficulty);
+  const isStep3Complete = config.questionCount != null && Boolean(config.difficulty);
   const canStartInterview = isStep1Complete && isStep2Complete && isStep3Complete && step === 3 && !isCreating;
   const copy = {
     createErrorTitle: language === 'vi' ? 'Lỗi tạo session' : 'Unable to create session',
@@ -116,13 +110,11 @@ const NewSession = () => {
     selectOptionsFirst: language === 'vi'
       ? 'Bạn cần chọn đủ cấu hình ở bước 3.'
       : 'You need to finish the options in step 3.',
-    futureFunction: language === 'vi' ? 'Tính năng tương lai' : 'Future function',
-    voiceVideoFuture: language === 'vi'
-      ? 'Voice và Video sẽ được mở ở bản cập nhật sau.'
-      : 'Voice and Video will be available in a future update.',
-    planBasedTimeLimit: language === 'vi'
-      ? 'Giới hạn thời gian được cố định theo gói hiện tại của bạn.'
-      : 'Time limit is fixed by your current plan.',
+    fixedTimeLimitBody: language === 'vi'
+      ? 'Hệ thống tự tính 5 phút cho mỗi câu hỏi, bất kể mode.'
+      : 'The system automatically allocates 5 minutes per question, regardless of mode.',
+    minutesPerQuestion: language === 'vi' ? '5 phút / câu' : '5 min / question',
+    estimatedDuration: language === 'vi' ? 'Tổng thời gian ước tính' : 'Estimated total time',
   };
 
   useEffect(() => {
@@ -134,14 +126,6 @@ const NewSession = () => {
     }
   }, [availableQuestionCount, config.questionCount]);
 
-  useEffect(() => {
-    setConfig((current) => (
-      current.timeLimit === allowedTimeLimitId
-        ? current
-        : { ...current, timeLimit: allowedTimeLimitId }
-    ));
-  }, [allowedTimeLimitId]);
-
   const handleStartInterview = async () => {
     if (!canStartInterview || requestedQuestionCount == null) return;
     setIsCreating(true);
@@ -152,7 +136,6 @@ const NewSession = () => {
         level: config.level,
         mode: config.answerMode,
         question_count: requestedQuestionCount,
-        time_limit_minutes: selectedTimeLimitMinutes,
       });
       // Store session questions in sessionStorage so InterviewRoom can use them
       sessionStorage.setItem(`session_${session.id}`, JSON.stringify(session));
@@ -374,61 +357,38 @@ const NewSession = () => {
                   </div>
 
                   {/* Time Limit */}
-                  <div>
-                    <Label className="mb-3 block">{t('newSession', 'timeLimit')}</Label>
-                    <p className="mb-3 text-sm text-muted-foreground">{copy.planBasedTimeLimit}</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {timeLimits.map((limit) => {
-                        const isLocked = limit.id !== allowedTimeLimitId;
-                        return (
-                          <button
-                            key={limit.id}
-                            type="button"
-                            disabled={isLocked}
-                            onClick={() => setConfig({ ...config, timeLimit: limit.id })}
-                            className={cn(
-                              "py-3 rounded-lg border font-medium transition-all",
-                              isLocked && "cursor-not-allowed opacity-45",
-                              config.timeLimit === limit.id
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "border-border hover:border-accent/50"
-                            )}
-                          >
-                            {limit.name[language]}
-                          </button>
-                        );
-                      })}
+                  <div className="rounded-xl border bg-muted/30 p-4">
+                    <Label className="mb-2 block">{t('newSession', 'timeLimit')}</Label>
+                    <p className="text-sm text-muted-foreground">{copy.fixedTimeLimitBody}</p>
+                    <div className="mt-3 flex items-center justify-between rounded-lg border bg-background px-4 py-3">
+                      <span className="text-sm font-medium text-foreground">{copy.minutesPerQuestion}</span>
+                      <span className="text-sm font-semibold text-accent">
+                        {estimatedTimeMinutes == null ? '—' : `${estimatedTimeMinutes} min`}
+                      </span>
                     </div>
                   </div>
 
                   {/* Answer Mode */}
                   <div>
                     <Label className="mb-3 block">{t('newSession', 'answerMode')}</Label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {answerModes.map((mode) => {
-                        const isFuture = mode.id !== 'text';
                         return (
                         <button
                           key={mode.id}
                           type="button"
-                          disabled={isFuture}
+                          onClick={() => setConfig({ ...config, answerMode: mode.id as 'text' | 'voice' })}
                           className={cn(
                             "relative p-4 rounded-lg border text-center transition-all",
-                            isFuture && "cursor-not-allowed opacity-55",
                             config.answerMode === mode.id
                               ? "border-accent bg-accent/5"
                               : "border-border hover:border-accent/50"
                           )}
                         >
-                          {isFuture && (
-                            <span className="absolute right-3 top-3 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {copy.futureFunction}
-                            </span>
-                          )}
                           <span className="text-2xl block mb-1">{mode.icon}</span>
                           <p className="font-medium text-foreground">{mode.name[language]}</p>
                           <p className="text-xs text-muted-foreground">
-                            {isFuture ? copy.voiceVideoFuture : mode.description[language]}
+                            {mode.description[language]}
                           </p>
                         </button>
                       )})}
@@ -529,12 +489,14 @@ const NewSession = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'timeLimit')}</span>
                   <span className="font-medium text-foreground">
-                    {selectedTimeLimit?.name[language] ?? t('newSession', 'notSelected')}
+                    {estimatedTimeMinutes == null ? t('newSession', 'notSelected') : `${estimatedTimeMinutes} min`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'answerModeLabel')}</span>
-                  <span className="font-medium text-foreground">{textAnswerMode?.name[language] ?? 'Text'}</span>
+                  <span className="font-medium text-foreground">
+                    {answerModes.find((mode) => mode.id === config.answerMode)?.name[language] ?? 'Text'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'difficultyLabel')}</span>

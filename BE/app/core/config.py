@@ -63,7 +63,7 @@ class Settings:
     deepseek_max_tokens: int = int(os.getenv("DEEPSEEK_MAX_TOKENS", "1800"))
     deepseek_temperature: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.2"))
     deepseek_scoring_timeout_seconds: float = float(os.getenv("DEEPSEEK_SCORING_TIMEOUT_SECONDS", "20"))
-    deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "1200"))
+    deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "1800"))
     deepseek_qna_timeout_seconds: float = float(os.getenv("DEEPSEEK_QNA_TIMEOUT_SECONDS", "30"))
     deepseek_qna_max_tokens: int = int(os.getenv("DEEPSEEK_QNA_MAX_TOKENS", "1000"))
     deepseek_question_gen_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUESTION_GEN_TIMEOUT_SECONDS", "18"))
@@ -96,12 +96,25 @@ class Settings:
     whisper_en_model_name: str = os.getenv("WHISPER_EN_MODEL_NAME", "small.en")
     interview_stt_language: str = os.getenv("INTERVIEW_STT_LANGUAGE", "auto")
     interview_stt_max_upload_mb: int = int(os.getenv("INTERVIEW_STT_MAX_UPLOAD_MB", "25"))
+    interview_stt_cleanup_enabled: bool = os.getenv("INTERVIEW_STT_CLEANUP_ENABLED", "true").lower() == "true"
+    interview_stt_cleanup_max_tokens: int = int(os.getenv("INTERVIEW_STT_CLEANUP_MAX_TOKENS", "160"))
     whisper_runtime_root_raw: str | None = os.getenv("WHISPER_RUNTIME_ROOT")
     interview_tts_enabled: bool = os.getenv("INTERVIEW_TTS_ENABLED", "true").lower() == "true"
+    interview_tts_engine: str = os.getenv("INTERVIEW_TTS_ENGINE", "vieneu").lower()
+    interview_tts_english_engine: str = os.getenv("INTERVIEW_TTS_ENGLISH_ENGINE", "kokoro").lower()
+    interview_tts_script_language: str = os.getenv("INTERVIEW_TTS_SCRIPT_LANGUAGE", "vi").lower()
     kitten_tts_voice: str = os.getenv("KITTEN_TTS_VOICE", "expr-voice-2-f")
     kitten_tts_speed: float = float(os.getenv("KITTEN_TTS_SPEED", "1.25"))
     kitten_tts_sample_rate: int = int(os.getenv("KITTEN_TTS_SAMPLE_RATE", "24000"))
     kitten_tts_max_chars: int = int(os.getenv("KITTEN_TTS_MAX_CHARS", "900"))
+    kitten_tts_model: str = os.getenv("KITTEN_TTS_MODEL", "KittenML/kitten-tts-nano-0.8")
+    vieneu_tts_mode: str = os.getenv("VIENEU_TTS_MODE", "turbo")
+    vieneu_tts_voice: str | None = os.getenv("VIENEU_TTS_VOICE")
+    kokoro_tts_model_path_raw: str | None = os.getenv("KOKORO_TTS_MODEL_PATH")
+    kokoro_tts_voices_path_raw: str | None = os.getenv("KOKORO_TTS_VOICES_PATH")
+    kokoro_tts_voice: str = os.getenv("KOKORO_TTS_VOICE", "af_sarah")
+    kokoro_tts_speed: float = float(os.getenv("KOKORO_TTS_SPEED", "1.0"))
+    kokoro_tts_language: str = os.getenv("KOKORO_TTS_LANGUAGE", "en-us")
 
     @cached_property
     def uploads_dir(self) -> Path:
@@ -124,6 +137,22 @@ class Settings:
         if self.whisper_runtime_root_raw:
             return Path(self.whisper_runtime_root_raw)
         return self.project_root / ".runtime" / "whisper.cpp"
+
+    @cached_property
+    def kokoro_runtime_root(self) -> Path:
+        return self.project_root / ".runtime" / "kokoro"
+
+    @cached_property
+    def kokoro_tts_model_path(self) -> Path:
+        if self.kokoro_tts_model_path_raw:
+            return Path(self.kokoro_tts_model_path_raw)
+        return self.kokoro_runtime_root / "kokoro-v1.0.onnx"
+
+    @cached_property
+    def kokoro_tts_voices_path(self) -> Path:
+        if self.kokoro_tts_voices_path_raw:
+            return Path(self.kokoro_tts_voices_path_raw)
+        return self.kokoro_runtime_root / "voices-v1.0.bin"
 
     @cached_property
     def whisper_repo_dir(self) -> Path:

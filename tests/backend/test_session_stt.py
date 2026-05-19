@@ -99,6 +99,18 @@ def test_build_whisper_command_rejects_unsupported_language():
         )
 
 
+def test_answer_submit_accepts_output_language():
+    from app.schemas.answer import AnswerSubmit
+
+    payload = AnswerSubmit(
+        question_id=1,
+        answer_text="EventListener is an API for listening to events.",
+        output_language="en",
+    )
+
+    assert payload.output_language == "en"
+
+
 def test_session_stt_route_returns_session_not_found_for_missing_session():
     app = FastAPI()
     app.include_router(sessions_router, prefix="/api/sessions")

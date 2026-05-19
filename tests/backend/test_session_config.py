@@ -1,0 +1,218 @@
+import os
+import sys
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "BE"))
+
+import app.api.endpoints.sessions as sessions_module
+from app.api.endpoints.auth import get_current_user
+from app.api.endpoints.sessions import router as sessions_router
+from app.db.session import get_db
+from app.schemas.user import UserOut
+
+
+class FakeTransaction:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+class FakeDb:
+    def __init__(self):
+        self.insert_params = None
+        self.executemany_params = None
+        self.previous_first_question_id = None
+
+    def transaction(self):
+        return FakeTransaction()
+
+    async def fetchrow(self, query, *params):
+        self.insert_params = (query, params)
+        return {
+            "id": uuid.UUID("11111111-1111-1111-1111-111111111111"),
+            "user_id": params[0],
+            "major": params[1],
+            "role": params[2],
+            "level": params[3],
+            "mode": params[4],
+            "status": "IN_PROGRESS",
+            "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
+            "completed_at": None,
+            "time_limit_minutes": params[5],
+        }
+
+    async def executemany(self, query, values):
+        self.executemany_params = (query, values)
+
+    async def fetchval(self, query, *params):
+        return self.previous_first_question_id
+
+
+def _build_user() -> UserOut:
+    return UserOut(
+        id=uuid.UUID("22222222-2222-2222-2222-222222222222"),
+        email="candidate@example.com",
+        created_at="2026-05-05T00:00:00Z",
+        full_name="Candidate",
+        is_admin=False,
+    )
+
+
+def test_create_session_forces_five_minutes_per_question_and_accepts_voice_mode(monkeypatch):
+    app = FastAPI()
+    app.include_router(sessions_router, prefix="/api/sessions")
+
+    fake_db = FakeDb()
+
+    async def override_db():
+        yield fake_db
+
+    async def fake_plan_snapshot(db, user_id):
+        return {
+            "can_start_new_session": True,
+            "is_admin": False,
+            "plan_tier": "free_trial",
+            "plan_status": "active",
+        }
+
+    async def fake_fetch_questions(db, *, major, role, level, count):
+        return [
+            {
+                "id": 1,
+                "major": major,
+                "role": role,
+                "level": level,
+                "text": "Question 1",
+                "text_en": "Question 1",
+                "text_vi": "Question 1",
+                "category": "General",
+                "category_en": "General",
+                "category_vi": "General",
+                "difficulty": "easy",
+                "tags": [],
+            },
+            {
+                "id": 2,
+                "major": major,
+                "role": role,
+                "level": level,
+                "text": "Question 2",
+                "text_en": "Question 2",
+                "text_vi": "Question 2",
+                "category": "General",
+                "category_en": "General",
+                "category_vi": "General",
+                "difficulty": "medium",
+                "tags": [],
+            },
+        ][:count]
+
+    async def fake_ensure_question_bank_minimum(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(sessions_module, "get_user_plan_snapshot", fake_plan_snapshot)
+    monkeypatch.setattr(sessions_module, "_fetch_session_questions", fake_fetch_questions)
+    monkeypatch.setattr(sessions_module, "ensure_question_bank_minimum", fake_ensure_question_bank_minimum)
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_user] = _build_user
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/sessions",
+        headers={"X-UI-Language": "en"},
+        json={
+            "major": "technology",
+            "role": "frontend",
+            "level": "junior",
+            "mode": "voice",
+            "question_count": 10,
+            "time_limit_minutes": 999,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["mode"] == "voice"
+    assert response.json()["time_limit_minutes"] == 50
+    assert fake_db.insert_params[1][4] == "voice"
+    assert fake_db.insert_params[1][5] == 50
+
+
+def test_create_session_rotates_repeated_first_question(monkeypatch):
+    app = FastAPI()
+    app.include_router(sessions_router, prefix="/api/sessions")
+
+    fake_db = FakeDb()
+    fake_db.previous_first_question_id = 5
+
+    async def override_db():
+        yield fake_db
+
+    async def fake_plan_snapshot(db, user_id):
+        return {
+            "can_start_new_session": True,
+            "is_admin": False,
+            "plan_tier": "free_trial",
+            "plan_status": "active",
+        }
+
+    async def fake_fetch_questions(db, *, major, role, level, count):
+        return [
+            {
+                "id": 5,
+                "major": major,
+                "role": role,
+                "level": level,
+                "text": "Responsive design là gì?",
+                "text_en": "What is responsive design?",
+                "text_vi": "Responsive design là gì?",
+                "category": "CSS",
+                "category_en": "CSS",
+                "category_vi": "CSS",
+                "difficulty": "easy",
+                "tags": [],
+            },
+            {
+                "id": 3,
+                "major": major,
+                "role": role,
+                "level": level,
+                "text": "Event listener là gì?",
+                "text_en": "What is an event listener?",
+                "text_vi": "Event listener là gì?",
+                "category": "JavaScript",
+                "category_en": "JavaScript",
+                "category_vi": "JavaScript",
+                "difficulty": "easy",
+                "tags": [],
+            },
+        ]
+
+    monkeypatch.setattr(sessions_module, "get_user_plan_snapshot", fake_plan_snapshot)
+    monkeypatch.setattr(sessions_module, "_fetch_session_questions", fake_fetch_questions)
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_user] = _build_user
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/sessions",
+        headers={"X-UI-Language": "vi"},
+        json={
+            "major": "technology",
+            "role": "frontend",
+            "level": "intern",
+            "mode": "voice",
+            "question_count": 2,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["questions"][0]["id"] == 3
+    assert fake_db.executemany_params[1][0][1] == 3

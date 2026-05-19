@@ -13,7 +13,6 @@ class SessionCreate(BaseModel):
     level: str
     mode: str = 'text'
     question_count: int = 5
-    time_limit_minutes: Optional[int] = None
 
 
 class SessionOut(BaseModel):

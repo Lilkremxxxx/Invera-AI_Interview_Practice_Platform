@@ -27,8 +27,6 @@ import {
   AlertCircle,
   Lightbulb,
   Volume2,
-  Pause,
-  Play,
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,6 +38,14 @@ import { roleLabelMap } from '@/lib/mock-data';
 import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
 
 const RECORDING_LIMIT_SECONDS = 120;
+const DEFAULT_STT_LANGUAGE = 'vi';
+
+type SttLanguage = 'vi' | 'en';
+
+const browserSttLanguageMap: Record<SttLanguage, string> = {
+  vi: 'vi-VN',
+  en: 'en-US',
+};
 
 type SpeechRecognitionResultLike = {
   isFinal: boolean;
@@ -125,6 +131,9 @@ const InterviewRoom = () => {
     sttUnavailable: language === 'vi' ? 'Trình duyệt này không hỗ trợ ghi âm.' : 'This browser does not support audio recording.',
     sttPermissionDenied: language === 'vi' ? 'Không thể truy cập microphone.' : 'Unable to access the microphone.',
     sttFailed: language === 'vi' ? 'Không thể chuyển giọng nói thành văn bản.' : 'Unable to transcribe the recording.',
+    sttLanguage: language === 'vi' ? 'Ngôn ngữ voice' : 'Voice language',
+    vietnameseVoice: language === 'vi' ? 'Tiếng Việt' : 'Vietnamese voice input',
+    englishVoice: language === 'vi' ? 'Tiếng Anh' : 'English voice input',
     submit: language === 'vi' ? 'Nộp câu trả lời' : 'Submit answer',
     grading: language === 'vi' ? 'Đang chấm bài...' : 'Scoring your answer...',
     takeSeconds: language === 'vi' ? 'Thường mất khoảng 15-30 giây' : 'Usually takes about 15-30 seconds',
@@ -137,8 +146,7 @@ const InterviewRoom = () => {
     submittedAnswer: language === 'vi' ? 'Câu trả lời của bạn' : 'Your answer',
     feedback: language === 'vi' ? 'Nhận xét' : 'Feedback',
     listenFeedback: language === 'vi' ? 'Nghe phản hồi' : 'Listen to feedback',
-    pauseFeedback: language === 'vi' ? 'Tạm dừng' : 'Pause',
-    resumeFeedback: language === 'vi' ? 'Nghe tiếp' : 'Resume',
+    feedbackAudioPlayer: language === 'vi' ? 'Trình phát audio nhận xét' : 'Feedback audio player',
     preparingFeedbackAudio: language === 'vi' ? 'Đang tạo giọng đọc...' : 'Preparing voice...',
     nextQuestion: language === 'vi' ? 'Câu tiếp theo' : 'Next question',
     finish: language === 'vi' ? 'Hoàn thành' : 'Finish',
@@ -155,13 +163,13 @@ const InterviewRoom = () => {
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState('');
+  const [sttLanguage, setSttLanguage] = useState<SttLanguage>(DEFAULT_STT_LANGUAGE);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSynthesizingFeedback, setIsSynthesizingFeedback] = useState(false);
-  const [isFeedbackAudioPlaying, setIsFeedbackAudioPlaying] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -174,7 +182,6 @@ const InterviewRoom = () => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const liveFinalTranscriptRef = useRef('');
-  const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   // Load session from sessionStorage (set by NewSession after create)
@@ -259,7 +266,6 @@ const InterviewRoom = () => {
       mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       speechRecognitionRef.current?.stop();
-      feedbackAudioRef.current?.pause();
     };
   }, []);
 
@@ -341,6 +347,7 @@ const InterviewRoom = () => {
       const result = await sessionsApi.submitAnswer(id, {
         question_id: question.id,
         answer_text: answer,
+        output_language: sttLanguage,
       });
       setCurrentAnswer(result);
       setShowFeedback(true);
@@ -355,41 +362,9 @@ const InterviewRoom = () => {
     }
   };
 
-  const playFeedbackAudio = (audioUrl?: string | null) => {
-    if (!audioUrl || typeof Audio === 'undefined') return;
-
-    feedbackAudioRef.current?.pause();
-    const audio = new Audio(resolveFeedbackAudioUrl(audioUrl));
-    audio.onended = () => setIsFeedbackAudioPlaying(false);
-    audio.onpause = () => setIsFeedbackAudioPlaying(false);
-    audio.onplay = () => setIsFeedbackAudioPlaying(true);
-    feedbackAudioRef.current = audio;
-    void audio
-      .play()
-      .then(() => setIsFeedbackAudioPlaying(true))
-      .catch(() => setIsFeedbackAudioPlaying(false));
-  };
-
   const handleListenFeedback = async () => {
     if (!currentAnswer || !id || isSynthesizingFeedback) return;
-    const existingAudio = feedbackAudioRef.current;
-    if (existingAudio) {
-      if (isFeedbackAudioPlaying) {
-        existingAudio.pause();
-        setIsFeedbackAudioPlaying(false);
-        return;
-      }
-      void existingAudio
-        .play()
-        .then(() => setIsFeedbackAudioPlaying(true))
-        .catch(() => setIsFeedbackAudioPlaying(false));
-      return;
-    }
-
-    if (currentAnswer.tts_audio_url) {
-      playFeedbackAudio(currentAnswer.tts_audio_url);
-      return;
-    }
+    if (currentAnswer.tts_audio_url) return;
 
     setIsSynthesizingFeedback(true);
     try {
@@ -401,7 +376,6 @@ const InterviewRoom = () => {
             tts_audio_url: result.tts_audio_url,
           }
         : existing);
-      playFeedbackAudio(result.tts_audio_url);
     } catch (err) {
       toast({
         title: copy.submitError,
@@ -435,7 +409,7 @@ const InterviewRoom = () => {
       const recognition = new Recognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = language === 'vi' ? 'vi-VN' : 'en-US';
+      recognition.lang = browserSttLanguageMap[sttLanguage];
       recognition.onresult = (event) => {
         let interim = '';
         let finalText = '';
@@ -449,7 +423,6 @@ const InterviewRoom = () => {
         }
         if (finalText.trim()) {
           liveFinalTranscriptRef.current = `${liveFinalTranscriptRef.current} ${finalText}`.trim();
-          appendTranscript(finalText.trim());
         }
         setLiveTranscript(interim.trim());
       };
@@ -510,12 +483,15 @@ const InterviewRoom = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         audioChunksRef.current = [];
         if (!audioBlob.size || !id) return;
-        if (liveFinalTranscriptRef.current.trim()) return;
-
         setIsTranscribing(true);
         try {
           const audioFile = new File([audioBlob], `session-${id}.webm`, { type: 'audio/webm' });
-          const result = await sessionsApi.transcribeAnswer(id, audioFile);
+          const result = await sessionsApi.transcribeAnswer(
+            id,
+            audioFile,
+            sttLanguage,
+            session.questions[currentQuestion]?.id,
+          );
           appendTranscript(result.text);
         } catch (err) {
           toast({
@@ -555,9 +531,6 @@ const InterviewRoom = () => {
       setAnswer('');
       setShowFeedback(false);
       setCurrentAnswer(null);
-      feedbackAudioRef.current?.pause();
-      feedbackAudioRef.current = null;
-      setIsFeedbackAudioPlaying(false);
     } else {
       // Last question — complete the session
       setIsCompleting(true);
@@ -718,7 +691,37 @@ const InterviewRoom = () => {
                 />
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div
+                      aria-label={copy.sttLanguage}
+                      className="inline-flex rounded-md border border-input bg-background p-0.5"
+                      role="group"
+                    >
+                      <Button
+                        aria-label={copy.vietnameseVoice}
+                        aria-pressed={sttLanguage === 'vi'}
+                        className="h-8 px-3 text-xs"
+                        disabled={isRecording || isTranscribing}
+                        onClick={() => setSttLanguage('vi')}
+                        size="sm"
+                        type="button"
+                        variant={sttLanguage === 'vi' ? 'secondary' : 'ghost'}
+                      >
+                        VI
+                      </Button>
+                      <Button
+                        aria-label={copy.englishVoice}
+                        aria-pressed={sttLanguage === 'en'}
+                        className="h-8 px-3 text-xs"
+                        disabled={isRecording || isTranscribing}
+                        onClick={() => setSttLanguage('en')}
+                        size="sm"
+                        type="button"
+                        variant={sttLanguage === 'en' ? 'secondary' : 'ghost'}
+                      >
+                        EN
+                      </Button>
+                    </div>
                     <Button
                       variant={isRecording ? "destructive" : "outline"}
                       size="sm"
@@ -817,30 +820,30 @@ const InterviewRoom = () => {
                       )}
                       {copy.feedback}
                     </h5>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isSynthesizingFeedback}
-                      onClick={() => void handleListenFeedback()}
-                    >
-                      {isSynthesizingFeedback ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isFeedbackAudioPlaying ? (
-                        <Pause className="w-4 h-4" />
-                      ) : feedbackAudioRef.current ? (
-                        <Play className="w-4 h-4" />
-                      ) : (
-                        <Volume2 className="w-4 h-4" />
-                      )}
-                      {isSynthesizingFeedback
-                        ? copy.preparingFeedbackAudio
-                        : isFeedbackAudioPlaying
-                          ? copy.pauseFeedback
-                          : feedbackAudioRef.current
-                            ? copy.resumeFeedback
-                            : copy.listenFeedback}
-                    </Button>
+                    {currentAnswer.tts_audio_url ? (
+                      <audio
+                        aria-label={copy.feedbackAudioPlayer}
+                        className="h-10 w-full max-w-sm"
+                        controls
+                        preload="metadata"
+                        src={resolveFeedbackAudioUrl(currentAnswer.tts_audio_url)}
+                      />
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isSynthesizingFeedback}
+                        onClick={() => void handleListenFeedback()}
+                      >
+                        {isSynthesizingFeedback ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Volume2 className="w-4 h-4" />
+                        )}
+                        {isSynthesizingFeedback ? copy.preparingFeedbackAudio : copy.listenFeedback}
+                      </Button>
+                    )}
                   </div>
                   <StructuredFeedback feedback={currentAnswer.feedback} />
                 </div>

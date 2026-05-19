@@ -449,6 +449,7 @@ export interface QnaMessageCreateResult {
 export interface AnswerSubmit {
   question_id: number;
   answer_text: string;
+  output_language?: 'vi' | 'en';
 }
 
 // ─── Auth API ───────────────────────────────────────────────────────────────
@@ -577,10 +578,18 @@ export const sessionsApi = {
     });
   },
 
-  transcribeAnswer: async (sessionId: string, audioFile: File): Promise<AnswerTranscriptOut> => {
+  transcribeAnswer: async (
+    sessionId: string,
+    audioFile: File,
+    language: 'vi' | 'en' | 'auto' = 'vi',
+    questionId?: number,
+  ): Promise<AnswerTranscriptOut> => {
     const formData = new FormData();
     formData.append('audio', audioFile);
-    formData.append('language', 'auto');
+    formData.append('language', language);
+    if (questionId != null) {
+      formData.append('question_id', String(questionId));
+    }
     return request<AnswerTranscriptOut>(`/sessions/${sessionId}/stt`, {
       method: 'POST',
       body: formData,

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { authApi, UserOut, getToken, setToken, clearToken } from '@/lib/api';
+import { authApi, UserOut, TOKEN_KEY, getToken, setToken, clearToken } from '@/lib/api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface AuthContextType {
@@ -20,6 +20,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserOut | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const clearAuth = useCallback(() => {
+    clearToken();
+    setUser(null);
+  }, []);
 
   const refreshUser = useCallback(async () => {
     const token = getToken();
@@ -54,20 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await refreshUser();
       } catch {
-        clearToken();
-        setUser(null);
+        clearAuth();
       } finally {
         setLoading(false);
       }
     };
 
     validateToken();
-  }, [refreshUser]);
+  }, [clearAuth, refreshUser]);
 
   useEffect(() => {
-    if (!user?.id) return;
-
     const syncUserFromDatabase = () => {
+      if (!getToken()) return;
       void refreshUser();
     };
 
@@ -81,16 +84,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const intervalId = window.setInterval(syncUserFromDatabase, 10000);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== TOKEN_KEY) return;
+      if (!event.newValue) {
+        clearAuth();
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      void refreshUser().finally(() => {
+        setLoading(false);
+      });
+    };
+
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('storage', handleStorage);
 
     return () => {
-      window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('storage', handleStorage);
     };
-  }, [refreshUser, user?.id]);
+  }, [clearAuth, refreshUser]);
 
   /**
    * login: gọi POST /auth/login → lưu token → fetch user info.
@@ -112,11 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const me = await authApi.me();
     setUser(me);
     return me;
-  }, []);
-
-  const clearAuth = useCallback(() => {
-    clearToken();
-    setUser(null);
   }, []);
 
   /**

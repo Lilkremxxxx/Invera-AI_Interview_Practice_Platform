@@ -29,6 +29,7 @@ from app.services.session_pdf import build_session_pdf_filename, build_sessions_
 from app.services.question_bank_seed import ensure_question_bank_minimum
 from app.services.scoring import ScoringRequest, score_answer
 from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
+from app.services.transcript_cleanup import correct_transcript_text
 
 router = APIRouter()
 
@@ -100,6 +101,18 @@ async def _fetch_session_questions(
         """,
         major, role, level, count,
     )
+
+
+def _avoid_repeated_first_question(questions, previous_first_question_id):
+    if not previous_first_question_id or len(questions) <= 1:
+        return questions
+    if questions[0]["id"] != previous_first_question_id:
+        return questions
+
+    for index, question in enumerate(questions[1:], start=1):
+        if question["id"] != previous_first_question_id:
+            return questions[index:] + questions[:index]
+    return questions
 
 
 def _humanize_role_label(role: str) -> str:
@@ -316,6 +329,22 @@ async def create_session(
             detail=f"Chưa có câu hỏi cho major={major}, role={role}, level={level}",
         )
 
+    previous_first_question_id = await db.fetchval(
+        """
+        SELECT sq.question_id
+        FROM sessions s
+        JOIN session_question_sets sq ON sq.session_id = s.id AND sq.position = 1
+        WHERE s.user_id = $1
+          AND s.major = $2
+          AND s.role = $3
+          AND s.level = $4
+        ORDER BY s.created_at DESC
+        LIMIT 1
+        """,
+        current_user.id, major, role, level,
+    )
+    questions = _avoid_repeated_first_question(questions, previous_first_question_id)
+
     async with db.transaction():
         session_row = await db.fetchrow(
             """
@@ -522,6 +551,7 @@ async def transcribe_session_audio(
     session_id: uuid.UUID,
     audio: UploadFile = File(...),
     language: str | None = Form(None),
+    question_id: int | None = Form(None),
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
@@ -561,6 +591,26 @@ async def transcribe_session_audio(
     except subprocess.CalledProcessError as exc:
         detail = exc.stderr.strip() or "Không thể chuyển audio thành transcript lúc này."
         raise HTTPException(status_code=500, detail=detail) from exc
+
+    if question_id is not None:
+        question_row = await db.fetchrow(
+            """
+            SELECT q.id, q.text, q.text_en, q.text_vi
+            FROM questions q
+            JOIN session_question_sets sq
+              ON sq.question_id = q.id
+             AND sq.session_id = $1
+            WHERE q.id = $2
+            """,
+            session_id, question_id,
+        )
+        if question_row:
+            cleanup_language = "vi" if str(language or "").strip().lower() == "vi" else "en"
+            transcript = await correct_transcript_text(
+                transcript=transcript,
+                question_text=localized_question_field(question_row, "text", cleanup_language),
+                language=cleanup_language,
+            )
 
     return AnswerTranscriptOut(text=transcript)
 
@@ -634,20 +684,23 @@ async def submit_answer(
         raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại")
 
     ui_language = resolve_ui_language(request)
+    feedback_language = "vi" if str(body.output_language or ui_language).strip().lower() == "vi" else "en"
+    force_feedback_language = body.output_language is not None
     cleaned_answer_text = sanitize_user_text(body.answer_text)
 
     # Score the answer
     score, feedback = await score_answer(
         ScoringRequest(
             answer_text=cleaned_answer_text,
-            ideal_answer=localized_question_field(question_row, "ideal_answer", ui_language),
-            question_text=localized_question_field(question_row, "text", ui_language),
+            ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+            question_text=localized_question_field(question_row, "text", feedback_language),
             role=session_row["role"],
             level=session_row["level"],
-            category=localized_question_field(question_row, "category", ui_language),
+            category=localized_question_field(question_row, "category", feedback_language),
             difficulty=question_row["difficulty"],
             major=session_row["major"],
-            preferred_language=ui_language,
+            preferred_language=feedback_language,
+            force_language=force_feedback_language,
         )
     )
 
@@ -677,7 +730,7 @@ async def submit_answer(
             session_id, body.question_id, cleaned_answer_text, score, feedback,
         )
 
-    tts_script = build_feedback_tts_script(score=score, feedback=feedback)
+    tts_script = build_feedback_tts_script(score=score, feedback=feedback, language=feedback_language)
     return _serialize_answer_row(answer_row, tts_script=tts_script)
 
 

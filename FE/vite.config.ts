@@ -18,4 +18,41 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return undefined;
+          }
+
+          if (id.includes("react-router-dom")) {
+            return "router";
+          }
+
+          if (id.includes("@tanstack/react-query")) {
+            return "query";
+          }
+
+          if (id.includes("@radix-ui")) {
+            return "radix";
+          }
+
+          if (
+            id.includes("react-hook-form") ||
+            id.includes("@hookform") ||
+            id.includes("zod")
+          ) {
+            return "forms";
+          }
+
+          if (id.includes("recharts") || id.includes("d3-")) {
+            return "charts";
+          }
+
+          return "vendor";
+        },
+      },
+    },
+  },
 }));

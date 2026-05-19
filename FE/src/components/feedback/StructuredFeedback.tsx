@@ -25,6 +25,7 @@ const sectionCopy = {
     outline: 'Khung trả lời tốt hơn',
     followUp: 'Câu hỏi follow-up',
     missing: 'Thiếu',
+    quote: 'Trích dẫn',
     noFeedback: 'Chưa có phản hồi chi tiết.',
     strong: 'Tốt',
     mixed: 'Trung bình',
@@ -37,6 +38,7 @@ const sectionCopy = {
     outline: 'Stronger answer outline',
     followUp: 'Follow-up questions',
     missing: 'Missing',
+    quote: 'Quote',
     noFeedback: 'No detailed feedback yet.',
     strong: 'Strong',
     mixed: 'Mixed',
@@ -152,6 +154,11 @@ export function StructuredFeedback({ feedback, className }: StructuredFeedbackPr
                     </Badge>
                   )}
                 </div>
+                {criterion.quote && (
+                  <blockquote className="mb-3 rounded-lg border-l-4 border-accent/50 bg-accent/5 px-3 py-2 text-sm italic leading-6 text-foreground/85">
+                    <span className="not-italic font-medium text-foreground">{copy.quote}:</span> {criterion.quote}
+                  </blockquote>
+                )}
                 {criterion.evidence && (
                   <p className="text-sm leading-6 text-foreground/90">{criterion.evidence}</p>
                 )}

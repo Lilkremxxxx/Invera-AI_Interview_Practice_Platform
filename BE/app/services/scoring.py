@@ -8,6 +8,7 @@ HR-calibrated scorer for interview answers.
 - Treat very short Vietnamese answers as automatically weak because HR cannot evaluate them well.
 """
 
+import copy
 from dataclasses import dataclass
 import json
 import logging
@@ -61,7 +62,9 @@ class ScoringRequest:
     level: str
     category: str
     difficulty: str
+    major: str = "technology"
     preferred_language: str = "en"
+    force_language: bool = False
 
 
 def _tokenize(text: str) -> set[str]:
@@ -108,61 +111,385 @@ def _detect_question_type(category: str, question_text: str) -> str:
     return "technical_general"
 
 
-def _rubric_prompt(question_type: str, level: str, preferred_language: str) -> str:
-    type_specific = {
-        "behavioral": "Judge ownership, structure, decision-making, result, and reflection.",
-        "system_design": "Judge architecture clarity, constraints, trade-offs, scaling, and risk awareness.",
-        "database": "Judge data correctness, query/index reasoning, operations, and trade-offs.",
-        "algorithm": "Judge correctness, approach selection, complexity, edge cases, and explanation.",
-        "technical_general": "Judge correctness, reasoning, specificity, and practical judgment.",
-    }[question_type]
+_TECH_RUBRIC = [
+    {
+        "name": "Domain Knowledge & Technical Accuracy",
+        "weight": 25,
+        "definition": "Correctness of concepts, terminology, assumptions, and technical constraints.",
+        "level_1": "Core concepts wrong; confuses components/consequences; dangerous or baseless assumptions.",
+        "level_3": "Mostly correct for common cases; gaps in edge cases or important dependencies.",
+        "level_5": "Accurate and well-contextualised; states assumptions, dependencies, edge cases, and limits.",
+    },
+    {
+        "name": "Problem Decomposition & Reasoning",
+        "weight": 20,
+        "definition": "How the candidate frames goals, constraints, breaks down the problem, and reasons step by step.",
+        "level_1": "Jumps to a solution immediately; no goal/constraint/trade-off clarification.",
+        "level_3": "Separates the main parts; logic is acceptable but not prioritised or hypothesis-driven.",
+        "level_5": "Sharp framing; reasonable prioritisation; clear causal chain; knows where to clarify.",
+    },
+    {
+        "name": "Design, Implementation & Trade-offs",
+        "weight": 20,
+        "definition": "Quality of the technical proposal — architecture/algorithm/data choices, trade-off explanation.",
+        "level_1": "Generic solution; no comparison of alternatives; no design consequences discussed.",
+        "level_3": "Workable solution; partial trade-off mention; not deep enough on scale/performance/maintainability.",
+        "level_5": "Solid design; choices justified; alternatives compared; trade-offs on scale, latency, reliability, maintainability, cost when relevant.",
+    },
+    {
+        "name": "Feasibility, Quality & Risk Judgment",
+        "weight": 15,
+        "definition": "Realism of rollout, testing, observability, security/privacy, compliance, ethics.",
+        "level_1": "Ignores testing, rollout, monitoring, security/privacy, or deployment risk.",
+        "level_3": "Mentions basic testing/monitoring/risk; lacks concrete controls or rollback.",
+        "level_5": "Feasible deployment plan; quality and risk controls clear; security/privacy/legal/ethical concerns raised when relevant.",
+    },
+    {
+        "name": "Technical Communication",
+        "weight": 15,
+        "definition": "Clarity, coherence, audience fit, avoiding unnecessary jargon.",
+        "level_1": "Hard to follow; wrong terminology; disjointed structure.",
+        "level_3": "Understandable but wordy or lacks signposting.",
+        "level_5": "Tight structure; concise delivery; makes complex ideas easy to follow.",
+    },
+    {
+        "name": "Creativity & Optimisation",
+        "weight": 5,
+        "definition": "Useful novelty — avoids over-engineering.",
+        "level_1": "No new insight; or 'creative' but irrelevant.",
+        "level_3": "At least one reasonable improvement.",
+        "level_5": "Valuable insight or optimisation that remains practical.",
+    },
+]
+
+_BUSINESS_RUBRIC = [
+    {
+        "name": "Business Context & Objectives",
+        "weight": 20,
+        "definition": "Understanding of the business problem, economics, customers, market, stakeholders, success metrics.",
+        "level_1": "Misses the core business problem; confuses goal with solution; ignores key stakeholders.",
+        "level_3": "Grasps basic goals and some constraints; lacks commercial context or decision criteria.",
+        "level_5": "Sharp framing; clear goals, segment, economics, stakeholders, KPIs, and determining constraints.",
+    },
+    {
+        "name": "Analysis & Quantitative Reasoning",
+        "weight": 25,
+        "definition": "Quality of argument, data use, assumptions, calculations, sensitivity.",
+        "level_1": "Claims without evidence; weak logic; wrong or irrelevant numbers.",
+        "level_3": "Basic logic and/or quantification; assumptions not explicit; thin sensitivity.",
+        "level_5": "Tight analysis; clear assumptions; distinguishes signal from noise; sufficient quantification for decisions.",
+    },
+    {
+        "name": "Recommendation, Prioritisation & Decision Quality",
+        "weight": 20,
+        "definition": "Clarity of final proposal, ability to choose/reject, resource prioritisation.",
+        "level_1": "Vague recommendation; lists many things without picking the main one.",
+        "level_3": "Reasonable proposal; basic prioritisation; link to goals not yet sharp.",
+        "level_5": "Clear choice; knows trade-offs; prioritises by impact-feasibility; persuasive reasoning for chosen option.",
+    },
+    {
+        "name": "Execution Feasibility & Risk Governance",
+        "weight": 15,
+        "definition": "Realism of execution plan: owner, timeline, KPI, resources, risk, contingency.",
+        "level_1": "Looks good on paper but hard to execute; ignores resources and risk.",
+        "level_3": "Basic deployment steps; mentions KPI or resources but lacks owner/timeline/risk handling.",
+        "level_5": "Actionable plan; clear owner/timeline/KPI; risks and mitigation stated.",
+    },
+    {
+        "name": "Communication & Stakeholder Management",
+        "weight": 15,
+        "definition": "Clarity, persuasiveness, executive audience fit, handling objections.",
+        "level_1": "Hard to follow; rambling; unclear 'so what'.",
+        "level_3": "Reasonably clear; missing executive summary or does not anticipate objections.",
+        "level_5": "Executive-ready; issue-to-recommendation flow; anticipates stakeholder pushback.",
+    },
+    {
+        "name": "Creativity & Opportunity Finding",
+        "weight": 5,
+        "definition": "New insight or value-adding alternative that remains realistic.",
+        "level_1": "No insight; idea too generic or unrealistic.",
+        "level_3": "At least one reasonable value-adding idea.",
+        "level_5": "Sharp insight or expanded option set that adds value without sacrificing operational reality.",
+    },
+]
+
+_FINANCE_RUBRIC = [
+    {
+        "name": "Business Context & Financial Acumen",
+        "weight": 25,
+        "definition": "Understanding of the business problem, economics, customers, market, stakeholders, success metrics and financial drivers.",
+        "level_1": "Misses the core business problem; confuses goal with solution; ignores key stakeholders or financial fundamentals.",
+        "level_3": "Grasps basic goals and some constraints; lacks commercial context, decision criteria, or financial awareness.",
+        "level_5": "Sharp framing; clear goals, segment, economics, stakeholders, KPIs, and financial trade-offs clearly articulated.",
+    },
+    {
+        "name": "Analysis & Quantitative Reasoning",
+        "weight": 25,
+        "definition": "Quality of argument, data use, assumptions, calculations, sensitivity.",
+        "level_1": "Claims without evidence; weak logic; wrong or irrelevant numbers.",
+        "level_3": "Basic logic and/or quantification; assumptions not explicit; thin sensitivity.",
+        "level_5": "Tight analysis; clear assumptions; distinguishes signal from noise; sufficient quantification for decisions.",
+    },
+    {
+        "name": "Recommendation, Prioritisation & Decision Quality",
+        "weight": 20,
+        "definition": "Clarity of final proposal, ability to choose/reject, resource prioritisation.",
+        "level_1": "Vague recommendation; lists many things without picking the main one.",
+        "level_3": "Reasonable proposal; basic prioritisation; link to goals not yet sharp.",
+        "level_5": "Clear choice; knows trade-offs; prioritises by impact-feasibility; persuasive reasoning for chosen option.",
+    },
+    {
+        "name": "Execution Feasibility & Risk Governance",
+        "weight": 15,
+        "definition": "Realism of execution plan: owner, timeline, KPI, resources, risk, contingency.",
+        "level_1": "Looks good on paper but hard to execute; ignores resources and risk.",
+        "level_3": "Basic deployment steps; mentions KPI or resources but lacks owner/timeline/risk handling.",
+        "level_5": "Actionable plan; clear owner/timeline/KPI; risks and mitigation stated.",
+    },
+    {
+        "name": "Communication & Stakeholder Management",
+        "weight": 10,
+        "definition": "Clarity, persuasiveness, executive audience fit, handling objections.",
+        "level_1": "Hard to follow; rambling; unclear 'so what'.",
+        "level_3": "Reasonably clear; missing executive summary or does not anticipate objections.",
+        "level_5": "Executive-ready; issue-to-recommendation flow; anticipates stakeholder pushback.",
+    },
+    {
+        "name": "Creativity & Opportunity Finding",
+        "weight": 5,
+        "definition": "New insight or value-adding alternative that remains realistic.",
+        "level_1": "No insight; idea too generic or unrealistic.",
+        "level_3": "At least one reasonable value-adding idea.",
+        "level_5": "Sharp insight or expanded option set that adds value without sacrificing operational reality.",
+    },
+]
+
+
+_TECH_ROLE_ADJUSTMENTS = [
+    {
+        "keywords": [
+            "infrastructure", "platform", "cybersecurity", "infra",
+            "security", "devops", "sre", "cloud", "network",
+        ],
+        "from_criterion": "Creativity & Optimisation",
+        "to_criterion": "Feasibility, Quality & Risk Judgment",
+        "shift": 5,
+        "description": "Hạ tầng/platform/cybersecurity: +5% từ Sáng tạo sang Khả thi–Rủi ro",
+    },
+    {
+        "keywords": [
+            "data", "ml", "machine learning", "research", "ai",
+            "data science", "data engineer", "ml engineer",
+        ],
+        "from_criterion": "Technical Communication",
+        "to_criterion": "Domain Knowledge & Technical Accuracy",
+        "shift": 5,
+        "description": "Data/ML research: +5% từ Giao tiếp sang Kiến thức kỹ thuật",
+    },
+    {
+        "keywords": [
+            "support", "solutions", "solutions engineer",
+            "customer", "field", "solutions architect",
+        ],
+        "from_criterion": "Creativity & Optimisation",
+        "to_criterion": "Technical Communication",
+        "shift": 5,
+        "description": "Support/solutions: +5% từ Sáng tạo sang Giao tiếp",
+    },
+]
+
+_BUSINESS_ROLE_ADJUSTMENTS = [
+    {
+        "keywords": [
+            "strategy", "strategic", "finance", "financial",
+            "m&a", "investment", "corporate development",
+        ],
+        "from_criterion": "Creativity & Opportunity Finding",
+        "to_criterion": "Analysis & Quantitative Reasoning",
+        "shift": 5,
+        "description": "Strategy/finance: +5% từ Sáng tạo sang Phân tích",
+    },
+    {
+        "keywords": [
+            "sales", "bd", "business development", "account",
+            "customer success", "partnership", "account management",
+        ],
+        "from_criterion": "Analysis & Quantitative Reasoning",
+        "to_criterion": "Communication & Stakeholder Management",
+        "shift": 5,
+        "description": "Sales/BD: +5% từ Phân tích sang Giao tiếp–Stakeholder",
+    },
+    {
+        "keywords": [
+            "operations", "program management", "project management",
+            "pm", "program manager", "project manager", "prod ops",
+        ],
+        "from_criterion": "Creativity & Opportunity Finding",
+        "to_criterion": "Execution Feasibility & Risk Governance",
+        "shift": 5,
+        "description": "Operations/PM: +5% từ Sáng tạo sang Khả thi–Rủi ro",
+    },
+]
+
+
+def _apply_role_adjustments(criteria: list[dict[str, object]], role: str) -> list[dict[str, object]]:
+    """Apply quick role-based weight adjustments per rubric.docx 'Điều chỉnh nhanh theo vai trò'.
+
+    Returns a deep copy with modified weights; original is not mutated.
+    No changes if role is empty/unknown or no adjustment matches.
+    """
+    if not role or not role.strip():
+        return copy.deepcopy(criteria)
+
+    role_lower = role.strip().lower()
+
+    # Detect which rubric type based on criterion names
+    has_tech_names = any("Technical" in str(c.get("name", "")) or "Accuracy" in str(c.get("name", "")) for c in criteria)
+    adjustments = _TECH_ROLE_ADJUSTMENTS if has_tech_names else _BUSINESS_ROLE_ADJUSTMENTS
+
+    result = copy.deepcopy(criteria)
+
+    for adj in adjustments:
+        if not any(kw in role_lower for kw in adj["keywords"]):
+            continue
+
+        from_idx = next(
+            (i for i, c in enumerate(result) if c["name"] == adj["from_criterion"]),
+            None,
+        )
+        to_idx = next(
+            (i for i, c in enumerate(result) if c["name"] == adj["to_criterion"]),
+            None,
+        )
+
+        if from_idx is not None and to_idx is not None:
+            old_from = result[from_idx]["weight"]
+            old_to = result[to_idx]["weight"]
+            if old_from >= adj["shift"]:
+                result[from_idx]["weight"] = old_from - adj["shift"]
+                result[to_idx]["weight"] = old_to + adj["shift"]
+                logger.info(
+                    "Role adjustment applied: %s | %s: %d%% -> %d%%, %s: %d%% -> %d%%",
+                    adj["description"],
+                    result[from_idx]["name"], old_from, result[from_idx]["weight"],
+                    result[to_idx]["name"], old_to, result[to_idx]["weight"],
+                )
+
+        # Only apply the first matching adjustment
+        break
+
+    return result
+
+
+def _resolve_rubric(major: str) -> list[dict[str, object]]:
+    normalized = (major or "technology").strip().lower()
+    if normalized == "finance":
+        return _FINANCE_RUBRIC
+    if normalized in ("business", "business_analyst"):
+        return _BUSINESS_RUBRIC
+    return _TECH_RUBRIC
+
+
+def _format_rubric_for_prompt(criteria: list[dict[str, object]], level: str) -> str:
+    lines = ["### Scoring Scale (per criterion)", ""]
+    lines.append("1 = Fails")
+    lines.append("    Off-target or severely wrong; lacks evidence; hard to salvage without almost starting over.")
+    lines.append("2 = Weak")
+    lines.append("    Shows some understanding but scattered; thin reasoning; misses important constraints.")
+    lines.append("3 = Meets")
+    lines.append("    Covers the core; mostly correct; logic usable for standard cases; depth or trade-offs still missing.")
+    lines.append("4 = Good")
+    lines.append("    Accurate, prioritised, considers risks/trade-offs, clear delivery; practically usable.")
+    lines.append("5 = Excellent")
+    lines.append("    Deep, accurate, well-contextualised, anticipates risks, evidence-backed, actionable, persuasive.")
+    lines.append("")
+    lines.append(f"### Seniority Context: {level}")
+    lines.append("- Intern/Fresher: focus on fundamentals, clarity, basic correctness")
+    lines.append("- Junior: correct reasoning, practical examples, awareness of trade-offs")
+    lines.append("- Mid: depth, prioritisation, risk awareness, stronger judgment")
+    lines.append("- Senior: strategic trade-offs, operational excellence, mentoring patterns")
+    lines.append("")
+    lines.append("### 6 Criteria (score each independently, then compute weighted total)")
+    lines.append("")
+
+    for i, c in enumerate(criteria, 1):
+        name = c["name"]
+        weight = c["weight"]
+        definition = c["definition"]
+        l1 = c["level_1"]
+        l3 = c["level_3"]
+        l5 = c["level_5"]
+        lines.append(f"**Criterion {i}: {name} — Weight {weight}%**")
+        lines.append(f"  Definition: {definition}")
+        lines.append(f"  Level 1 (Fails): {l1}")
+        lines.append(f"  Level 3 (Meets): {l3}")
+        lines.append(f"  Level 5 (Excellent): {l5}")
+        lines.append("")
+
+    lines.append("### Floor Rules")
+    if any("Technical" in str(c["name"]) or "Accuracy" in str(c["name"]) for c in criteria):
+        lines.append("- If Domain Knowledge (C1) or Design/Trade-offs (C3) = 1 → overall max = Borderline")
+    else:
+        lines.append("- If Business Context (C1) or Analysis (C2) = 1 → overall should not pass")
+    lines.append("")
+    lines.append("### Score Bands for Overall /10")
+    lines.append("- 8.5-10.0: very strong, clear, accurate, specific, good judgment → interpret as 85-100/100")
+    lines.append("- 6.5-8.4: good and credible, mostly on point, explains reasoning → 70-84/100")
+    lines.append("- 4.0-6.4: some foundation but missing depth, specificity, or structure → 55-69/100")
+    lines.append("- below 4.0: too short, off-target, incorrect, or shallow → <55/100")
+
+    return "\n".join(lines)
+
+
+def _rubric_prompt(question_type: str, level: str, preferred_language: str, major: str, role: str) -> str:
+    criteria = _resolve_rubric(major)
+    criteria = _apply_role_adjustments(criteria, role)
+    rubric_section = _format_rubric_for_prompt(criteria, level)
 
     return f"""
-You are Invera's interview evaluator.
+You are Invera's interview evaluator. Use the structured rubric below to score the candidate's answer.
 
-Score the answer the way a practical HR/interviewer would experience it.
 The reference answer is only an anchor for expected depth, not a mandatory checklist.
 Reward correct paraphrases, clear reasoning, and useful examples even when wording differs.
 
-Context:
-- Target level: {level}
-- Question type hint: {question_type}
-- Required output language: {preferred_language}
-- {type_specific}
-
-Score bands:
-- 8.5-10.0: very strong, clear, accurate, specific, good judgment
-- 6.5-8.4: good and credible, mostly on point, explains reasoning
-- 4.0-6.4: some foundation but missing depth, specificity, or structure
-- below 4.0: too short, off-target, incorrect, or shallow
+{rubric_section}
 
 Return STRICT JSON only:
 {{
   "language": "vi" | "en",
   "question_type": "{question_type}",
   "score": 0.0,
-  "summary": "one short HR-style assessment",
+  "summary": "one direct HR-style assessment with the main pass/fail reason",
   "criteria": [
     {{
-      "name": "criterion name",
+      "name": "criterion name (exactly as listed above)",
+      "score": 1-5,
       "assessment": "strong | mixed | weak",
-      "evidence": "observed evidence from the answer",
+      "quote": "short exact excerpt copied from the candidate answer that justifies this criterion score",
+      "evidence": "practical evaluation of that quoted excerpt for this criterion",
       "missing": "what would raise the score"
     }}
   ],
-  "strengths": ["max 3 short bullets"],
-  "gaps": ["max 3 short bullets"],
-  "improvements": ["max 3 prioritized actions"],
-  "better_outline": ["max 4 short steps"],
+  "strengths": ["max 4 specific bullets"],
+  "gaps": ["max 4 specific bullets"],
+  "improvements": ["max 4 prioritized actions"],
+  "better_outline": ["max 5 short steps"],
   "follow_up": ["max 2 short follow-up questions"]
 }}
 
 Rules:
 - Be evidence-based. Do not invent experience, metrics, or implementation details.
+- Every criterion MUST include quote. The quote must be copied from candidate_answer, max 18 words, and must not be paraphrased.
+- Never quote the question, reference answer, rubric text, or your own summary. If possible, use different candidate_answer excerpts across criteria.
+- In evidence, evaluate the quoted words directly against the rubric. Do not write generic feedback that could apply to any answer.
+- In missing, name the specific concept, example, trade-off, risk, metric, or implementation detail needed next.
 - Do not punish the answer just because it does not copy the reference wording.
-- Use the rubric to explain quality and how to improve for an actual HR/interviewer.
+- Score each criterion using the anchor descriptions (Level 1, 3, 5) as your guide.
+- Use the full 1-5 scale — do not only use 2, 3, 4.
+- Remember the floor rules: certain low scores cap the overall band.
+- Compute the overall score as: weighted_sum / 5 * 10 (converting 1-5 per criterion to /10 overall).
 - Write every field in {preferred_language} only.
-- Keep the output concise and high-signal.
+- Be detailed enough for coaching. Avoid filler, but do not collapse the rubric into generic comments.
 """.strip()
 
 
@@ -190,7 +517,7 @@ def _format_feedback(result: dict[str, Any]) -> str:
     }[language]
 
     lines: list[str] = []
-    summary = str(result.get("summary") or "").strip()
+    summary = _calibrated_summary(result, language)
     if summary:
         lines.append(f"{labels['summary']}: {summary}")
 
@@ -198,14 +525,29 @@ def _format_feedback(result: dict[str, Any]) -> str:
     if isinstance(criteria, list) and criteria:
         lines.append("")
         lines.append(f"{labels['criteria']}:")
-        for item in criteria[:4]:
+        for item in criteria[:6]:
             if not isinstance(item, dict):
                 continue
             name = str(item.get("name") or "").strip()
             assessment = str(item.get("assessment") or "").strip()
+            quote = str(item.get("quote") or "").strip()
             evidence = str(item.get("evidence") or "").strip()
             missing = str(item.get("missing") or "").strip()
-            detail_parts = [part for part in (evidence, missing) if part]
+            if quote and not (quote.startswith("“") and quote.endswith("”")):
+                quote = f"“{quote.strip(chr(34) + '“”')}”"
+            if language == "vi":
+                detail_parts = [
+                    f"Trích dẫn: {quote}" if quote else "",
+                    f"Đánh giá: {evidence}" if evidence else "",
+                    f"Thiếu: {missing}" if missing else "",
+                ]
+            else:
+                detail_parts = [
+                    f"Quote: {quote}" if quote else "",
+                    f"Evaluation: {evidence}" if evidence else "",
+                    f"Missing: {missing}" if missing else "",
+                ]
+            detail_parts = [part for part in detail_parts if part]
             title = " - ".join(part for part in (name, assessment) if part)
             lines.append(f"- {title}: {' | '.join(detail_parts)}".rstrip(": "))
 
@@ -234,6 +576,48 @@ def _format_feedback(result: dict[str, Any]) -> str:
     )
 
 
+def _calibrated_summary(result: dict[str, Any], language: str) -> str:
+    criteria = [item for item in (result.get("criteria") or []) if isinstance(item, dict)]
+    weak_names = [
+        str(item.get("name") or "").strip()
+        for item in criteria
+        if str(item.get("assessment") or "").strip().lower() == "weak"
+    ]
+    mixed_count = sum(1 for item in criteria if str(item.get("assessment") or "").strip().lower() == "mixed")
+    raw_score = result.get("score")
+    score = float(raw_score) if isinstance(raw_score, (int, float)) else None
+
+    if language == "vi":
+        if weak_names:
+            listed = ", ".join(name for name in weak_names[:2] if name)
+            return (
+                f"Câu trả lời có vài điểm đúng, nhưng chưa đủ chắc vì còn tiêu chí yếu"
+                f"{f': {listed}' if listed else ''}."
+            )
+        if score is not None and score >= 8.5:
+            return "Câu trả lời mạnh: rõ trọng tâm, có bằng chứng, có chiều sâu và judgment đủ tốt."
+        if mixed_count >= 2:
+            return "Câu trả lời đạt mức dùng được, nhưng vẫn cần làm rõ bằng chứng, ví dụ và lập luận để thuyết phục hơn."
+        if score is not None and score >= 6.5:
+            return "Câu trả lời có nền tảng tốt, nhưng cần thêm bằng chứng cụ thể để nâng mức đánh giá."
+        if score is not None and score >= 4.0:
+            return "Câu trả lời có nền tảng nhưng còn thiếu độ sâu, ví dụ cụ thể, hoặc cấu trúc rõ ràng hơn."
+        return "Câu trả lời hiện còn yếu vì quá ngắn, thiếu trọng tâm, hoặc thiếu phần giải thích."
+
+    if weak_names:
+        listed = ", ".join(name for name in weak_names[:2] if name)
+        return f"The answer has some correct points, but it is not strong yet because weak criteria remain{f': {listed}' if listed else ''}."
+    if score is not None and score >= 8.5:
+        return "Strong answer: clear, evidence-backed, deep enough, and well-judged."
+    if mixed_count >= 2:
+        return "Usable answer, but it still needs clearer evidence, examples, and reasoning to be convincing."
+    if score is not None and score >= 6.5:
+        return "The answer has a solid foundation, but it needs more concrete evidence to score higher."
+    if score is not None and score >= 4.0:
+        return "The answer has some foundation, but it still needs more depth, specificity, or structure."
+    return "The answer is currently weak because it is too short, off-target, or under-explained."
+
+
 def _normalize_model_response(content: str, request: ScoringRequest) -> dict[str, Any]:
     cleaned = content.strip()
     if cleaned.startswith("```"):
@@ -260,7 +644,11 @@ def _normalize_model_response(content: str, request: ScoringRequest) -> dict[str
         request.category,
         request.question_text,
     )
-    result["language"] = normalize_supported_language(result.get("language"), request.preferred_language)
+    result["language"] = (
+        normalize_supported_language(request.preferred_language, "en")
+        if request.force_language
+        else normalize_supported_language(result.get("language"), request.preferred_language)
+    )
 
     for key in ("criteria", "strengths", "gaps", "improvements", "better_outline", "follow_up"):
         value = result.get(key)
@@ -268,6 +656,17 @@ def _normalize_model_response(content: str, request: ScoringRequest) -> dict[str
             result[key] = []
         elif not isinstance(value, list):
             result[key] = [str(value)]
+
+    normalized_criteria: list[Any] = []
+    for item in result.get("criteria") or []:
+        if not isinstance(item, dict):
+            normalized_criteria.append(item)
+            continue
+        item["quote"] = str(item.get("quote") or "").strip()
+        item["evidence"] = str(item.get("evidence") or "").strip()
+        item["missing"] = str(item.get("missing") or "").strip()
+        normalized_criteria.append(item)
+    result["criteria"] = normalized_criteria
 
     result["summary"] = str(result.get("summary") or "").strip()
     return result
@@ -289,6 +688,84 @@ def _score_band_summary(score: float, language: str) -> str:
     if score >= 4.0:
         return "This answer has some foundation, but it still needs more depth, specificity, or structure."
     return "This answer is currently weak for interview use because it is too short, off-target, or too shallow."
+
+
+def _candidate_quote(answer_text: str, max_chars: int = 180) -> str:
+    cleaned = sanitize_user_text(answer_text).strip()
+    if not cleaned:
+        return ""
+
+    sentences = [chunk.strip() for chunk in re.split(r"(?<=[.!?。！？])\s+", cleaned) if chunk.strip()]
+    quote = sentences[0] if sentences else cleaned
+    if len(quote) <= max_chars:
+        return quote
+
+    return f"{quote[:max_chars].rsplit(' ', 1)[0].rstrip()}..."
+
+
+def _candidate_quote_segments(answer_text: str, max_chars: int = 180) -> list[str]:
+    cleaned = sanitize_user_text(answer_text).strip()
+    if not cleaned:
+        return []
+
+    raw_segments = [
+        chunk.strip()
+        for chunk in re.split(r"(?<=[.!?。！？])\s+|\n+", cleaned)
+        if chunk.strip()
+    ]
+    if len(raw_segments) <= 1:
+        raw_segments = [
+            chunk.strip()
+            for chunk in re.split(r"\s*(?:;|,|,| và | nhưng | tuy nhiên | ví dụ | for example )\s*", cleaned, flags=re.I)
+            if chunk.strip()
+        ]
+
+    segments: list[str] = []
+    for segment in raw_segments:
+        quote = segment
+        if len(quote) > max_chars:
+            quote = quote[:max_chars].rsplit(" ", 1)[0].rstrip()
+        if quote and quote not in segments:
+            segments.append(quote)
+    return segments or [_candidate_quote(answer_text, max_chars=max_chars)]
+
+
+def _quote_belongs_to_answer(quote: str, answer_text: str) -> bool:
+    cleaned_quote = quote.strip().strip('"“”')
+    if not cleaned_quote:
+        return False
+    return cleaned_quote in sanitize_user_text(answer_text)
+
+
+def _fill_missing_criterion_quotes(result: dict[str, Any], answer_text: str) -> dict[str, Any]:
+    fallback_quote = _candidate_quote(answer_text)
+    quote_segments = _candidate_quote_segments(answer_text)
+    used_quotes: set[str] = set()
+    criteria = result.get("criteria") or []
+    if not isinstance(criteria, list):
+        return result
+
+    for index, item in enumerate(criteria):
+        if not isinstance(item, dict):
+            continue
+
+        current_quote = str(item.get("quote") or "").strip().strip('"“”')
+        quote_is_usable = _quote_belongs_to_answer(current_quote, answer_text) and current_quote not in used_quotes
+        if quote_is_usable:
+            item["quote"] = current_quote
+            used_quotes.add(current_quote)
+            continue
+
+        replacement = ""
+        for offset in range(len(quote_segments)):
+            candidate = quote_segments[(index + offset) % len(quote_segments)]
+            if candidate and candidate not in used_quotes:
+                replacement = candidate
+                break
+        item["quote"] = replacement or fallback_quote
+        if item["quote"]:
+            used_quotes.add(item["quote"])
+    return result
 
 
 def _short_answer_word_limit(language: str) -> int:
@@ -595,10 +1072,14 @@ def _heuristic_metrics(request: ScoringRequest) -> dict[str, Any]:
 
     return {
         "question_type": question_type,
-        "language": select_response_language(
-            request.preferred_language,
-            request.question_text,
-            request.answer_text,
+        "language": (
+            normalize_supported_language(request.preferred_language, "en")
+            if request.force_language
+            else select_response_language(
+                request.preferred_language,
+                request.question_text,
+                request.answer_text,
+            )
         ),
         "words": words,
         "sentences": sentences,
@@ -619,6 +1100,7 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
     language = metrics["language"]
     question_type = metrics["question_type"]
     score = metrics["score"]
+    quote = _candidate_quote(request.answer_text)
     relevance_label = _assessment_label(metrics["relevance"])
     clarity_label = _assessment_label((metrics["length_metric"] * 0.35) + (metrics["reasoning_metric"] * 0.65))
     specificity_label = _assessment_label(metrics["specificity_metric"])
@@ -633,12 +1115,14 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Bám sát câu hỏi",
                 "assessment": relevance_label,
+                "quote": quote,
                 "evidence": "Câu trả lời đang đi đúng trọng tâm chính của câu hỏi." if relevance_label != "weak" else "Câu trả lời chưa bám sát vào trọng tâm chính.",
                 "missing": "Nói rõ ý chính của câu hỏi trước khi mở rộng." if relevance_label == "weak" else "Có thể liên kết trực tiếp hơn với đề bài ngay từ đầu.",
             },
             {
                 "name": "Độ rõ ràng và lập luận",
                 "assessment": clarity_label,
+                "quote": quote,
                 "evidence": "Bạn đã có giải thích và trình bày theo logic." if clarity_label == "strong" else (
                     "Đã có một vài ý giải thích, nhưng mạch trình bày chưa thật sự chắc." if clarity_label == "mixed" else "Còn thiếu giải thích và logic nối câu."
                 ),
@@ -647,6 +1131,7 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Tính cụ thể",
                 "assessment": specificity_label,
+                "quote": quote,
                 "evidence": "Câu trả lời có chi tiết cụ thể để tạo độ tin cậy." if specificity_label == "strong" else (
                     "Đã có một số chi tiết, nhưng vẫn có thể cụ thể hóa hơn." if specificity_label == "mixed" else "Còn thiếu ví dụ, dữ kiện, hoặc tình huống cụ thể."
                 ),
@@ -655,6 +1140,7 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Độ sâu và judgment",
                 "assessment": depth_label,
+                "quote": quote,
                 "evidence": "Bạn đã cho thấy độ sâu hoặc awareness về trade-off/rủi ro." if depth_label == "strong" else (
                     "Đã có một chút depth, nhưng chưa thật rõ ở phần đánh đổi hoặc judgment." if depth_label == "mixed" else "Chưa thể hiện rõ trade-off, rủi ro, hoặc judgment thực tế."
                 ),
@@ -687,12 +1173,14 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Relevance",
                 "assessment": relevance_label,
+                "quote": quote,
                 "evidence": "The answer stays close to the core question." if relevance_label != "weak" else "The answer does not stay close enough to the core question.",
                 "missing": "State the direct answer earlier and tie each point back to the question.",
             },
             {
                 "name": "Clarity and reasoning",
                 "assessment": clarity_label,
+                "quote": quote,
                 "evidence": "The explanation has a clear line of reasoning." if clarity_label == "strong" else (
                     "Some reasoning is present, but the structure could be tighter." if clarity_label == "mixed" else "The logic is under-explained."
                 ),
@@ -701,6 +1189,7 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Specificity",
                 "assessment": specificity_label,
+                "quote": quote,
                 "evidence": "The answer includes concrete detail that feels credible." if specificity_label == "strong" else (
                     "There is some detail, but it could be more concrete." if specificity_label == "mixed" else "The answer needs examples, context, or concrete detail."
                 ),
@@ -709,6 +1198,7 @@ def _heuristic_result(request: ScoringRequest) -> dict[str, Any]:
             {
                 "name": "Depth and judgment",
                 "assessment": depth_label,
+                "quote": quote,
                 "evidence": "The answer shows useful trade-off awareness or judgment." if depth_label == "strong" else (
                     "There is some depth, but not enough practical judgment yet." if depth_label == "mixed" else "The answer does not clearly show trade-offs, risk awareness, or judgment."
                 ),
@@ -777,10 +1267,27 @@ def keyword_score_answer(
 
 async def _score_with_deepseek(request: ScoringRequest) -> tuple[float, str]:
     question_type = _detect_question_type(request.category, request.question_text)
+    criteria = _resolve_rubric(request.major)
+    adjusted_criteria = _apply_role_adjustments(criteria, request.role)
+    criteria_payload = []
+    for c in adjusted_criteria:
+        criteria_payload.append(
+            {
+                "name": c["name"],
+                "weight": c["weight"],
+                "definition": c["definition"],
+                "anchors": {
+                    "fails": c["level_1"],
+                    "meets": c["level_3"],
+                    "excellent": c["level_5"],
+                },
+            }
+        )
     user_payload = json.dumps(
         {
             "product": "Invera",
             "objective": "Evaluate an interview answer and explain how to improve it for an actual interviewer.",
+            "industry_major": request.major,
             "candidate_context": {
                 "target_role": request.role,
                 "seniority_level": request.level,
@@ -793,31 +1300,29 @@ async def _score_with_deepseek(request: ScoringRequest) -> tuple[float, str]:
             },
             "reference_answer_anchor": request.ideal_answer,
             "candidate_answer": request.answer_text,
-            "rubric_focus": [
-                "relevance",
-                "clarity",
-                "reasoning",
-                "specificity",
-                "examples",
-                "tradeoffs_when_relevant",
-                "hr_readability",
-            ],
+            "rubric_criteria": criteria_payload,
         },
         ensure_ascii=False,
     )
     response = await create_chat_completion(
-        system_prompt=_rubric_prompt(question_type, request.level, request.preferred_language),
+        system_prompt=_rubric_prompt(question_type, request.level, request.preferred_language, request.major, request.role),
         user_prompt=user_payload,
         max_tokens=settings.deepseek_scoring_max_tokens,
         timeout_seconds=settings.deepseek_scoring_timeout_seconds,
         temperature=0.1,
     )
     normalized = _normalize_model_response(response["content"], request)
+    normalized = _fill_missing_criterion_quotes(normalized, request.answer_text)
     return normalized["score"], _format_feedback(normalized)
 
 
 def _very_short_vietnamese_answer(request: ScoringRequest) -> dict[str, Any] | None:
-    if select_response_language(request.preferred_language, request.answer_text) != "vi":
+    language = (
+        normalize_supported_language(request.preferred_language, "en")
+        if request.force_language
+        else select_response_language(request.preferred_language, request.answer_text)
+    )
+    if language != "vi":
         return None
     words = _word_count(request.answer_text)
     if words >= SHORT_VIETNAMESE_WORD_LIMIT:
@@ -829,10 +1334,15 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
     sanitized_answer = sanitize_user_text(request.answer_text)
     sanitized_question = sanitize_user_text(request.question_text)
     sanitized_ideal = sanitize_user_text(request.ideal_answer)
-    preferred_language = select_response_language(
-        request.preferred_language,
-        request.answer_text,
-        request.question_text,
+    requested_language = normalize_supported_language(request.preferred_language, "en")
+    preferred_language = (
+        requested_language
+        if request.force_language
+        else select_response_language(
+            request.preferred_language,
+            request.answer_text,
+            request.question_text,
+        )
     )
 
     effective_request = ScoringRequest(
@@ -843,7 +1353,9 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
         level=request.level,
         category=request.category,
         difficulty=request.difficulty,
+        major=request.major,
         preferred_language=normalize_supported_language(preferred_language, request.preferred_language),
+        force_language=request.force_language,
     )
 
     if not effective_request.answer_text.strip():
@@ -856,10 +1368,12 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
 
     short_answer = _very_short_vietnamese_answer(effective_request)
     if short_answer is not None:
+        short_answer = _fill_missing_criterion_quotes(short_answer, effective_request.answer_text)
         return short_answer["score"], _format_feedback(short_answer)
 
     quick_guard = _quick_guard_result(effective_request)
     if quick_guard is not None:
+        quick_guard = _fill_missing_criterion_quotes(quick_guard, effective_request.answer_text)
         return quick_guard["score"], _format_feedback(quick_guard)
 
     if _deepseek_is_enabled():
@@ -871,6 +1385,7 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
             logger.exception("Unexpected DeepSeek scoring failure; falling back to heuristic scorer.")
 
     heuristic = _heuristic_result(effective_request)
+    heuristic = _fill_missing_criterion_quotes(heuristic, effective_request.answer_text)
     return heuristic["score"], _format_feedback(heuristic)
 
 

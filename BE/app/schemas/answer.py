@@ -7,6 +7,7 @@ from typing import Optional
 class AnswerSubmit(BaseModel):
     question_id: int
     answer_text: str
+    output_language: str | None = None
 
 
 class AnswerOut(BaseModel):

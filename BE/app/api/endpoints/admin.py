@@ -58,6 +58,10 @@ def _normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
+def _is_primary_admin_email(email: str) -> bool:
+    return _normalize_email(email) in settings.primary_admin_emails
+
+
 def _admin_signup_link(email: str) -> str:
     base = settings.frontend_public_url.rstrip("/")
     query = urlencode({"email": email})
@@ -316,7 +320,7 @@ async def admin_list_users(
                 created_at=row["created_at"],
                 full_name=row["full_name"],
                 is_admin=row["is_admin"],
-                is_primary_admin=_normalize_email(row["email"]) == "nhatbang6688@gmail.com",
+                is_primary_admin=_is_primary_admin_email(row["email"]),
                 provider=row["provider"],
                 email_verified=row["email_verified"],
                 plan_tier=entitlement["plan_tier"],
@@ -422,7 +426,7 @@ async def admin_update_user_plan(
         created_at=updated["created_at"],
         full_name=updated["full_name"],
         is_admin=updated["is_admin"],
-        is_primary_admin=_normalize_email(updated["email"]) == "nhatbang6688@gmail.com",
+        is_primary_admin=_is_primary_admin_email(updated["email"]),
         provider=updated["provider"],
         email_verified=updated["email_verified"],
         plan_tier=entitlement["plan_tier"],
@@ -458,7 +462,7 @@ async def admin_delete_user(
     if str(target["id"]) == str(current_user.id):
         raise HTTPException(status_code=400, detail="Không thể tự xóa chính tài khoản admin hiện tại.")
 
-    if _normalize_email(target["email"]) in settings.primary_admin_emails:
+    if _is_primary_admin_email(target["email"]):
         raise HTTPException(status_code=400, detail="Không thể xóa tài khoản admin chính.")
 
     await db.execute("DELETE FROM users WHERE id = $1", user_id)
@@ -516,7 +520,7 @@ async def admin_list_admin_users(
                 created_at=row["created_at"],
                 full_name=row["full_name"],
                 is_admin=row["is_admin"],
-                is_primary_admin=_normalize_email(row["email"]) == "nhatbang6688@gmail.com",
+                is_primary_admin=_is_primary_admin_email(row["email"]),
                 provider=row["provider"],
             )
         )
@@ -682,7 +686,7 @@ async def remove_admin_access(
     target = await db.fetchrow("SELECT id, email FROM users WHERE id = $1", user_id)
     if not target:
         raise HTTPException(status_code=404, detail="Không tìm thấy admin cần gỡ quyền.")
-    if _normalize_email(target["email"]) == "nhatbang6688@gmail.com":
+    if _is_primary_admin_email(target["email"]):
         raise HTTPException(status_code=400, detail="Không thể gỡ quyền admin của admin chính.")
 
     row = await db.fetchrow(
@@ -721,7 +725,7 @@ async def toggle_admin(
     )
     if not target:
         raise HTTPException(status_code=404, detail="Không tìm thấy user!")
-    if _normalize_email(target["email"]) == "nhatbang6688@gmail.com":
+    if _is_primary_admin_email(target["email"]):
         raise HTTPException(status_code=400, detail="Không thể thay đổi quyền của admin chính!")
     if not target["is_admin"]:
         raise HTTPException(

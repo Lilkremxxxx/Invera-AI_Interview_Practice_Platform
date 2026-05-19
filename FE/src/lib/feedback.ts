@@ -3,6 +3,7 @@ export type FeedbackAssessment = 'strong' | 'mixed' | 'weak' | null;
 export interface FeedbackCriterion {
   title: string;
   assessment: FeedbackAssessment;
+  quote?: string;
   evidence: string;
   missing?: string;
 }
@@ -31,7 +32,7 @@ type SectionKey =
 const SECTION_HEADERS: Record<SectionKey, string[]> = {
   criteria: ['Tiêu chí chấm', 'Scoring criteria'],
   strengths: ['Điểm tốt', 'Strengths'],
-  gaps: ['Thiếu / còn yếu', 'Gaps'],
+  gaps: ['Thiếu / còn yếu', 'Điểm cần cải thiện', 'Gaps'],
   improvements: ['Ưu tiên cải thiện', 'Priority improvements'],
   betterOutline: ['Khung trả lời tốt hơn', 'Stronger answer outline'],
   followUp: ['Câu hỏi follow-up', 'Follow-up questions'],
@@ -71,11 +72,31 @@ function parseCriterion(line: string): FeedbackCriterion {
     };
   }
 
+  const details = [match[3], match[4]]
+    .filter(Boolean)
+    .join(' | ')
+    .split('|')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const quote = details
+    .find((part) => /^(Trích dẫn|Quote):/i.test(part))
+    ?.replace(/^(Trích dẫn|Quote):\s*/i, '')
+    .trim();
+  const evaluation = details
+    .find((part) => /^(Đánh giá|Evaluation):/i.test(part))
+    ?.replace(/^(Đánh giá|Evaluation):\s*/i, '')
+    .trim();
+  const missing = details
+    .find((part) => /^(Thiếu|Missing):/i.test(part))
+    ?.replace(/^(Thiếu|Missing):\s*/i, '')
+    .trim();
+
   return {
     title: match[1].trim(),
     assessment: match[2].toLowerCase() as FeedbackAssessment,
-    evidence: match[3].trim(),
-    missing: match[4]?.trim() || undefined,
+    quote,
+    evidence: evaluation || match[3].trim(),
+    missing: missing || undefined,
   };
 }
 
