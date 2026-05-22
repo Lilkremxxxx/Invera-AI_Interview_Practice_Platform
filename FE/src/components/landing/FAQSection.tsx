@@ -5,14 +5,19 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useLanguage, translations } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 export const FAQSection = () => {
   const { language, t } = useLanguage();
   const items = translations.faq.items;
 
   return (
-    <section id="faq" className="scroll-mt-24 py-20 bg-muted/30">
-      <div className="container mx-auto px-4">
+    <section id="faq" className="relative scroll-mt-24 overflow-hidden py-20 bg-muted/30">
+      <MascotDecoration
+        index={7}
+        className="absolute right-2 top-24 hidden w-24 rotate-6 opacity-90 lg:block xl:right-12 xl:w-32"
+      />
+      <div className="container relative mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             {t('faq', 'badge')}

@@ -287,6 +287,7 @@ async def admin_list_users(
             u.plan_billing_period,
             u.plan_started_at,
             u.plan_expires_at,
+            u.additional_sessions,
             COUNT(DISTINCT s.id) AS session_count,
             ROUND(AVG(a.score)::numeric, 1)::float AS avg_score
         FROM users u
@@ -296,7 +297,7 @@ async def admin_list_users(
         GROUP BY
             u.id, u.email, u.created_at, u.full_name, u.is_admin, u.provider,
             u.email_verified, u.plan_tier, u.plan_status, u.plan_billing_period,
-            u.plan_started_at, u.plan_expires_at
+            u.plan_started_at, u.plan_expires_at, u.additional_sessions
         ORDER BY u.created_at DESC
         LIMIT ${len(params) - 1} OFFSET ${len(params)}
         """,
@@ -312,6 +313,7 @@ async def admin_list_users(
             plan_billing_period=row["plan_billing_period"],
             plan_expires_at=row["plan_expires_at"],
             sessions_used=sessions_used,
+            additional_sessions=row["additional_sessions"] or 0,
         )
         users.append(
             AdminManagedUserOut(
@@ -330,6 +332,7 @@ async def admin_list_users(
                 plan_expires_at=row["plan_expires_at"],
                 sessions_used=sessions_used,
                 session_limit=entitlement["session_limit"],
+                additional_sessions=row["additional_sessions"] or 0,
                 can_start_new_session=entitlement["can_start_new_session"],
                 can_use_qna=entitlement["can_use_qna"],
                 avg_score=float(row["avg_score"]) if row["avg_score"] is not None else None,
@@ -395,6 +398,7 @@ async def admin_update_user_plan(
             u.plan_billing_period,
             u.plan_started_at,
             u.plan_expires_at,
+            u.additional_sessions,
             COUNT(DISTINCT s.id) AS session_count,
             ROUND(AVG(a.score)::numeric, 1)::float AS avg_score
         FROM users u
@@ -404,7 +408,7 @@ async def admin_update_user_plan(
         GROUP BY
             u.id, u.email, u.created_at, u.full_name, u.is_admin, u.provider,
             u.email_verified, u.plan_tier, u.plan_status, u.plan_billing_period,
-            u.plan_started_at, u.plan_expires_at
+            u.plan_started_at, u.plan_expires_at, u.additional_sessions
         """,
         user_id,
     )
@@ -419,6 +423,7 @@ async def admin_update_user_plan(
         plan_billing_period=updated["plan_billing_period"],
         plan_expires_at=updated["plan_expires_at"],
         sessions_used=sessions_used,
+        additional_sessions=updated["additional_sessions"] or 0,
     )
     return AdminManagedUserOut(
         id=updated["id"],
@@ -436,6 +441,7 @@ async def admin_update_user_plan(
         plan_expires_at=updated["plan_expires_at"],
         sessions_used=sessions_used,
         session_limit=entitlement["session_limit"],
+        additional_sessions=updated["additional_sessions"] or 0,
         can_start_new_session=entitlement["can_start_new_session"],
         can_use_qna=entitlement["can_use_qna"],
         avg_score=float(updated["avg_score"]) if updated["avg_score"] is not None else None,

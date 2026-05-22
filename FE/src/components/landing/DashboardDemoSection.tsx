@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, CheckCircle2, Clock3, Sparkles, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 type DemoRole = 'frontend' | 'backend' | 'product';
 type DemoRange = '7d' | '30d';
@@ -162,8 +163,12 @@ export const DashboardDemoSection = () => {
   );
 
   return (
-    <section id="dashboard-demo" className="scroll-mt-24 bg-white py-24">
-      <div className="container mx-auto px-4">
+    <section id="dashboard-demo" className="relative scroll-mt-24 overflow-hidden bg-white py-24">
+      <MascotDecoration
+        index={5}
+        className="absolute right-2 top-28 hidden w-24 rotate-6 opacity-90 lg:block xl:right-12 xl:w-32"
+      />
+      <div className="container relative mx-auto px-4">
         <div className="mb-12 max-w-3xl">
           <span className="mb-5 inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
             {copy.badge}

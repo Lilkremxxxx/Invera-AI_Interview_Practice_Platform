@@ -2,11 +2,16 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 export const HeroSection = () => {
   const { t } = useLanguage();
   return (
     <section className="relative min-h-screen bg-background overflow-hidden">
+      <MascotDecoration
+        index={1}
+        className="absolute right-3 top-28 hidden w-28 rotate-6 animate-slide-up opacity-95 lg:block xl:right-10 xl:w-36"
+      />
       {/* Removed heavy glow effects - clean background only */}
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 relative">
@@ -45,7 +50,7 @@ export const HeroSection = () => {
 
           {/* CTAs - Strong contrast */}
           <div 
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 sm:mb-16 lg:mb-20 animate-slide-up"
+            className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 px-4 mb-12 sm:mb-16 lg:mb-20 animate-slide-up sm:max-w-none sm:flex-row sm:px-0"
             style={{ animationDelay: '200ms' }}
           >
             <Button 
@@ -92,6 +97,7 @@ export const HeroSection = () => {
               <span className="text-sm font-semibold text-primary/70 dark:text-muted-foreground">{t('hero', 'stat3')}</span>
             </div>
           </div>
+
         </div>
 
         {/* Hero Image/Mockup - Clean card with clear borders */}

@@ -20,12 +20,16 @@ class RedeemCodeRequest(BaseModel):
     code: str
 
 
+class BuySessionsRequest(BaseModel):
+    quantity: int
+
+
 class PaymentOrderOut(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     provider: str
-    plan_tier: Literal["basic", "pro", "premium"]
-    billing_period: BillingPeriod
+    plan_tier: str
+    billing_period: str
     amount_vnd: int
     status: str
     provider_order_ref: str

@@ -133,6 +133,25 @@ def can_export_sessions(
     return normalized_status == ACTIVE_STATUS and normalized_tier in EXPORT_ENABLED_PLAN_TIERS
 
 
+def get_current_billing_cycle_start(plan_started_at: datetime | None, now: datetime) -> datetime | None:
+    if not plan_started_at:
+        return None
+    elapsed = now - plan_started_at
+    periods = max(0, elapsed.days // 30)
+    return plan_started_at + timedelta(days=periods * 30)
+
+
+def resolve_additional_session_price(plan_tier: str | None) -> int:
+    normalized_tier = normalize_plan_tier(plan_tier)
+    if normalized_tier == BASIC_PLAN:
+        return 35_000
+    elif normalized_tier == PRO_PLAN:
+        return 30_000
+    elif normalized_tier == PREMIUM_PLAN:
+        return 28_000
+    return 35_000
+
+
 def compute_entitlement(
     *,
     is_admin: bool,
@@ -141,6 +160,7 @@ def compute_entitlement(
     plan_billing_period: str | None,
     plan_expires_at: datetime | None,
     sessions_used: int,
+    additional_sessions: int = 0,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     current_time = now or utcnow()
@@ -161,48 +181,63 @@ def compute_entitlement(
         }
 
     if normalized_tier in PURCHASABLE_PLAN_TIERS and plan_expires_at and plan_expires_at > current_time:
+        if normalized_tier == BASIC_PLAN:
+            base_limit = 5
+        elif normalized_tier == PRO_PLAN:
+            base_limit = 8
+        elif normalized_tier == PREMIUM_PLAN:
+            base_limit = 12
+        else:
+            base_limit = 5
+
+        total_limit = base_limit + additional_sessions
         return {
             "plan_tier": normalized_tier,
             "plan_status": ACTIVE_STATUS,
             "plan_billing_period": normalized_period,
-            "session_limit": None,
+            "session_limit": total_limit,
             "sessions_used": sessions_used,
-            "can_start_new_session": True,
+            "can_start_new_session": sessions_used < total_limit,
             "can_use_qna": normalized_tier in QNA_ENABLED_PLAN_TIERS,
             "is_billing_exempt": False,
         }
 
     if normalized_tier in PURCHASABLE_PLAN_TIERS:
+        total_limit = TRIAL_SESSION_LIMIT + additional_sessions
         return {
             "plan_tier": normalized_tier,
             "plan_status": EXPIRED_STATUS,
             "plan_billing_period": normalized_period,
-            "session_limit": TRIAL_SESSION_LIMIT,
+            "session_limit": total_limit,
             "sessions_used": sessions_used,
-            "can_start_new_session": sessions_used < TRIAL_SESSION_LIMIT,
+            "can_start_new_session": sessions_used < total_limit,
             "can_use_qna": False,
             "is_billing_exempt": False,
         }
 
-    trial_status = ACTIVE_STATUS if sessions_used < TRIAL_SESSION_LIMIT else TRIAL_EXHAUSTED_STATUS
+    trial_limit = TRIAL_SESSION_LIMIT + additional_sessions
+    trial_status = ACTIVE_STATUS if sessions_used < trial_limit else TRIAL_EXHAUSTED_STATUS
     return {
         "plan_tier": FREE_TRIAL_PLAN,
         "plan_status": trial_status,
         "plan_billing_period": None,
-        "session_limit": TRIAL_SESSION_LIMIT,
+        "session_limit": trial_limit,
         "sessions_used": sessions_used,
-        "can_start_new_session": sessions_used < TRIAL_SESSION_LIMIT,
+        "can_start_new_session": sessions_used < trial_limit,
         "can_use_qna": False,
         "is_billing_exempt": False,
     }
 
 
-async def count_user_sessions(db: asyncpg.Connection, user_id) -> int:
-    total = await db.fetchval("SELECT COUNT(*) FROM sessions WHERE user_id = $1", user_id)
+async def count_user_sessions(db: asyncpg.Connection, user_id, since: datetime | None = None) -> int:
+    if since:
+        total = await db.fetchval("SELECT COUNT(*) FROM sessions WHERE user_id = $1 AND created_at >= $2", user_id, since)
+    else:
+        total = await db.fetchval("SELECT COUNT(*) FROM sessions WHERE user_id = $1", user_id)
     return int(total or 0)
 
 
-async def get_user_plan_snapshot(db: asyncpg.Connection, user_id) -> dict[str, Any]:
+async def get_user_plan_snapshot(db: asyncpg.Connection, user_id, now: datetime | None = None) -> dict[str, Any]:
     row = await db.fetchrow(
         """
         SELECT
@@ -219,7 +254,8 @@ async def get_user_plan_snapshot(db: asyncpg.Connection, user_id) -> dict[str, A
             plan_expires_at,
             avatar_path,
             resume_path,
-            resume_filename
+            resume_filename,
+            additional_sessions
         FROM users
         WHERE id = $1
         """,
@@ -228,7 +264,17 @@ async def get_user_plan_snapshot(db: asyncpg.Connection, user_id) -> dict[str, A
     if row is None:
         raise ValueError("User not found")
 
-    sessions_used = await count_user_sessions(db, row["id"])
+    current_time = now or utcnow()
+    since = None
+    if row["plan_status"] == ACTIVE_STATUS and row["plan_started_at"]:
+        since = get_current_billing_cycle_start(row["plan_started_at"], current_time)
+
+    sessions_used = await count_user_sessions(db, row["id"], since=since)
+    try:
+        add_sess = row["additional_sessions"] or 0
+    except (KeyError, TypeError):
+        add_sess = 0
+
     entitlement = compute_entitlement(
         is_admin=row["is_admin"],
         plan_tier=row["plan_tier"],
@@ -236,6 +282,8 @@ async def get_user_plan_snapshot(db: asyncpg.Connection, user_id) -> dict[str, A
         plan_billing_period=row["plan_billing_period"],
         plan_expires_at=row["plan_expires_at"],
         sessions_used=sessions_used,
+        additional_sessions=add_sess,
+        now=current_time,
     )
 
     if row["plan_status"] != entitlement["plan_status"]:

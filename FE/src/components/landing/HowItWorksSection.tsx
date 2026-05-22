@@ -1,5 +1,6 @@
 ﻿import { Target, MessageSquare, TrendingUp, ArrowRight } from 'lucide-react';
 import { useLanguage, translations } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 const stepIcons = [Target, MessageSquare, TrendingUp];
 const stepNumbers = ['01', '02', '03'];
@@ -9,7 +10,11 @@ export const HowItWorksSection = () => {
   const steps = translations.how.steps;
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="relative overflow-hidden py-20 bg-muted/30">
+      <MascotDecoration
+        index={3}
+        className="absolute -right-4 top-10 hidden w-28 rotate-6 opacity-90 md:block lg:right-8 lg:w-36"
+      />
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">

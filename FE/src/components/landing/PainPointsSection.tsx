@@ -1,5 +1,6 @@
 ﻿import { AlertCircle, Clock, TrendingDown } from 'lucide-react';
 import { useLanguage, translations } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 const painIcons = [AlertCircle, Clock, TrendingDown];
 
@@ -8,7 +9,11 @@ export const PainPointsSection = () => {
   const items = translations.pain.items;
 
   return (
-    <section className="py-20 bg-background">
+    <section className="relative overflow-hidden py-20 bg-background">
+      <MascotDecoration
+        index={2}
+        className="absolute -left-4 bottom-8 hidden w-28 -rotate-6 opacity-90 md:block lg:left-8 lg:w-36"
+      />
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">

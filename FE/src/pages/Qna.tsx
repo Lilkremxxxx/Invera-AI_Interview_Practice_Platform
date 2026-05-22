@@ -29,31 +29,31 @@ const DOCX_MAX_BYTES = 10 * 1024 * 1024;
 
 const copy = {
   vi: {
-    title: 'Invera QnA',
-    subtitle: 'Hỏi bất kỳ điều gì về câu trả lời phỏng vấn, kiến thức kỹ thuật, hoặc upload DOCX để AI giải thích theo rubric của Invera.',
-    panelTitle: 'QnA theo rubric Invera',
-    panelBody: 'AI sẽ trả lời theo hướng rõ ràng, đúng trọng tâm, nhấn mạnh điểm cần cải thiện và cách biến câu trả lời thành phiên bản mạnh hơn khi đi phỏng vấn.',
-    suggestedPrompt: 'Ví dụ: Giải thích giúp mình CORS trong FastAPI và mình nên trả lời câu này thế nào khi đi phỏng vấn?',
-    emptyTitle: 'Chưa có hội thoại nào',
-    emptyBody: 'Hãy bắt đầu bằng một câu hỏi text hoặc upload một file DOCX để AI phân tích nội dung cho bạn.',
-    quoteReady: 'Đã thêm đoạn bôi đen vào khung hỏi.',
-    quotePlaceholder: 'Đoạn đang được hỏi tiếp',
-    docxReady: 'DOCX đã sẵn sàng để gửi',
-    docxHint: 'Hỗ trợ DOCX tối đa 10MB. PDF sẽ thêm sau.',
-    invalidDocxType: 'Hiện chỉ hỗ trợ file DOCX cho tab QnA.',
-    invalidDocxSize: 'DOCX vượt quá 10MB.',
-    askPlaceholder: 'Hỏi bất kỳ điều gì về câu trả lời, rubric, hoặc nội dung từ DOCX...',
+    title: 'Hỏi Đáp với AI Rubric',
+    subtitle: 'Hỏi bất kỳ điều gì về câu trả lời phỏng vấn, kiến thức kỹ thuật, hoặc tải lên file DOCX để AI giải thích chi tiết theo tiêu chuẩn đánh giá của Invera.',
+    panelTitle: 'Hỏi Đáp theo Tiêu Chí Rubric',
+    panelBody: 'Trợ lý học tập bám sát phương pháp hướng dẫn của Invera: tập trung vào tính mạch lạc, rõ ràng, đưa ra các ví dụ cụ thể và cách tối ưu hóa câu trả lời thô để giúp bạn sẵn sàng chinh phục nhà tuyển dụng.',
+    suggestedPrompt: 'Ví dụ: Giải thích giúp mình CORS trong FastAPI và cách trả lời câu này khi đi phỏng vấn?',
+    emptyTitle: 'Bắt đầu cuộc trò chuyện mới',
+    emptyBody: 'Hãy gửi một câu hỏi hoặc đính kèm tài liệu DOCX để nhận phản hồi phân tích chi tiết.',
+    quoteReady: 'Đã sao chép đoạn trích dẫn vào khung soạn thảo.',
+    quotePlaceholder: 'Đoạn trích đang được hỏi tiếp',
+    docxReady: 'File DOCX đã được tải lên và sẵn sàng để gửi',
+    docxHint: 'Hỗ trợ định dạng DOCX dung lượng tối đa 10MB.',
+    invalidDocxType: 'Hệ thống hiện chỉ hỗ trợ file DOCX cho trang Hỏi Đáp (QnA).',
+    invalidDocxSize: 'File DOCX vượt quá giới hạn dung lượng 10MB.',
+    askPlaceholder: 'Hỏi bất kỳ điều gì về câu trả lời, tiêu chí chấm điểm, hoặc tải lên tài liệu DOCX để bắt đầu...',
     attachDocx: 'Đính kèm DOCX',
-    removeDocx: 'Xóa DOCX',
+    removeDocx: 'Xóa tài liệu',
     send: 'Gửi câu hỏi',
-    sending: 'AI đang trả lời...',
-    loadingThread: 'Đang tải hội thoại QnA...',
-    sendFailed: 'Không thể gửi câu hỏi lúc này.',
-    inputRequired: 'Hãy nhập câu hỏi hoặc đính kèm một file DOCX.',
-    lockedTitle: 'QnA đã bị khóa',
-    lockedBody: 'Gói Free không dùng được QnA. Hãy nâng cấp lên Basic, Pro hoặc Premium để mở khóa.',
-    unlockNow: 'Mở khóa ngay',
-    followUpTemplate: 'Giải thích rõ hơn đoạn này theo rubric Invera và chỉ ra mình nên trả lời tốt hơn như thế nào:',
+    sending: 'AI đang phân tích và soạn câu trả lời...',
+    loadingThread: 'Đang tải lịch sử hội thoại...',
+    sendFailed: 'Đã xảy ra lỗi khi gửi câu hỏi.',
+    inputRequired: 'Vui lòng nhập nội dung câu hỏi hoặc tải lên tài liệu DOCX.',
+    lockedTitle: 'Tính năng Hỏi Đáp (QnA) đã bị khóa',
+    lockedBody: 'Gói dùng thử miễn phí không bao gồm quyền truy cập Hỏi Đáp (QnA). Vui lòng nâng cấp lên các gói Basic, Pro hoặc Premium để tiếp tục trải nghiệm.',
+    unlockNow: 'Nâng cấp mở khóa ngay',
+    followUpTemplate: 'Giải thích chi tiết hơn đoạn này theo tiêu chuẩn đánh giá của Invera và hướng dẫn cách hoàn thiện tốt nhất:',
     user: 'Bạn',
     ai: 'Invera AI',
   },
@@ -68,7 +68,7 @@ const copy = {
     quoteReady: 'The highlighted excerpt has been added to your prompt.',
     quotePlaceholder: 'Follow-up excerpt',
     docxReady: 'DOCX ready to send',
-    docxHint: 'DOCX up to 10MB is supported now. PDF can come later.',
+    docxHint: 'DOCX up to 10MB is supported now.',
     invalidDocxType: 'Only DOCX files are supported in QnA right now.',
     invalidDocxSize: 'The DOCX file exceeds the 10MB limit.',
     askPlaceholder: 'Ask anything about an answer, the rubric, or content from a DOCX...',
@@ -86,6 +86,53 @@ const copy = {
     user: 'You',
     ai: 'Invera AI',
   },
+} as const;
+
+const SUGGESTED_PROMPTS = {
+  vi: [
+    {
+      title: 'FastAPI & CORS',
+      prompt: 'Giải thích giúp mình CORS trong FastAPI và cách trả lời câu này khi đi phỏng vấn để ghi điểm tối đa?',
+      icon: Sparkles,
+    },
+    {
+      title: 'Tối ưu hóa SQL',
+      prompt: 'Làm thế nào để phát hiện và tối ưu hóa các truy vấn SQL chậm trong môi trường production?',
+      icon: MessageSquareText,
+    },
+    {
+      title: 'REST API vs GraphQL',
+      prompt: 'So sánh REST API và GraphQL. Khi nào một dự án thực tế nên ưu tiên chọn GraphQL thay vì REST?',
+      icon: MessageSquareText,
+    },
+    {
+      title: 'Phân tích file DOCX',
+      prompt: 'Mình đã đính kèm bản nháp câu trả lời phỏng vấn. Nhờ AI phân tích, chấm điểm theo rubric và đề xuất bản viết lại tốt hơn.',
+      icon: FileText,
+    },
+  ],
+  en: [
+    {
+      title: 'FastAPI & CORS',
+      prompt: 'Help me explain CORS in FastAPI and how I should answer it in an interview to get maximum scores.',
+      icon: Sparkles,
+    },
+    {
+      title: 'SQL Optimization',
+      prompt: 'How do I detect and optimize slow SQL queries in a production database environment?',
+      icon: MessageSquareText,
+    },
+    {
+      title: 'REST API vs GraphQL',
+      prompt: 'Compare REST API and GraphQL. When should a real production project choose GraphQL over REST?',
+      icon: MessageSquareText,
+    },
+    {
+      title: 'Analyze DOCX draft',
+      prompt: 'I have attached my draft interview answer. Please analyze it based on the rubric and write a better version.',
+      icon: FileText,
+    },
+  ],
 } as const;
 
 function formatDateTime(value: string, locale: string) {
@@ -124,7 +171,12 @@ export default function Qna() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const restoredFromCacheRef = useRef(false);
   const canUseQna = user?.is_admin || user?.can_use_qna || false;
-  const coachBadgeLabel = user?.plan_tier === 'pro' ? 'Pro' : 'Rubric coach';
+  const coachBadgeLabel =
+    user?.plan_tier === 'pro'
+      ? 'Pro'
+      : language === 'vi'
+      ? 'Trợ lý Rubric'
+      : 'Rubric coach';
   const qnaStorageKey = useMemo(
     () => `invera_qna_state_${user?.id ?? 'guest'}`,
     [user?.id],
@@ -292,267 +344,301 @@ export default function Qna() {
   };
 
   return (
-    <div className="w-full space-y-4">
-      <div className="grid gap-4 xl:grid-cols-[228px_minmax(0,1fr)] 2xl:grid-cols-[240px_minmax(0,1fr)]">
-        <Card className="rounded-[28px] border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-5 text-white shadow-[0_24px_72px_-40px_rgba(8,145,178,0.5)]">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-2xl bg-white/10 p-2.5">
-              <Sparkles className="h-4.5 w-4.5 text-cyan-200" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/80">Invera</p>
-              <h1 className="text-[1.75rem] font-semibold tracking-tight">{text.title}</h1>
-            </div>
-          </div>
-          <p className="text-sm leading-6 text-slate-200">{text.subtitle}</p>
-          <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-              <MessageSquareText className="h-4 w-4 text-cyan-200" />
-              <span>{text.panelTitle}</span>
-            </div>
-            <p className="text-sm leading-6 text-slate-300">{text.panelBody}</p>
-          </div>
-          <div className="mt-4 rounded-[24px] border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm leading-6 text-cyan-50">
-            {text.suggestedPrompt}
-          </div>
-        </Card>
-
-        <Card className="rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)]">
-          <div className="flex h-[84vh] min-h-[780px] flex-col">
-            <div className="border-b border-border/70 px-5 py-4 md:px-6">
-              <div className="flex items-center justify-between gap-4">
+    <div className="w-full max-w-6xl mx-auto space-y-4 px-2 sm:px-4">
+      <Card className="rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)] overflow-hidden">
+        <div className="flex h-[82vh] min-h-[720px] flex-col">
+          {/* Header */}
+          <div className="border-b border-border/70 px-5 py-4 md:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-cyan-500/10 p-2 text-cyan-600 dark:text-cyan-400">
+                  <Sparkles className="h-5 w-5" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-foreground">{text.title}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {threadId ? `Thread ${threadId.slice(0, 8)}` : text.loadingThread}
+                  <h2 className="text-lg font-bold tracking-tight text-foreground">{text.title}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {threadId ? `Thread ID: ${threadId.slice(0, 8)}` : text.loadingThread}
                   </p>
                 </div>
-                <Badge variant="secondary" className="rounded-full px-3 py-1">
-                  {coachBadgeLabel}
-                </Badge>
               </div>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                {coachBadgeLabel}
+              </Badge>
             </div>
+          </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6 xl:px-8">
-              {loading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-24 w-3/5 rounded-[28px]" />
-                  <Skeleton className="ml-auto h-20 w-2/5 rounded-[28px]" />
-                  <Skeleton className="h-64 w-full rounded-[32px]" />
-                </div>
-              ) : !canUseQna ? (
-                <div className="flex h-full min-h-[360px] items-center justify-center">
-                  <div className="max-w-lg rounded-[32px] border border-dashed border-border bg-muted/20 px-8 py-10 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
-                      <MessageSquareText className="h-6 w-6 text-accent" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground">{text.lockedTitle}</h3>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{text.lockedBody}</p>
-                    <Button asChild className="mt-5 rounded-full px-5">
-                      <Link to="/app/upgrade">{text.unlockNow}</Link>
-                    </Button>
+          {/* Main Area */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 bg-slate-50/20 dark:bg-slate-950/20">
+            {loading ? (
+              <div className="max-w-4xl mx-auto space-y-4">
+                <Skeleton className="h-20 w-3/5 rounded-[24px]" />
+                <Skeleton className="ml-auto h-16 w-2/5 rounded-[24px]" />
+                <Skeleton className="h-48 w-full rounded-[28px]" />
+              </div>
+            ) : !canUseQna ? (
+              <div className="flex h-full min-h-[360px] items-center justify-center">
+                <div className="max-w-md w-full rounded-[28px] border border-dashed border-border bg-card/50 px-6 py-8 text-center shadow-sm">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                    <MessageSquareText className="h-6 w-6" />
                   </div>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex h-full min-h-[360px] items-center justify-center">
-                  <div className="max-w-lg rounded-[32px] border border-dashed border-border bg-muted/20 px-8 py-10 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
-                      <MessageSquareText className="h-6 w-6 text-accent" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground">{text.emptyTitle}</h3>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{text.emptyBody}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {messages.map((item) => (
-                    <div
-                      key={item.id}
-                      className={cn('flex gap-3', item.role === 'user' ? 'justify-end' : 'justify-start')}
-                    >
-                      {item.role === 'assistant' && (
-                        <Avatar className="mt-1 hidden h-10 w-10 border border-border/70 sm:flex">
-                          <AvatarFallback className="bg-accent/10 text-accent">
-                            <Sparkles className="h-4 w-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-
-                      <div
-                        className={cn(
-                          'space-y-2',
-                          item.role === 'user' ? 'max-w-[min(100%,760px)] items-end' : 'w-full max-w-none'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground/80">
-                            {item.role === 'user' ? text.user : text.ai}
-                          </span>
-                          <span>{formatDateTime(item.created_at, locale)}</span>
-                        </div>
-
-                        {item.role === 'assistant' && item.structured_payload ? (
-                          <QnaStructuredAnswer
-                            answer={item.structured_payload}
-                            onAskAboutSelection={handleAskAboutSelection}
-                          />
-                        ) : (
-                          <div
-                            className={cn(
-                              'rounded-[28px] border px-5 py-4 text-sm leading-7 shadow-sm',
-                              item.role === 'user'
-                                ? 'border-accent/30 bg-accent text-accent-foreground'
-                                : 'border-border/70 bg-background',
-                            )}
-                          >
-                            {item.selected_text && (
-                              <div className={cn(
-                                'mb-3 rounded-2xl border px-3 py-2 text-xs leading-6',
-                                item.role === 'user'
-                                  ? 'border-white/20 bg-white/10 text-white/90'
-                                  : 'border-border/70 bg-muted/40 text-muted-foreground',
-                              )}>
-                                {item.selected_text}
-                              </div>
-                            )}
-                            {item.attachment_name && (
-                              <div className={cn(
-                                'mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium',
-                                item.role === 'user'
-                                  ? 'bg-white/15 text-white'
-                                  : 'bg-accent/10 text-accent',
-                              )}>
-                                <FileText className="h-3.5 w-3.5" />
-                                <span>{item.attachment_name}</span>
-                              </div>
-                            )}
-                            <p>{item.content}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {item.role === 'user' && (
-                        <Avatar className="mt-1 hidden h-10 w-10 border border-border/70 sm:flex">
-                          <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.email ?? text.user} />
-                          <AvatarFallback>{userInitials(user)}</AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  ))}
-
-                  {sending && (
-                    <div className="flex gap-3">
-                      <Avatar className="mt-1 hidden h-10 w-10 border border-border/70 sm:flex">
-                        <AvatarFallback className="bg-accent/10 text-accent">
-                          <Sparkles className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="w-full max-w-none rounded-[28px] border border-border/70 bg-background px-5 py-4 shadow-sm">
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>{text.sending}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={endRef} />
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-border/70 px-4 py-4 md:px-6 xl:px-8">
-              <div className="space-y-3 rounded-[28px] border border-border/70 bg-muted/15 p-3 md:p-4">
-                {quotedText && (
-                  <div className="flex items-start justify-between gap-3 rounded-2xl border border-info/20 bg-info/5 px-4 py-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-info">{text.quotePlaceholder}</p>
-                      <p className="mt-1 text-sm leading-6 text-foreground/90">{quotedText}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => setQuotedText('')}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-
-                {docxFile && (
-                  <Alert className="rounded-2xl border-accent/20 bg-accent/5">
-                    <FileText className="h-4 w-4" />
-                    <AlertTitle>{text.docxReady}</AlertTitle>
-                    <AlertDescription className="flex items-center justify-between gap-3">
-                      <span>{docxFile.name}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto px-2 py-1"
-                        onClick={() => setDocxFile(null)}
-                      >
-                        {text.removeDocx}
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <Textarea
-                  ref={composerRef}
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  onKeyDown={handleComposerKeyDown}
-                  placeholder={quotedText ? highlightedSelectionTemplate : text.askPlaceholder}
-                  disabled={!canUseQna}
-                  className="min-h-[126px] resize-none rounded-[24px] border-0 bg-background/80 px-4 py-4 text-sm leading-7 shadow-inner focus-visible:ring-2 focus-visible:ring-accent"
-                />
-
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      className="hidden"
-                      onChange={handleDocxChange}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-full"
-                      disabled={!canUseQna}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip className="mr-2 h-4 w-4" />
-                      {text.attachDocx}
-                    </Button>
-                    <span className="text-xs text-muted-foreground">{text.docxHint}</span>
-                  </div>
-
-                  <Button
-                    type="button"
-                    className="rounded-full px-5"
-                    disabled={!canUseQna || !hasComposerPayload || sending}
-                    onClick={handleSend}
-                  >
-                    {sending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {text.sending}
-                      </>
-                    ) : (
-                      <>
-                        <SendHorizonal className="mr-2 h-4 w-4" />
-                        {text.send}
-                      </>
-                    )}
+                  <h3 className="text-lg font-bold text-foreground">{text.lockedTitle}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text.lockedBody}</p>
+                  <Button asChild className="mt-5 rounded-full px-6 bg-cyan-600 hover:bg-cyan-700 text-white transition-all shadow-md shadow-cyan-600/25">
+                    <Link to="/app/upgrade">{text.unlockNow}</Link>
                   </Button>
                 </div>
               </div>
+            ) : messages.length === 0 ? (
+              /* Welcome Panel when there are no messages */
+              <div className="flex h-full flex-col justify-center items-center py-6">
+                <div className="max-w-3xl w-full px-4 text-center space-y-6">
+                  {/* Hero Header */}
+                  <div className="space-y-3">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25">
+                      <Sparkles className="h-7 w-7" />
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                      {language === 'vi' ? 'Trợ lý Hỏi Đáp Rubric' : 'Invera Rubric Coach'}
+                    </h3>
+                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+                      {text.subtitle}
+                    </p>
+                  </div>
+
+                  {/* Rubric Details Panel */}
+                  <div className="rounded-[24px] border border-border bg-card/60 p-5 text-left shadow-sm">
+                    <div className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
+                      <MessageSquareText className="h-4.5 w-4.5 text-cyan-500" />
+                      <span>{text.panelTitle}</span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{text.panelBody}</p>
+                  </div>
+
+                  {/* Suggested Prompts Grid */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {language === 'vi' ? 'Gợi ý chủ đề thảo luận' : 'Suggested Topics'}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {SUGGESTED_PROMPTS[language].map((item, idx) => {
+                        const IconComponent = item.icon;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setMessage(item.prompt);
+                              window.setTimeout(() => composerRef.current?.focus(), 0);
+                            }}
+                            className="flex flex-col items-start text-left p-4 rounded-2xl border border-border bg-card hover:bg-muted/40 hover:border-cyan-500/40 transition-all duration-200 group relative shadow-sm"
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 group-hover:bg-cyan-500/20 transition-colors">
+                                <IconComponent className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                                {item.title}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                              {item.prompt}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Chat Thread Messages List */
+              <div className="mx-auto max-w-4xl space-y-6">
+                {messages.map((item) => (
+                  <div
+                    key={item.id}
+                    className={cn('flex gap-3', item.role === 'user' ? 'justify-end' : 'justify-start')}
+                  >
+                    {item.role === 'assistant' && (
+                      <Avatar className="mt-1 hidden h-9 w-9 border border-border/70 sm:flex">
+                        <AvatarFallback className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                          <Sparkles className="h-4.5 w-4.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+
+                    <div
+                      className={cn(
+                        'space-y-1.5',
+                        item.role === 'user' ? 'max-w-[min(100%,720px)] items-end' : 'w-full max-w-none'
+                      )}
+                    >
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground/80">
+                          {item.role === 'user' ? text.user : text.ai}
+                        </span>
+                        <span>{formatDateTime(item.created_at, locale)}</span>
+                      </div>
+
+                      {item.role === 'assistant' && item.structured_payload ? (
+                        <QnaStructuredAnswer
+                          answer={item.structured_payload}
+                          onAskAboutSelection={handleAskAboutSelection}
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            'rounded-[24px] border px-5 py-3.5 text-sm leading-relaxed shadow-sm whitespace-pre-wrap',
+                            item.role === 'user'
+                              ? 'border-cyan-600 bg-cyan-600 text-white'
+                              : 'border-border/80 bg-card text-foreground',
+                          )}
+                        >
+                          {item.selected_text && (
+                            <div className={cn(
+                              'mb-3 rounded-xl border px-3 py-2 text-xs leading-relaxed',
+                              item.role === 'user'
+                                ? 'border-white/20 bg-white/10 text-white/90'
+                                : 'border-border bg-muted/50 text-muted-foreground',
+                            )}>
+                              {item.selected_text}
+                            </div>
+                          )}
+                          {item.attachment_name && (
+                            <div className={cn(
+                              'mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold',
+                              item.role === 'user'
+                                ? 'bg-white/15 text-white'
+                                : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+                            )}>
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>{item.attachment_name}</span>
+                            </div>
+                          )}
+                          <p>{item.content}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {item.role === 'user' && (
+                      <Avatar className="mt-1 hidden h-9 w-9 border border-border/70 sm:flex">
+                        <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.email ?? text.user} />
+                        <AvatarFallback className="font-semibold bg-muted">{userInitials(user)}</AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                ))}
+
+                {sending && (
+                  <div className="flex gap-3">
+                    <Avatar className="mt-1 hidden h-9 w-9 border border-border/70 sm:flex">
+                      <AvatarFallback className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                        <Sparkles className="h-4.5 w-4.5 animate-pulse" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="w-full max-w-none rounded-[24px] border border-border/70 bg-card px-5 py-4 shadow-sm">
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <Loader2 className="h-4.5 w-4.5 animate-spin text-cyan-500" />
+                        <span>{text.sending}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={endRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Composer Input Area */}
+          <div className="border-t border-border bg-background/50 backdrop-blur-md px-4 py-4 md:px-6">
+            <div className="mx-auto max-w-4xl space-y-3 rounded-[24px] border border-border bg-card shadow-lg p-3 transition-all duration-200 focus-within:border-cyan-500/40 focus-within:shadow-cyan-500/5">
+              {quotedText && (
+                <div className="flex items-start justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">{text.quotePlaceholder}</p>
+                    <p className="mt-0.5 text-xs text-foreground/90 truncate">{quotedText}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 rounded-full hover:bg-muted/80"
+                    onClick={() => setQuotedText('')}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+
+              {docxFile && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-cyan-500 shrink-0" />
+                    <span className="text-xs font-semibold text-foreground/90 truncate">{docxFile.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-3 py-1 rounded-full text-xs font-medium hover:bg-muted"
+                    onClick={() => setDocxFile(null)}
+                  >
+                    {text.removeDocx}
+                  </Button>
+                </div>
+              )}
+
+              <Textarea
+                ref={composerRef}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={handleComposerKeyDown}
+                placeholder={quotedText ? highlightedSelectionTemplate : text.askPlaceholder}
+                disabled={!canUseQna}
+                className="min-h-[72px] md:min-h-[88px] resize-none rounded-[16px] border-0 bg-transparent px-3 py-2 text-sm leading-relaxed shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50"
+              />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-border/50 pt-3 px-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={handleDocxChange}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full h-8 px-4 text-xs font-semibold hover:border-cyan-500/30 hover:bg-cyan-500/5"
+                    disabled={!canUseQna}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="mr-1.5 h-3.5 w-3.5" />
+                    {text.attachDocx}
+                  </Button>
+                  <span className="text-[10px] text-muted-foreground">{text.docxHint}</span>
+                </div>
+
+                <Button
+                  type="button"
+                  className="rounded-full h-9 px-5 text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-600/25 transition-all"
+                  disabled={!canUseQna || !hasComposerPayload || sending}
+                  onClick={handleSend}
+                >
+                  {sending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      {text.sending}
+                    </>
+                  ) : (
+                    <>
+                      <SendHorizonal className="mr-1.5 h-3.5 w-3.5" />
+                      {text.send}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -37,10 +37,10 @@ const Sessions = () => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const copy = {
-    loadError: language === 'vi' ? 'Không thể tải sessions. Vui lòng thử lại.' : 'Unable to load sessions. Please try again.',
+    loadError: language === 'vi' ? 'Không thể tải danh sách phiên. Vui lòng thử lại.' : 'Unable to load sessions. Please try again.',
     completed: language === 'vi' ? 'Hoàn thành' : 'Completed',
-    inProgress: language === 'vi' ? 'Đang làm' : 'In progress',
-    exportFailed: language === 'vi' ? 'Không thể xuất toàn bộ sessions lúc này.' : 'Unable to export all sessions right now.',
+    inProgress: language === 'vi' ? 'Đang thực hiện' : 'In progress',
+    exportFailed: language === 'vi' ? 'Không thể xuất thông tin các phiên luyện tập lúc này.' : 'Unable to export all sessions right now.',
     exportingAll: language === 'vi' ? 'Đang xuất...' : 'Exporting...',
     locale: language === 'vi' ? 'vi-VN' : 'en-US',
   };
@@ -184,9 +184,9 @@ const Sessions = () => {
                         <span>•</span>
                         <span>{session.question_count ?? 0} {t('sessions', 'questions')}</span>
                         <span>•</span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 capitalize">
                           {getModeIcon(session.mode)}
-                          {session.mode}
+                          {t('sessions', session.mode)}
                         </span>
                         <span>•</span>
                         <span className={cn(

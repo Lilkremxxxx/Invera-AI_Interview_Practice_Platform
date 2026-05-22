@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle2, CreditCard, Gift, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CreditCard, Gift, Loader2, ShieldCheck, ShoppingBag, Plus, Minus } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -65,21 +65,30 @@ const copy = {
     perMonth: '/tháng',
     perYear: '/năm',
     currentPlan: 'Đang dùng',
-    redirecting: 'Đang chuyển sang VNPay',
+    redirecting: 'Đang chuyển sang PayOS',
     renewPlan: 'Gia hạn gói',
     upgradeTo: 'Nâng cấp lên',
     paymentHistory: 'Lịch sử thanh toán',
     noOrders: 'Chưa có giao dịch nào được tạo.',
     orderCode: 'Mã đơn',
     paymentUpdatedTitle: 'Thanh toán thành công',
-    paymentUpdatedDescription: 'Gói của bạn đã được cập nhật sau khi VNPay xác nhận giao dịch.',
+    paymentUpdatedDescription: 'Gói của bạn đã được cập nhật sau khi PayOS xác nhận giao dịch.',
     paymentSuccessToastTitle: 'Thanh toán thành công',
     paymentSuccessToastDescription: 'Gói của bạn đã được kích hoạt.',
     paymentFailedToastTitle: 'Thanh toán chưa hoàn tất',
-    paymentFailedToastDescription: 'VNPay chưa xác nhận giao dịch thành công. Bạn có thể thử lại.',
+    paymentFailedToastDescription: 'PayOS chưa xác nhận giao dịch thành công. Bạn có thể thử lại.',
     paymentInvalidToastTitle: 'Phản hồi thanh toán không hợp lệ',
     paymentInvalidToastDescription: 'Không thể xác minh chữ ký từ cổng thanh toán.',
     checkoutErrorTitle: 'Không thể tạo phiên thanh toán',
+    additionalSessionsLabel: 'Số phiên mua thêm',
+    buySessionsTitle: 'Mua thêm phiên luyện tập',
+    buySessionsDescription: 'Mua thêm phiên luyện tập riêng lẻ để tiếp tục sử dụng mà không cần nâng cấp gói.',
+    sessionQtyLabel: 'Số lượng phiên',
+    unitPriceLabel: 'Đơn giá',
+    totalAmountLabel: 'Tổng tiền',
+    buyNowButton: 'Thanh toán ngay',
+    pricingTierLabel: 'Đơn giá áp dụng cho gói',
+    checkoutSessionsErrorTitle: 'Không thể tạo phiên thanh toán mua session',
   },
   en: {
     title: 'Upgrade plan',
@@ -109,21 +118,30 @@ const copy = {
     perMonth: '/month',
     perYear: '/year',
     currentPlan: 'Current plan',
-    redirecting: 'Redirecting to VNPay',
+    redirecting: 'Redirecting to PayOS',
     renewPlan: 'Renew plan',
     upgradeTo: 'Upgrade to',
     paymentHistory: 'Payment history',
     noOrders: 'No transactions have been created yet.',
     orderCode: 'Order code',
     paymentUpdatedTitle: 'Payment successful',
-    paymentUpdatedDescription: 'Your plan was updated after VNPay confirmed the transaction.',
+    paymentUpdatedDescription: 'Your plan was updated after PayOS confirmed the transaction.',
     paymentSuccessToastTitle: 'Payment successful',
     paymentSuccessToastDescription: 'Your plan is now active.',
     paymentFailedToastTitle: 'Payment not completed',
-    paymentFailedToastDescription: 'VNPay did not confirm a successful transaction. You can try again.',
+    paymentFailedToastDescription: 'PayOS did not confirm a successful transaction. You can try again.',
     paymentInvalidToastTitle: 'Invalid payment response',
     paymentInvalidToastDescription: 'The payment gateway signature could not be verified.',
     checkoutErrorTitle: 'Unable to create payment session',
+    additionalSessionsLabel: 'Extra sessions balance',
+    buySessionsTitle: 'Purchase extra sessions',
+    buySessionsDescription: 'Buy individual sessions to keep practicing without upgrading your plan.',
+    sessionQtyLabel: 'Number of sessions',
+    unitPriceLabel: 'Unit price',
+    totalAmountLabel: 'Total amount',
+    buyNowButton: 'Purchase now',
+    pricingTierLabel: 'Price tier applied for',
+    checkoutSessionsErrorTitle: 'Unable to create session purchase session',
   },
 } as const;
 
@@ -139,6 +157,32 @@ export default function Upgrade() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [redeemCode, setRedeemCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+  const [sessionQty, setSessionQty] = useState<number>(5);
+  const [loadingSessions, setLoadingSessions] = useState<boolean>(false);
+
+  const unitPrice = useMemo(() => {
+    const tier = user?.plan_tier;
+    if (tier === 'pro') return 30000;
+    if (tier === 'premium') return 28000;
+    return 35000;
+  }, [user?.plan_tier]);
+
+  const handleBuySessions = async () => {
+    if (sessionQty <= 0) return;
+    setLoadingSessions(true);
+    try {
+      const response = await billingApi.createBuySessionsCheckout(sessionQty);
+      window.location.href = response.payment_url;
+    } catch (error) {
+      toast({
+        title: text.checkoutSessionsErrorTitle,
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
 
   const purchasablePlans = useMemo(
     () => pricingPlans.filter((plan) => plan.id === 'basic' || plan.id === 'pro' || plan.id === 'premium'),
@@ -165,13 +209,21 @@ export default function Upgrade() {
     void refreshUser();
 
     if (paymentState === 'success') {
+      let successDesc = text.paymentSuccessToastDescription;
+      if (paymentPlan) {
+        if (paymentPlan === 'additional_sessions') {
+          successDesc = language === 'vi'
+            ? 'Mua thêm phiên thành công. Các phiên bổ sung đã được cộng vào tài khoản của bạn.'
+            : 'Additional sessions purchased successfully. Extra sessions have been added to your account.';
+        } else {
+          successDesc = language === 'vi'
+            ? `Gói ${paymentPlan.toUpperCase()} đã được kích hoạt.`
+            : `Your ${paymentPlan.toUpperCase()} plan is now active.`;
+        }
+      }
       toast({
         title: text.paymentSuccessToastTitle,
-        description: paymentPlan
-          ? language === 'vi'
-            ? `Gói ${paymentPlan.toUpperCase()} đã được kích hoạt.`
-            : `Your ${paymentPlan.toUpperCase()} plan is now active.`
-          : text.paymentSuccessToastDescription,
+        description: successDesc,
       });
       return;
     }
@@ -304,6 +356,10 @@ export default function Upgrade() {
                   {user?.plan_expires_at ? new Date(user.plan_expires_at).toLocaleString(locale) : text.notApplied}
                 </strong>
               </p>
+              <p>
+                {text.additionalSessionsLabel}:{' '}
+                <strong className="text-foreground">{user?.additional_sessions ?? 0}</strong>
+              </p>
             </div>
             {!user?.can_start_new_session && (
               <Alert className="border-amber-200 bg-amber-50 text-amber-900">
@@ -413,6 +469,99 @@ export default function Upgrade() {
           </Card>
 
           <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5" />
+                {text.buySessionsTitle}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {text.buySessionsDescription}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-muted/40">
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">
+                    {text.pricingTierLabel}: <strong className="text-foreground">{formatPlanLabel(user, language)}</strong>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {text.unitPriceLabel}: <strong className="text-foreground">{formatCurrency(unitPrice)}</strong> / {language === 'vi' ? 'phiên' : 'session'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSessionQty(Math.max(1, sessionQty - 1))}
+                    disabled={sessionQty <= 1 || loadingSessions}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={sessionQty}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setSessionQty(isNaN(val) ? 1 : Math.max(1, val));
+                    }}
+                    className="w-16 text-center"
+                    disabled={loadingSessions}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSessionQty(sessionQty + 1)}
+                    disabled={loadingSessions}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[1, 5, 10, 20].map((qty) => (
+                  <Button
+                    key={qty}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSessionQty(qty)}
+                    disabled={loadingSessions}
+                    className={sessionQty === qty ? 'border-accent text-accent bg-accent/5' : ''}
+                  >
+                    +{qty}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">{text.totalAmountLabel}</div>
+                  <div className="text-2xl font-bold text-accent">{formatCurrency(unitPrice * sessionQty)}</div>
+                </div>
+                <Button
+                  onClick={handleBuySessions}
+                  disabled={loadingSessions || sessionQty <= 0}
+                  className="px-6"
+                >
+                  {loadingSessions ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      {language === 'vi' ? 'Đang xử lý...' : 'Processing...'}
+                    </>
+                  ) : (
+                    <>
+                      {text.buyNowButton}
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle>{text.paymentHistory}</CardTitle>
             </CardHeader>
@@ -431,7 +580,15 @@ export default function Upgrade() {
                   >
                     <div className="space-y-1">
                       <div className="font-medium text-foreground">
-                        {order.plan_tier.toUpperCase()} · {formatBillingPeriod(order.billing_period, language)}
+                        {order.plan_tier === 'additional_sessions' ? (
+                          language === 'vi' ? (
+                            `Mua thêm ${order.billing_period} phiên`
+                          ) : (
+                            `Purchase ${order.billing_period} sessions`
+                          )
+                        ) : (
+                          `${order.plan_tier.toUpperCase()} · ${formatBillingPeriod(order.billing_period, language)}`
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {formatCurrency(order.amount_vnd)} · {text.orderCode} {order.provider_order_ref}

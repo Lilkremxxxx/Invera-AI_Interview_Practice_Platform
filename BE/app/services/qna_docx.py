@@ -37,8 +37,12 @@ def extract_docx_text(upload: UploadFile) -> tuple[str, str]:
     if suffix not in ALLOWED_DOCX_EXTENSIONS:
         raise QnaDocxValidationError("Only DOCX files are supported right now.")
 
+    # Some browsers/OSes send varying content types for DOCX (e.g. application/zip, application/x-zip-compressed)
+    # Since we strictly check the .docx extension and parse using python-docx anyway, we only validate
+    # content_type if it is known to be a completely different, unsupported format.
     content_type = (upload.content_type or "").lower()
-    if content_type and content_type not in ALLOWED_DOCX_CONTENT_TYPES:
+    unsupported_types = {"application/pdf", "image/jpeg", "image/png", "text/plain", "text/html"}
+    if content_type in unsupported_types:
         raise QnaDocxValidationError("Unsupported DOCX content type.")
 
     raw = _read_with_limit(upload, DOCX_MAX_BYTES)

@@ -153,6 +153,7 @@ async def startup_event():
             "013_convert_answer_scores_to_ten_scale.sql",
             "014_add_session_time_limit.sql",
             "015_update_session_time_limit_constraint.sql",
+            "016_add_additional_sessions.sql",
         ]
         async with pool.acquire() as conn:
             for migration in migrations:

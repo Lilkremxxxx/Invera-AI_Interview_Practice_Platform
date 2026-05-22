@@ -254,11 +254,17 @@ async def create_session(
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
+    ui_language = resolve_ui_language(request)
     entitlement = await get_user_plan_snapshot(db, current_user.id)
     if not entitlement["can_start_new_session"]:
+        detail = (
+            "Bạn đã dùng hết số phiên phỏng vấn cho phép. Hãy mua thêm session hoặc nâng cấp gói để tiếp tục."
+            if ui_language == "vi"
+            else "You have run out of available sessions. Please purchase more sessions or upgrade your plan to continue."
+        )
         raise HTTPException(
             status_code=403,
-            detail="Bạn đã dùng hết 1 session miễn phí. Hãy nâng cấp gói để tạo phiên mới.",
+            detail=detail,
         )
 
     # Validate role/level combo
@@ -275,7 +281,6 @@ async def create_session(
 
     count = max(1, min(body.question_count, 15))
     mode = body.mode.strip().lower()
-    ui_language = resolve_ui_language(request)
     if mode not in ALLOWED_SESSION_MODES:
         detail = (
             "Mode trả lời không hợp lệ. Chỉ hỗ trợ Văn bản hoặc Giọng nói."
@@ -345,7 +350,32 @@ async def create_session(
     )
     questions = _avoid_repeated_first_question(questions, previous_first_question_id)
 
+    # Determine if this session consumes a purchased extra session
+    base_limit = 1
+    if entitlement["plan_tier"] == "basic" and entitlement["plan_status"] == "active":
+        base_limit = 5
+    elif entitlement["plan_tier"] == "pro" and entitlement["plan_status"] == "active":
+        base_limit = 8
+    elif entitlement["plan_tier"] == "premium" and entitlement["plan_status"] == "active":
+        base_limit = 12
+
+    deduct_additional = (
+        not entitlement.get("is_billing_exempt", False)
+        and not entitlement.get("is_admin", False)
+        and entitlement.get("sessions_used", 0) >= base_limit
+    )
+
     async with db.transaction():
+        if deduct_additional:
+            await db.execute(
+                """
+                UPDATE users
+                SET additional_sessions = GREATEST(0, additional_sessions - 1),
+                    updated_at = NOW()
+                WHERE id = $1
+                """,
+                current_user.id,
+            )
         session_row = await db.fetchrow(
             """
             INSERT INTO sessions (user_id, major, role, level, mode, status, time_limit_minutes)

@@ -57,6 +57,7 @@ export const pricingPlanContent = {
     },
     features: {
       vi: [
+        '5 phiên phỏng vấn / tháng',
         'Phỏng vấn AI giọng nói (chọn vai trò & cấp độ)',
         'Câu hỏi hành vi + kỹ thuật',
         'Chấm điểm theo rubric',
@@ -65,6 +66,7 @@ export const pricingPlanContent = {
         'So sánh điểm giữa các phiên',
       ],
       en: [
+        '5 sessions / month',
         'Voice AI interviews with role and level selection',
         'Behavioral and technical question sets',
         'Rubric-based scoring',
@@ -96,6 +98,7 @@ export const pricingPlanContent = {
     },
     features: {
       vi: [
+        '8 phiên phỏng vấn / tháng',
         'Lịch sử phiên không giới hạn',
         'Phân tích hiệu suất chi tiết',
         'Bảng theo dõi tiến độ',
@@ -105,6 +108,7 @@ export const pricingPlanContent = {
         'Bộ câu hỏi theo công ty',
       ],
       en: [
+        '8 sessions / month',
         'Unlimited session history',
         'Detailed performance analytics',
         'Progress dashboard',
@@ -137,6 +141,7 @@ export const pricingPlanContent = {
     },
     features: {
       vi: [
+        '12 phiên phỏng vấn / tháng',
         'Chế độ phỏng vấn kết hợp (AI + mentor)',
         'Mentor quan sát và can thiệp khi cần',
         'Phản hồi định tính thời gian thực',
@@ -146,6 +151,7 @@ export const pricingPlanContent = {
         'Lên lịch ưu tiên',
       ],
       en: [
+        '12 sessions / month',
         'Hybrid interview mode with AI and mentor',
         'Mentor observation and intervention when needed',
         'Real-time qualitative feedback',

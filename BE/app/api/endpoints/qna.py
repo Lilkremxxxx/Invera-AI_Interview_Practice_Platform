@@ -138,10 +138,16 @@ async def create_qna_message(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if not clean_message and not attachment_text:
-        raise HTTPException(status_code=400, detail="Please enter a question or upload a DOCX file.")
+        if language == "vi":
+            raise HTTPException(status_code=400, detail="Vui lòng nhập câu hỏi hoặc đính kèm một file DOCX.")
+        else:
+            raise HTTPException(status_code=400, detail="Please enter a question or upload a DOCX file.")
 
     if not clean_message and attachment_text:
-        clean_message = "Please review the uploaded DOCX and answer based on its content."
+        if language == "vi":
+            clean_message = "Vui lòng xem xét file DOCX đã tải lên và trả lời dựa trên nội dung của nó."
+        else:
+            clean_message = "Please review the uploaded DOCX and answer based on its content."
 
     thread = await _ensure_thread(db, str(current_user.id))
 

@@ -45,6 +45,7 @@ class UserOut(BaseModel):
     plan_expires_at: Optional[datetime] = None
     session_limit: Optional[int] = None
     sessions_used: int = 0
+    additional_sessions: int = 0
     can_start_new_session: bool = True
     can_use_qna: bool = False
     is_billing_exempt: bool = False

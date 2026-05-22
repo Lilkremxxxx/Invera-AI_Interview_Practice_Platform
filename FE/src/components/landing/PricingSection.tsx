@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { pricingPlanContent } from '@/lib/pricing-content';
+import { MascotDecoration } from './MascotDecoration';
 
 const planIcons: Record<string, ReactNode> = {
   free: <Mic className="w-5 h-5" />,
@@ -88,8 +89,12 @@ export const PricingSection = () => {
   const sectionCopy = pricingSectionCopy;
 
   return (
-    <section id="pricing" className="scroll-mt-24 py-20 bg-background">
-      <div className="container mx-auto px-4">
+    <section id="pricing" className="relative scroll-mt-24 overflow-hidden py-20 bg-background">
+      <MascotDecoration
+        index={6}
+        className="absolute left-2 top-24 hidden w-24 -rotate-6 opacity-90 lg:block xl:left-12 xl:w-32"
+      />
+      <div className="container relative mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">

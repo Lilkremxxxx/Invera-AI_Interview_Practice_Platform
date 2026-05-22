@@ -43,3 +43,6 @@ BE/.env*
 FE/.env
 FE/.env*
 .runtime/
+.antigravitycli/
+tmp/
+private_uploads/

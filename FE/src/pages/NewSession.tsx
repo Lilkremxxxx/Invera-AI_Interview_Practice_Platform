@@ -84,8 +84,8 @@ const NewSession = () => {
     createErrorDescription: language === 'vi' ? 'Không thể tạo session. Vui lòng thử lại.' : 'Unable to create the session. Please try again.',
     blockedTitle: language === 'vi' ? 'Không thể tạo session mới' : 'Unable to create a new session',
     blockedBody: language === 'vi'
-      ? 'Bạn đã dùng hết session của Free trial. Hãy nâng cấp gói để tiếp tục luyện tập.'
-      : 'You have already used the only session included in Free trial. Upgrade your plan to continue practicing.',
+      ? 'Bạn đã dùng hết số phiên phỏng vấn cho phép. Hãy mua thêm session hoặc nâng cấp gói để tiếp tục.'
+      : 'You have run out of available sessions. Please purchase more sessions or upgrade your plan to continue.',
     upgradePlan: language === 'vi' ? 'Nâng cấp gói' : 'Upgrade plan',
     viewSessions: language === 'vi' ? 'Xem session hiện có' : 'View existing sessions',
     creating: language === 'vi' ? 'Đang tạo...' : 'Creating...',

@@ -39,6 +39,25 @@ import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass,
 
 const RECORDING_LIMIT_SECONDS = 120;
 const DEFAULT_STT_LANGUAGE = 'vi';
+const FEEDBACK_MASCOT_ANIMATIONS = [
+  'animate-mascot-bounce',
+  'animate-mascot-wiggle',
+  'animate-mascot-float',
+  'animate-mascot-spark',
+] as const;
+
+type FeedbackMascotAnimation = (typeof FEEDBACK_MASCOT_ANIMATIONS)[number];
+type FeedbackMascotCue = {
+  index: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  animation: FeedbackMascotAnimation;
+};
+
+function createFeedbackMascotCue(): FeedbackMascotCue {
+  return {
+    index: (Math.floor(Math.random() * 8) + 1) as FeedbackMascotCue['index'],
+    animation: FEEDBACK_MASCOT_ANIMATIONS[Math.floor(Math.random() * FEEDBACK_MASCOT_ANIMATIONS.length)],
+  };
+}
 
 type SttLanguage = 'vi' | 'en';
 
@@ -172,6 +191,7 @@ const InterviewRoom = () => {
   const [isSynthesizingFeedback, setIsSynthesizingFeedback] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
+  const [feedbackMascotCue, setFeedbackMascotCue] = useState<FeedbackMascotCue | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
   const [loadError, setLoadError] = useState(false);
@@ -192,7 +212,9 @@ const InterviewRoom = () => {
       try {
         setSession(JSON.parse(cached));
         return;
-      } catch {}
+      } catch {
+        // Ignore stale cached session JSON and fall back to the API.
+      }
     }
     // Fallback: fetch from API
     sessionsApi.get(id).then(setSession).catch(() => {
@@ -350,6 +372,7 @@ const InterviewRoom = () => {
         output_language: sttLanguage,
       });
       setCurrentAnswer(result);
+      setFeedbackMascotCue(createFeedbackMascotCue());
       setShowFeedback(true);
     } catch (err) {
       toast({
@@ -558,7 +581,9 @@ const InterviewRoom = () => {
     try {
       await sessionsApi.complete(id!);
       sessionStorage.removeItem(`session_${id}`);
-    } catch {}
+    } catch {
+      // Still return to the session list if the best-effort completion call fails.
+    }
     navigate('/app/sessions');
   };
 
@@ -780,7 +805,21 @@ const InterviewRoom = () => {
 
             {/* Feedback Panel */}
             {showFeedback && currentAnswer && (
-              <div className="bg-card rounded-2xl border p-6 md:p-8 space-y-6">
+              <div className="relative overflow-hidden bg-card rounded-2xl border p-6 md:p-8 space-y-6">
+                {feedbackMascotCue && (
+                  <img
+                    src={`/mascot/animation-${feedbackMascotCue.index}.png`}
+                    alt="Invera feedback mascot"
+                    width={112}
+                    height={128}
+                    loading="lazy"
+                    decoding="async"
+                    className={cn(
+                      'pointer-events-none absolute right-4 top-4 z-10 w-16 select-none object-contain opacity-90 drop-shadow-[0_14px_18px_rgba(15,23,42,0.12)] sm:w-20 md:w-24',
+                      feedbackMascotCue.animation
+                    )}
+                  />
+                )}
                 {/* Score */}
                 <div className="text-center pb-6 border-b">
                   <div className={cn(

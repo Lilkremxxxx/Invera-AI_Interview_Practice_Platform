@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MascotDecoration } from './MascotDecoration';
 
 export const CTASection = () => {
   const { t } = useLanguage();
@@ -9,6 +10,10 @@ export const CTASection = () => {
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="relative max-w-4xl mx-auto rounded-3xl bg-card border-2 border-border shadow-xl overflow-hidden">
+          <MascotDecoration
+            index={8}
+            className="absolute -left-3 bottom-0 hidden w-32 -rotate-6 opacity-95 sm:block md:w-40"
+          />
           <div className="relative z-10 px-8 py-16 md:px-16 md:py-20 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/30 mb-6">
               <Sparkles className="w-4 h-4 text-accent" />

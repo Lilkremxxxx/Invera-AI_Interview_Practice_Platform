@@ -49,6 +49,7 @@ class AdminManagedUserOut(BaseModel):
     plan_expires_at: Optional[datetime] = None
     sessions_used: int = 0
     session_limit: Optional[int] = None
+    additional_sessions: int = 0
     can_start_new_session: bool = True
     can_use_qna: bool = False
     avg_score: Optional[float] = None

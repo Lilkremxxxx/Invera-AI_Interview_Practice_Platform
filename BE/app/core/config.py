@@ -83,6 +83,22 @@ class Settings:
         f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/vnpay/ipn",
     )
     vnpay_locale: str = os.getenv("VNPAY_LOCALE", "vn")
+    payos_api_base_url: str = os.getenv("PAYOS_API_BASE_URL", "https://api-merchant.payos.vn")
+    payos_client_id: str | None = os.getenv("PAYOS_CLIENT_ID")
+    payos_api_key: str | None = os.getenv("PAYOS_API_KEY")
+    payos_checksum_key: str | None = os.getenv("PAYOS_CHECKSUM_KEY")
+    payos_return_url: str = os.getenv(
+        "PAYOS_RETURN_URL",
+        f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/payos/return",
+    )
+    payos_cancel_url: str = os.getenv(
+        "PAYOS_CANCEL_URL",
+        f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/payos/cancel",
+    )
+    payos_webhook_url: str = os.getenv(
+        "PAYOS_WEBHOOK_URL",
+        f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/payos/webhook",
+    )
     frontend_upgrade_url: str = os.getenv(
         "FRONTEND_UPGRADE_URL",
         f"{os.getenv('FRONTEND_URL', 'https://invera.pp.ua')}/app/upgrade",

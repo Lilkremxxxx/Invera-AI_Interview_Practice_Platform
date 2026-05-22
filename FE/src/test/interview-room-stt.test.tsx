@@ -344,6 +344,39 @@ describe("InterviewRoom STT", () => {
     });
   });
 
+  it("shows a random animated mascot when feedback arrives", async () => {
+    vi.spyOn(Math, "random")
+      .mockReturnValueOnce(0.5)
+      .mockReturnValueOnce(0.75);
+    submitAnswer.mockResolvedValue({
+      id: "answer-1",
+      session_id: "session-1",
+      question_id: 1,
+      answer_text: "typed answer",
+      score: 7.4,
+      feedback: "Detailed rubric feedback",
+      submitted_at: "2026-05-05T00:00:00Z",
+      tts_script: "English feedback. Vietnamese feedback.",
+      tts_audio_url: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/app/interview/session-1"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByRole("textbox"), { target: { value: "typed answer" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    const mascot = await screen.findByAltText("Invera feedback mascot");
+
+    expect(mascot).toHaveAttribute("src", "/mascot/animation-5.png");
+    expect(mascot).toHaveClass("animate-mascot-spark");
+  });
+
   it("renders native controls for an existing feedback audio URL", async () => {
     submitAnswer.mockResolvedValue({
       id: "answer-1",

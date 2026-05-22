@@ -186,6 +186,7 @@ export interface UserOut {
   avatar_url?: string | null;
   resume_uploaded?: boolean;
   resume_filename?: string | null;
+  additional_sessions?: number;
 }
 
 export interface RegisterResponse extends UserOut {
@@ -387,8 +388,8 @@ export interface PaymentOrderOut {
   id: string;
   user_id: string;
   provider: string;
-  plan_tier: 'basic' | 'pro' | 'premium';
-  billing_period: 'month' | 'year';
+  plan_tier: string;
+  billing_period: string;
   amount_vnd: number;
   status: string;
   provider_order_ref: string;
@@ -615,7 +616,7 @@ export const billingApi = {
     plan_tier: 'basic' | 'pro' | 'premium',
     billing_period: 'month' | 'year',
   ): Promise<CheckoutResponse> =>
-    request<CheckoutResponse>('/billing/vnpay/checkout', {
+    request<CheckoutResponse>('/billing/payos/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan_tier, billing_period }),
@@ -630,6 +631,15 @@ export const billingApi = {
 
   listOrders: async (): Promise<PaymentOrderOut[]> =>
     request<PaymentOrderOut[]>('/billing/orders'),
+
+  createBuySessionsCheckout: async (
+    quantity: number,
+  ): Promise<CheckoutResponse> =>
+    request<CheckoutResponse>('/billing/buy-sessions/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity }),
+    }),
 };
 
 export const profileApi = {
