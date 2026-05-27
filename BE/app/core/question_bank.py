@@ -66,6 +66,7 @@ def localized_question_field(row: Mapping[str, Any], field: str, language: str) 
 def localized_question_dict(
     row: Mapping[str, Any],
     *,
+    language: str = "en",
     include_ideal_answer: bool = False,
 ) -> dict[str, Any]:
     payload = dict(row)
@@ -73,10 +74,12 @@ def localized_question_dict(
     payload["text_vi"] = payload.get("text_vi") or payload.get("text")
     payload["category_en"] = payload.get("category_en") or payload.get("category")
     payload["category_vi"] = payload.get("category_vi") or payload.get("category")
-    payload["text"] = payload["text_en"]
-    payload["category"] = payload["category_en"]
+
+    is_vi = normalize_ui_language(language) == "vi"
+    payload["text"] = payload["text_vi"] if is_vi else payload["text_en"]
+    payload["category"] = payload["category_vi"] if is_vi else payload["category_en"]
     if include_ideal_answer:
         payload["ideal_answer_en"] = payload.get("ideal_answer_en") or payload.get("ideal_answer")
         payload["ideal_answer_vi"] = payload.get("ideal_answer_vi") or payload.get("ideal_answer")
-        payload["ideal_answer"] = payload["ideal_answer_en"]
+        payload["ideal_answer"] = payload["ideal_answer_vi"] if is_vi else payload["ideal_answer_en"]
     return payload

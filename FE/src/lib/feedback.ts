@@ -63,7 +63,7 @@ function matchSection(line: string): SectionKey | null {
 
 function parseCriterion(line: string): FeedbackCriterion {
   const trimmed = line.replace(/^-+\s*/, '').trim();
-  const match = trimmed.match(/^(.*?)\s*-\s*(strong|mixed|weak):\s*(.*?)(?:\s*\|\s*(.*))?$/i);
+  const match = trimmed.match(/^(.*?)\s*-\s*(strong|mixed|weak|fails|meets|excellent|good|fail|pass|borderline):\s*(.*?)(?:\s*\|\s*(.*))?$/i);
   if (!match) {
     return {
       title: trimmed,
@@ -91,9 +91,19 @@ function parseCriterion(line: string): FeedbackCriterion {
     ?.replace(/^(Thiếu|Missing):\s*/i, '')
     .trim();
 
+  let assessment: FeedbackAssessment = null;
+  const rawAssessment = match[2].toLowerCase();
+  if (['strong', 'excellent', 'good', 'pass'].includes(rawAssessment)) {
+    assessment = 'strong';
+  } else if (['mixed', 'meets', 'borderline'].includes(rawAssessment)) {
+    assessment = 'mixed';
+  } else if (['weak', 'fails', 'fail'].includes(rawAssessment)) {
+    assessment = 'weak';
+  }
+
   return {
     title: match[1].trim(),
-    assessment: match[2].toLowerCase() as FeedbackAssessment,
+    assessment,
     quote,
     evidence: evaluation || match[3].trim(),
     missing: missing || undefined,

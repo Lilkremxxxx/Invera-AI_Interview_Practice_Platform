@@ -46,16 +46,16 @@ const ROLE_OPTIONS: Record<MajorKey, RoleOption[]> = {
     { value: 'ux_designer', en: 'UX Designer', vi: 'UX Designer' },
   ],
   finance: [
-    { value: 'financial_analyst', en: 'Financial Analyst', vi: 'Chuyên viên phân tích tài chính' },
-    { value: 'accountant', en: 'Accountant', vi: 'Kế toán' },
-    { value: 'auditor', en: 'Auditor', vi: 'Kiểm toán viên' },
-    { value: 'investment_banking_analyst', en: 'Investment Banking Analyst', vi: 'Chuyên viên phân tích ngân hàng đầu tư' },
+    { value: 'financial_analyst', en: 'Financial Analyst', vi: 'Financial Analyst' },
+    { value: 'accountant', en: 'Accountant', vi: 'Accountant' },
+    { value: 'auditor', en: 'Auditor', vi: 'Auditor' },
+    { value: 'investment_banking_analyst', en: 'Investment Banking Analyst', vi: 'Investment Banking Analyst' },
   ],
   business: [
     { value: 'business_analyst', en: 'Business Analyst', vi: 'Business Analyst' },
-    { value: 'operations_analyst', en: 'Operations Analyst', vi: 'Chuyên viên phân tích vận hành' },
-    { value: 'sales_executive', en: 'Sales Executive', vi: 'Nhân viên kinh doanh' },
-    { value: 'marketing_executive', en: 'Marketing Executive', vi: 'Nhân viên marketing' },
+    { value: 'operations_analyst', en: 'Operations Analyst', vi: 'Operations Analyst' },
+    { value: 'sales_executive', en: 'Sales Executive', vi: 'Sales Executive' },
+    { value: 'marketing_executive', en: 'Marketing Executive', vi: 'Marketing Executive' },
   ],
 };
 
@@ -63,6 +63,7 @@ const LEVEL_OPTIONS = ['intern', 'fresher', 'junior', 'mid', 'senior'] as const;
 const DIFFICULTY_OPTIONS = ['easy', 'medium', 'hard'] as const;
 
 function prettyLabel(value: string) {
+  if (value === 'mid') return 'Mid-level';
   return value
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());

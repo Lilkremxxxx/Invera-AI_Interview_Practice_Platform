@@ -12,7 +12,9 @@ import {
   AlertCircle,
   TrendingUp,
   Loader2,
-  Play
+  Play,
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -25,11 +27,50 @@ import { canExportSessions } from '@/lib/plans';
 import { formatScore, formatScoreValue, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
 import { useToast } from '@/hooks/use-toast';
 const levelLabels: Record<string, { vi: string; en: string }> = {
-  intern: { vi: 'Thực tập sinh', en: 'Intern' },
+  intern: { vi: 'Intern', en: 'Intern' },
   fresher: { vi: 'Fresher', en: 'Fresher' },
   junior: { vi: 'Junior', en: 'Junior' },
-  mid: { vi: 'Trung cấp', en: 'Mid-level' },
+  mid: { vi: 'Mid-level', en: 'Mid-level' },
   senior: { vi: 'Senior', en: 'Senior' },
+};
+
+const renderMarkdown = (text: string | null | undefined) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  let inList = false;
+  const elements: React.ReactNode[] = [];
+  lines.forEach((line, idx) => {
+    let cleanLine = line.trim();
+    if (!cleanLine) {
+      if (inList) inList = false;
+      return;
+    }
+    const parseBold = (str: string) => {
+      const parts = str.split('**');
+      return parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-foreground">{part}</strong> : part);
+    };
+    if (cleanLine.startsWith('### ')) {
+      if (inList) inList = false;
+      elements.push(<h4 key={idx} className="text-sm font-bold mt-4 mb-2 text-foreground flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-cyan-500 shrink-0" />{parseBold(cleanLine.substring(4))}</h4>);
+    } else if (cleanLine.startsWith('## ')) {
+      if (inList) inList = false;
+      elements.push(<h3 key={idx} className="text-base font-bold mt-5 mb-2.5 text-foreground border-b pb-1 flex items-center gap-1.5">{parseBold(cleanLine.substring(3))}</h3>);
+    } else if (cleanLine.startsWith('# ')) {
+      if (inList) inList = false;
+      elements.push(<h2 key={idx} className="text-lg font-bold mt-6 mb-3 text-foreground flex items-center gap-1.5">{parseBold(cleanLine.substring(2))}</h2>);
+    } else if (cleanLine.startsWith('- ') || cleanLine.startsWith('* ')) {
+      if (!inList) inList = true;
+      elements.push(
+        <li key={idx} className="ml-5 list-disc text-xs text-foreground/90 mb-1 leading-relaxed">
+          {parseBold(cleanLine.substring(2))}
+        </li>
+      );
+    } else {
+      if (inList) inList = false;
+      elements.push(<p key={idx} className="text-xs text-foreground/80 leading-relaxed mb-2.5">{parseBold(cleanLine)}</p>);
+    }
+  });
+  return <div className="space-y-1">{elements}</div>;
 };
 
 const SessionDetail = () => {
@@ -121,10 +162,10 @@ const SessionDetail = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {roleLabelMap[session.role]?.[language] || session.role}
+              {roleLabelMap[session.role]?.en || session.role}
             </h1>
             <p className="text-muted-foreground">
-              {levelLabels[session.level]?.[language] || session.level} • {new Date(session.created_at).toLocaleDateString(copy.locale)} •{' '}
+              {levelLabels[session.level]?.en || session.level} • {new Date(session.created_at).toLocaleDateString(copy.locale)} •{' '}
               <span className={cn(
                 'font-medium text-xs px-1.5 py-0.5 rounded',
                 session.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
@@ -187,6 +228,31 @@ const SessionDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Evaluation Report (If Completed and Available) */}
+      {session.status === 'COMPLETED' && session.evaluation_report && (
+        <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
+          <CardHeader className="bg-muted/30 border-b pb-4">
+            <CardTitle className="flex items-center justify-between text-base font-bold">
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-accent animate-pulse" />
+                {language === 'vi' ? 'Báo cáo Đánh giá Tổng quan từ AI' : 'Overall AI Evaluation Report'}
+              </span>
+              {session.practice_plan && (
+                <Button variant="ghost" size="sm" asChild className="rounded-full text-accent hover:text-accent/80 hover:bg-accent/10 h-8 px-4 text-xs">
+                  <Link to={`/app/plan?session_id=${session.id}`}>
+                    {language === 'vi' ? 'Xem kế hoạch học tập' : 'View Practice Plan'}
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Link>
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {renderMarkdown(session.evaluation_report)}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Questions & Answers Timeline */}
       <Card>

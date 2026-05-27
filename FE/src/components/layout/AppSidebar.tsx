@@ -3,6 +3,7 @@ import {
   LayoutDashboard, 
   PlusCircle, 
   History, 
+  ClipboardList,
   MessageSquareText,
   User, 
   Settings, 
@@ -14,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { BrandIcon } from '@/components/layout/BrandIcon';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -26,10 +27,22 @@ export const AppSidebar = () => {
   const { t, language } = useLanguage();
   const { user, logout } = useAuthContext();
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const menuItems = [
     { icon: LayoutDashboard, label: t('sidebar', 'dashboard'), path: '/app' },
     { icon: PlusCircle, label: t('sidebar', 'newSession'), path: '/app/new' },
     { icon: History, label: t('sidebar', 'sessions'), path: '/app/sessions' },
+    { icon: ClipboardList, label: language === 'vi' ? 'Lộ trình' : 'Plan', path: '/app/plan' },
     { icon: MessageSquareText, label: t('sidebar', 'qna'), path: '/app/qna' },
     { icon: User, label: t('sidebar', 'profile'), path: '/app/profile' },
     { icon: Settings, label: t('sidebar', 'settings'), path: '/app/settings' },

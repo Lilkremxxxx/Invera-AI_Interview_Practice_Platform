@@ -1,4 +1,5 @@
 import uuid
+import random
 import asyncio
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -7,7 +8,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.db.session import get_db
+from app.db.session import create_pool, get_db
 from app.api.endpoints.auth import get_current_user
 from app.core.config import settings
 from app.core.question_bank import (
@@ -26,7 +27,7 @@ from app.services.deepseek_client import DeepSeekAPIError
 from app.services.interview_stt import InterviewSttRuntimeError, transcribe_audio_bytes
 from app.services.plans import can_export_sessions, get_user_plan_snapshot
 from app.services.session_pdf import build_session_pdf_filename, build_sessions_pdf
-from app.services.question_bank_seed import ensure_question_bank_minimum
+from app.services.question_bank_seed import ensure_question_bank_minimum, translate_questions_to_vi_if_needed
 from app.services.scoring import ScoringRequest, score_answer
 from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
 from app.services.transcript_cleanup import correct_transcript_text
@@ -45,10 +46,10 @@ ALLOWED_STT_CONTENT_TYPES = {
 }
 
 LEVEL_LABELS = {
-    "intern": {"vi": "Thực tập sinh", "en": "Intern"},
+    "intern": {"vi": "Intern", "en": "Intern"},
     "fresher": {"vi": "Fresher", "en": "Fresher"},
     "junior": {"vi": "Junior", "en": "Junior"},
-    "mid": {"vi": "Trung cấp", "en": "Mid-level"},
+    "mid": {"vi": "Mid-level", "en": "Mid-level"},
     "senior": {"vi": "Senior", "en": "Senior"},
 }
 MODE_LABELS = {
@@ -95,7 +96,7 @@ async def _fetch_session_questions(
                category, category_en, category_vi,
                difficulty, tags
         FROM questions
-        WHERE major = $1 AND role = $2 AND level = $3
+        WHERE major = $1 AND role = $2 AND level = $3 AND user_id IS NULL
         ORDER BY RANDOM()
         LIMIT $4
         """,
@@ -180,6 +181,7 @@ async def _load_session_bundle(
             LEFT JOIN answers a ON a.question_id = q.id AND a.session_id = $1
             WHERE q.role = $2 AND q.level = $3
               AND ($4::text IS NULL OR q.major = $4)
+              AND q.user_id IS NULL
             ORDER BY a.submitted_at NULLS LAST, q.id
             LIMIT 15
             """,
@@ -246,6 +248,51 @@ def _validate_stt_upload(upload: UploadFile):
         raise HTTPException(status_code=400, detail="Định dạng audio chưa được hỗ trợ cho STT.")
 
 
+async def _generate_session_report_background(*, session_id: uuid.UUID, language: str) -> None:
+    from app.services.evaluation import generate_session_evaluation_and_plan
+
+    try:
+        pool = await create_pool()
+        async with pool.acquire() as conn:
+            session_row = await conn.fetchrow(
+                """
+                SELECT id, role, level, major, status, evaluation_report, practice_plan
+                FROM sessions
+                WHERE id = $1
+                """,
+                session_id,
+            )
+            if not session_row or session_row["status"] != "COMPLETED":
+                return
+            if session_row["evaluation_report"] and session_row["practice_plan"]:
+                return
+
+            evaluation_report, practice_plan = await generate_session_evaluation_and_plan(
+                conn,
+                session_id=session_id,
+                role=session_row["role"],
+                level=session_row["level"],
+                major=session_row["major"],
+                language=language,
+            )
+            await conn.execute(
+                """
+                UPDATE sessions
+                SET evaluation_report = $1, practice_plan = $2
+                WHERE id = $3
+                """,
+                evaluation_report,
+                practice_plan,
+                session_id,
+            )
+    except Exception:
+        print(f"Error generating background session report for {session_id}")
+
+
+def _schedule_session_report_generation(*, session_id: uuid.UUID, language: str) -> None:
+    asyncio.create_task(_generate_session_report_background(session_id=session_id, language=language))
+
+
 # ─── POST /sessions ──────────────────────────────────────────────────────────
 @router.post("", response_model=SessionDetail)
 async def create_session(
@@ -289,7 +336,12 @@ async def create_session(
         )
         raise HTTPException(status_code=400, detail=detail)
 
-    requested_time_limit = count * 5
+    plan_tier = entitlement.get("plan_tier", "free")
+    plan_status = entitlement.get("plan_status", "inactive")
+    is_pro_or_above = (plan_tier in ("pro", "premium", "admin") and plan_status == "active") or current_user.is_admin
+
+    mins_per_question = 10 if is_pro_or_above else 5
+    requested_time_limit = count * mins_per_question
 
     # Lấy ngẫu nhiên câu hỏi cho major+role+level
     questions = await _fetch_session_questions(
@@ -350,6 +402,32 @@ async def create_session(
     )
     questions = _avoid_repeated_first_question(questions, previous_first_question_id)
 
+    # Fetch and append 1-2 random CV questions if they exist for the user
+    questions = list(questions)
+    cv_questions = []
+    if hasattr(db, "fetch"):
+        cv_questions = await db.fetch(
+            """
+            SELECT id, major, role, level, text, text_en, text_vi,
+                   category, category_en, category_vi,
+                   difficulty, tags
+            FROM questions
+            WHERE user_id = $1
+            ORDER BY RANDOM()
+            LIMIT $2
+            """,
+            current_user.id,
+            random.randint(1, 2),
+        )
+    if cv_questions:
+        questions.extend(cv_questions)
+
+    # Recalculate time limit based on original count and final CV questions added
+    requested_time_limit = count * mins_per_question + len(cv_questions) * mins_per_question
+
+    if ui_language == "vi":
+        questions = await translate_questions_to_vi_if_needed(db, questions)
+
     # Determine if this session consumes a purchased extra session
     base_limit = 1
     if entitlement["plan_tier"] == "basic" and entitlement["plan_status"] == "active":
@@ -404,7 +482,7 @@ async def create_session(
         created_at=session_row["created_at"],
         completed_at=session_row["completed_at"],
         time_limit_minutes=session_row["time_limit_minutes"],
-        questions=[QuestionOut(**localized_question_dict(q)) for q in questions],
+        questions=[QuestionOut(**localized_question_dict(q, language=ui_language)) for q in questions],
         answers=[],
     )
 
@@ -418,6 +496,7 @@ async def list_session_catalog(
         """
         SELECT major, role, level, COUNT(*)::int AS question_count
         FROM questions
+        WHERE user_id IS NULL
         GROUP BY major, role, level
         ORDER BY major, role, level
         """
@@ -458,6 +537,7 @@ async def list_sessions(
         SELECT
             s.id, s.user_id, s.major, s.role, s.level, s.mode, s.status,
             s.created_at, s.completed_at, s.time_limit_minutes,
+            s.evaluation_report, s.practice_plan,
             COUNT(DISTINCT sq.question_id)::int AS question_count,
             AVG(a.score)::float         AS avg_score
         FROM sessions s
@@ -484,6 +564,8 @@ async def list_sessions(
             question_count=r["question_count"],
             avg_score=round(r["avg_score"], 1) if r["avg_score"] is not None else None,
             time_limit_minutes=r["time_limit_minutes"],
+            evaluation_report=r["evaluation_report"],
+            practice_plan=r["practice_plan"],
         )
         for r in rows
     ]
@@ -547,6 +629,7 @@ async def export_session_pdf(
 @router.get("/{session_id}", response_model=SessionDetail)
 async def get_session(
     session_id: uuid.UUID,
+    request: Request,
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
@@ -557,6 +640,34 @@ async def get_session(
     answers_rows = bundle["answers_rows"]
     questions_rows = bundle["questions_rows"]
     avg_score = bundle["avg_score"]
+
+    ui_language = resolve_ui_language(request)
+    if ui_language == "vi":
+        questions_rows = await translate_questions_to_vi_if_needed(db, questions_rows)
+
+    # Lazy generation if completed but report/plan is missing
+    evaluation_report = session_row["evaluation_report"]
+    practice_plan = session_row["practice_plan"]
+    if session_row["status"] == "COMPLETED" and (not evaluation_report or not practice_plan):
+        from app.services.evaluation import generate_session_evaluation_and_plan
+        evaluation_report, practice_plan = await generate_session_evaluation_and_plan(
+            db,
+            session_id=session_id,
+            role=session_row["role"],
+            level=session_row["level"],
+            major=session_row["major"],
+            language=ui_language,
+        )
+        await db.execute(
+            """
+            UPDATE sessions
+            SET evaluation_report = $1, practice_plan = $2
+            WHERE id = $3
+            """,
+            evaluation_report,
+            practice_plan,
+            session_id,
+        )
 
     return SessionDetail(
         id=session_row["id"],
@@ -571,8 +682,10 @@ async def get_session(
         avg_score=avg_score,
         question_count=len(questions_rows),
         time_limit_minutes=session_row["time_limit_minutes"],
-        questions=[QuestionOut(**localized_question_dict(q)) for q in questions_rows],
+        questions=[QuestionOut(**localized_question_dict(q, language=ui_language)) for q in questions_rows],
         answers=[_serialize_answer_row(a) for a in answers_rows],
+        evaluation_report=evaluation_report,
+        practice_plan=practice_plan,
     )
 
 
@@ -800,25 +913,56 @@ async def synthesize_answer_feedback_tts(
 @router.put("/{session_id}/complete", response_model=SessionOut)
 async def complete_session(
     session_id: uuid.UUID,
+    request: Request,
+    generate_report: bool = Query(True),
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
     session_row = await db.fetchrow(
-        "SELECT id, status FROM sessions WHERE id = $1 AND user_id = $2",
+        "SELECT id, role, level, major, status, mode, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan FROM sessions WHERE id = $1 AND user_id = $2",
         session_id, current_user.id,
     )
     if not session_row:
         raise HTTPException(status_code=404, detail="Session không tồn tại")
 
+    # If already completed and has evaluation, skip generating again
+    if session_row["status"] == 'COMPLETED' and session_row["evaluation_report"]:
+        avg_row = await db.fetchrow(
+            "SELECT AVG(score)::float AS avg_score, COUNT(*)::int AS cnt FROM answers WHERE session_id = $1",
+            session_id,
+        )
+        return SessionOut(
+            id=session_row["id"],
+            user_id=current_user.id,
+            major=session_row["major"],
+            role=session_row["role"],
+            level=session_row["level"],
+            mode=session_row["mode"],
+            status=session_row["status"],
+            created_at=session_row["created_at"],
+            completed_at=session_row["completed_at"],
+            avg_score=round(avg_row["avg_score"], 1) if avg_row["avg_score"] else None,
+            question_count=avg_row["cnt"],
+            time_limit_minutes=session_row["time_limit_minutes"],
+            evaluation_report=session_row["evaluation_report"],
+            practice_plan=session_row["practice_plan"],
+        )
+
+    ui_language = resolve_ui_language(request)
+
     updated = await db.fetchrow(
         """
         UPDATE sessions
-        SET status = 'COMPLETED', completed_at = NOW()
+        SET status = 'COMPLETED',
+            completed_at = COALESCE(completed_at, NOW())
         WHERE id = $1
-        RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes
+        RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan
         """,
         session_id,
     )
+
+    if not updated["evaluation_report"] or not updated["practice_plan"]:
+        _schedule_session_report_generation(session_id=session_id, language=ui_language)
 
     # Tính avg score
     avg_row = await db.fetchrow(
@@ -839,12 +983,15 @@ async def complete_session(
         avg_score=round(avg_row["avg_score"], 1) if avg_row["avg_score"] else None,
         question_count=avg_row["cnt"],
         time_limit_minutes=updated["time_limit_minutes"],
+        evaluation_report=updated["evaluation_report"],
+        practice_plan=updated["practice_plan"],
     )
 
 
 # ─── GET /questions ────────────────────────────────────────────────────────────
 @router.get("/questions/list", response_model=List[QuestionOut])
 async def list_questions(
+    request: Request,
     role: Optional[str] = Query(None),
     level: Optional[str] = Query(None),
     db: asyncpg.Connection = Depends(get_db),
@@ -857,7 +1004,7 @@ async def list_questions(
                    category, category_en, category_vi,
                    difficulty, tags
             FROM questions
-            WHERE role = $1 AND level = $2
+            WHERE role = $1 AND level = $2 AND user_id IS NULL
             ORDER BY id
             """,
             role, level,
@@ -869,7 +1016,7 @@ async def list_questions(
                    category, category_en, category_vi,
                    difficulty, tags
             FROM questions
-            WHERE role = $1
+            WHERE role = $1 AND user_id IS NULL
             ORDER BY id
             """,
             role,
@@ -881,8 +1028,10 @@ async def list_questions(
                    category, category_en, category_vi,
                    difficulty, tags
             FROM questions
+            WHERE user_id IS NULL
             ORDER BY id
             LIMIT 50
             """
         )
-    return [QuestionOut(**localized_question_dict(r)) for r in rows]
+    ui_language = resolve_ui_language(request)
+    return [QuestionOut(**localized_question_dict(r, language=ui_language)) for r in rows]

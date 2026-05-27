@@ -338,6 +338,8 @@ export interface SessionOut {
   avg_score: number | null;
   question_count: number | null;
   time_limit_minutes?: number | null;
+  evaluation_report?: string | null;
+  practice_plan?: string | null;
 }
 
 export interface SessionDetail extends SessionOut {
@@ -604,8 +606,10 @@ export const sessionsApi = {
   },
 
   /** Đánh dấu session hoàn thành */
-  complete: async (sessionId: string): Promise<SessionOut> => {
-    return request<SessionOut>(`/sessions/${sessionId}/complete`, {
+  complete: async (sessionId: string, options: { generateReport?: boolean } = {}): Promise<SessionOut> => {
+    const shouldGenerateReport = options.generateReport ?? true;
+    const query = shouldGenerateReport ? '' : '?generate_report=false';
+    return request<SessionOut>(`/sessions/${sessionId}/complete${query}`, {
       method: 'PUT',
     });
   },

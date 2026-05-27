@@ -11,6 +11,7 @@ from app.services.scoring import (
     _heuristic_result,
     score_answer,
 )
+import app.services.scoring as scoring_module
 
 
 def test_format_feedback_includes_candidate_quote_for_each_criterion():
@@ -84,10 +85,8 @@ def test_feedback_summary_is_not_over_positive_when_any_criterion_is_weak():
     )
 
     first_line = feedback.splitlines()[0]
-    assert "khá tốt" not in first_line.lower()
-    assert "đáng tin" not in first_line.lower()
-    assert "tiêu chí yếu" in first_line.lower()
-    assert "Độ sâu và judgment" in first_line
+    assert "câu trả lời của bạn: câu trả lời khá tốt và đáng tin." in first_line.lower()
+    assert "còn yếu ở: độ sâu và judgment" in first_line.lower()
 
 
 def test_quote_repair_rejects_question_text_and_uses_distinct_answer_excerpts():
@@ -155,3 +154,126 @@ def test_score_answer_forced_english_short_answer_is_not_vietnamese_guard():
     assert score > 0
     assert "The answer is too short" in feedback
     assert "Câu trả lời quá ngắn" not in feedback
+
+
+def test_short_answer_guard_does_not_call_ai_or_quote_candidate(monkeypatch):
+    called = False
+
+    async def fake_deepseek(request):
+        nonlocal called
+        called = True
+        return 9.0, "should not be used"
+
+    monkeypatch.setattr(scoring_module, "_score_with_deepseek", fake_deepseek)
+    monkeypatch.setattr(
+        scoring_module,
+        "settings",
+        type("Settings", (), {
+            "deepseek_enabled": True,
+            "deepseek_api_key": "test-key",
+        })(),
+    )
+
+    score, feedback = asyncio.run(score_answer(
+        ScoringRequest(
+            answer_text="tôi thấy câu này nên trả lời là",
+            ideal_answer="Explain responsive design using flexible layouts, media queries, and viewport testing.",
+            question_text="Responsive design là gì?",
+            role="frontend",
+            level="intern",
+            category="CSS",
+            difficulty="easy",
+            major="technology",
+            preferred_language="vi",
+            force_language=True,
+        )
+    ))
+
+    assert called is False
+    assert score <= 2.5
+    assert "câu trả lời quá ngắn" in feedback.lower()
+    assert "Trích dẫn:" not in feedback
+
+
+def test_gibberish_answer_guard_does_not_call_ai_or_quote_candidate(monkeypatch):
+    called = False
+
+    async def fake_deepseek(request):
+        nonlocal called
+        called = True
+        return 9.0, "should not be used"
+
+    monkeypatch.setattr(scoring_module, "_score_with_deepseek", fake_deepseek)
+    monkeypatch.setattr(
+        scoring_module,
+        "settings",
+        type("Settings", (), {
+            "deepseek_enabled": True,
+            "deepseek_api_key": "test-key",
+        })(),
+    )
+
+    score, feedback = asyncio.run(score_answer(
+        ScoringRequest(
+            answer_text="dkj,fhsdkjfghskdjfhsdk qwrtypsdfgh zxcvbnm",
+            ideal_answer="Explain responsive design using flexible layouts, media queries, and viewport testing.",
+            question_text="What is responsive design?",
+            role="frontend",
+            level="intern",
+            category="CSS",
+            difficulty="easy",
+            major="technology",
+            preferred_language="en",
+            force_language=True,
+        )
+    ))
+
+    assert called is False
+    assert score <= 2.5
+    assert "not clear enough" in feedback.lower() or "off" in feedback.lower()
+    assert "Quote:" not in feedback
+
+
+def test_weak_answer_guard_vietnamese():
+    feedback = _format_feedback(
+        {
+            "language": "vi",
+            "is_weak_guard": True,
+            "summary": "This summary should be ignored",
+            "criteria": [
+                {
+                    "name": "Mức độ liên quan",
+                    "assessment": "weak",
+                    "evidence": "Ev",
+                    "missing": "Mis",
+                }
+            ],
+            "gaps": ["Gap 1"],
+        }
+    )
+    assert "Tóm tắt: Câu trả lời không đúng trọng tâm hoặc quá ngắn" in feedback
+    assert "Tiêu chí chấm" not in feedback
+    assert "Điểm cần cải thiện:" in feedback
+
+
+def test_weak_answer_guard_english():
+    feedback = _format_feedback(
+        {
+            "language": "en",
+            "is_weak_guard": True,
+            "summary": "This summary should be ignored",
+            "criteria": [
+                {
+                    "name": "Relevance",
+                    "assessment": "weak",
+                    "evidence": "Ev",
+                    "missing": "Mis",
+                }
+            ],
+            "gaps": ["Gap 1"],
+        }
+    )
+    assert "Summary: The answer is off-topic or too short" in feedback
+    assert "Scoring criteria" not in feedback
+    assert "Gaps:" in feedback
+

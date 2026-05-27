@@ -21,6 +21,7 @@ const InterviewRoom = lazy(() => import("./pages/InterviewRoom"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const SessionDetail = lazy(() => import("./pages/SessionDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Plan = lazy(() => import("./pages/Plan"));
 const Qna = lazy(() => import("./pages/Qna"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Upgrade = lazy(() => import("./pages/Upgrade"));
@@ -118,6 +119,7 @@ function AppContent() {
               <Route path="new" element={<NewSession />} />
               <Route path="sessions" element={<Sessions />} />
               <Route path="sessions/:id" element={<SessionDetail />} />
+              <Route path="plan" element={<Plan />} />
               <Route path="qna" element={<Qna />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />

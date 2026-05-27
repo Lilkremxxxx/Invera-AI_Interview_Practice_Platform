@@ -18,6 +18,7 @@ from app.services.profile_files import (
     save_avatar_upload,
     save_resume_upload,
 )
+from app.services.resume_questions import extract_text_from_pdf, generate_and_save_cv_questions
 
 
 router = APIRouter()
@@ -109,6 +110,13 @@ async def upload_resume(
     safe_filename = Path(resume.filename or "resume.pdf").name
     content_type = resume.content_type or "application/pdf"
 
+    # Extract text from the saved PDF
+    abs_path = resume_file_path(storage_path)
+    try:
+        extracted_text = extract_text_from_pdf(abs_path)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Lỗi đọc file PDF: {str(exc)}") from exc
+
     await db.execute(
         """
         UPDATE users
@@ -116,21 +124,30 @@ async def upload_resume(
             resume_filename = $2,
             resume_size_bytes = $3,
             resume_content_type = $4,
+            resume_text = $5,
             updated_at = NOW()
-        WHERE id = $5
+        WHERE id = $6
         """,
         storage_path,
         safe_filename,
         size,
         content_type,
+        extracted_text,
         current_user.id,
     )
+
+    try:
+        await generate_and_save_cv_questions(db, current_user.id, extracted_text)
+    except Exception as exc:
+        # Generate and save has fallback, but if it fails completely (e.g. database error), we log it
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generating questions from CV: {exc}")
 
     if current["resume_path"] and current["resume_path"] != storage_path:
         delete_private_file(current["resume_path"])
 
     return ResumeUploadResponse(
-        message="Upload resume thành công.",
+        message="Upload resume thành công và đã khởi tạo câu hỏi từ CV.",
         resume_uploaded=True,
         resume_filename=safe_filename,
     )
@@ -165,21 +182,25 @@ async def delete_resume(
     if current is None or not current["resume_path"]:
         raise HTTPException(status_code=404, detail="Bạn chưa có resume để xóa.")
 
-    await db.execute(
-        """
-        UPDATE users
-        SET resume_path = NULL,
-            resume_filename = NULL,
-            resume_size_bytes = NULL,
-            resume_content_type = NULL,
-            updated_at = NOW()
-        WHERE id = $1
-        """,
-        current_user.id,
-    )
+    async with db.transaction():
+        await db.execute(
+            """
+            UPDATE users
+            SET resume_path = NULL,
+                resume_filename = NULL,
+                resume_size_bytes = NULL,
+                resume_content_type = NULL,
+                resume_text = NULL,
+                updated_at = NOW()
+            WHERE id = $1
+            """,
+            current_user.id,
+        )
+        await db.execute("DELETE FROM questions WHERE user_id = $1", current_user.id)
+
     delete_private_file(current["resume_path"])
     return ResumeUploadResponse(
-        message="Đã xóa resume.",
+        message="Đã xóa resume và các câu hỏi liên quan.",
         resume_uploaded=False,
         resume_filename=None,
     )

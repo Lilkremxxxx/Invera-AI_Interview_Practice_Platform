@@ -28,6 +28,8 @@ class SessionOut(BaseModel):
     avg_score: Optional[float] = None
     question_count: Optional[int] = None
     time_limit_minutes: Optional[int] = None
+    evaluation_report: Optional[str] = None
+    practice_plan: Optional[str] = None
 
 
 class SessionDetail(SessionOut):

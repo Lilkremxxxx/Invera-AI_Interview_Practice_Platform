@@ -564,5 +564,4028 @@
       "How do you measure the success of an ML platform?",
       "What is ML platform adoption metrics?"
     ]
+  },
+  "answers": {
+    "Intern": [
+      "For intern ML Engineer: What is the difference between supervised and unsupervised learning?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is machine learning? Define it.. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between classification and regression?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is overfitting? How do you prevent it?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the bias-variance tradeoff?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a training set, validation set, and test set?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is cross-validation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "Gradient Descent is an optimization algorithm minimizing loss by iteratively moving in the direction of steepest descent (negative gradient). Types: Batch GD (full dataset - accurate but slow), Stochastic GD (one sample per step - fast but noisy), Mini-batch GD (balanced, most common). Learning rate controls step size: too high → overshoot, too low → slow convergence. Momentum, Adam, RMSprop are adaptive variants that improve convergence.",
+      "For intern ML Engineer: What is the difference between linear and logistic regression?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a decision tree?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is random forest?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between bagging and boosting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a confusion matrix?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is precision and recall?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is an F1 score?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is accuracy?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the ROC curve?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the AUC?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is feature scaling? Why is it important?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is standardization vs normalization?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is one-hot encoding?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is label encoding?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between L1 and L2 regularization?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a hyperparameter?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a parameter?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between a parameter and a hyperparameter?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is GridSearchCV?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is mean squared error?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is mean absolute error?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is R-squared?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between KNN classification and KNN regression?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the elbow method in K-means?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the silhouette score?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is PCA?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between PCA and t-SNE?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a neural network?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is an activation function? Give examples.. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is ReLU?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is sigmoid?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is tanh?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is backpropagation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a loss function?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is cross-entropy loss?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "Gradient Descent is an optimization algorithm minimizing loss by iteratively moving in the direction of steepest descent (negative gradient). Types: Batch GD (full dataset - accurate but slow), Stochastic GD (one sample per step - fast but noisy), Mini-batch GD (balanced, most common). Learning rate controls step size: too high → overshoot, too low → slow convergence. Momentum, Adam, RMSprop are adaptive variants that improve convergence.",
+      "Gradient Descent is an optimization algorithm minimizing loss by iteratively moving in the direction of steepest descent (negative gradient). Types: Batch GD (full dataset - accurate but slow), Stochastic GD (one sample per step - fast but noisy), Mini-batch GD (balanced, most common). Learning rate controls step size: too high → overshoot, too low → slow convergence. Momentum, Adam, RMSprop are adaptive variants that improve convergence.",
+      "Gradient Descent is an optimization algorithm minimizing loss by iteratively moving in the direction of steepest descent (negative gradient). Types: Batch GD (full dataset - accurate but slow), Stochastic GD (one sample per step - fast but noisy), Mini-batch GD (balanced, most common). Learning rate controls step size: too high → overshoot, too low → slow convergence. Momentum, Adam, RMSprop are adaptive variants that improve convergence.",
+      "For intern ML Engineer: What is a learning rate?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is Python?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is NumPy?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is pandas?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is scikit-learn?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is TensorFlow?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is PyTorch?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between TensorFlow and PyTorch?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a tensor?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is GPU? Why is it used in ML?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between CPU and GPU?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a DataFrame?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: How do you load data in pandas?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: How do you handle missing values in pandas?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the fillna() method?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the dropna() method?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a pipeline in sklearn?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is feature extraction?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is feature selection?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between feature extraction and feature selection?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the correlation coefficient?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between Pearson and Spearman correlation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is multicollinearity?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a p-value?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the null hypothesis?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a t-test?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a chi-square test?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a normal distribution?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a histogram?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a box plot?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is data preprocessing?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is data augmentation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between structured and unstructured data?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is JSON?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a CSV file?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is SQL?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: Write a basic SQL SELECT query.. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a JOIN in SQL?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between INNER JOIN and LEFT JOIN?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is GROUP BY in SQL?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between WHERE and HAVING?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a primary key?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a foreign key?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is Git?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between Git and GitHub?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a commit in Git?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a branch in Git?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between merge and rebase?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a pull request?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between list and tuple in Python?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a dictionary in Python?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is list comprehension in Python?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between deep copy and shallow copy?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the time complexity of a Python list append?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is an API?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is REST API?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is HTTP?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between GET and POST?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between batch processing and real-time processing?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a data pipeline?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is ETL?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is Docker?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is a container?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For intern ML Engineer: What is the difference between Docker and a virtual machine?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn."
+    ],
+    "Fresher": [
+      "For fresher ML Engineer: Explain how Random Forest works in detail.. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: Explain how Gradient Boosting works.. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is XGBoost? How does it handle missing values?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is LightGBM? What is GOSS?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is CatBoost? How does it handle categorical features?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between XGBoost, LightGBM, and CatBoost?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the maximum likelihood estimation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: Explain how logistic regression works mathematically.. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the decision boundary in logistic regression?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the softmax function?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between hard and soft classification?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is SVM? Explain the kernel trick.. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between linear SVM and kernel SVM?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the C parameter in SVM?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Naive Bayes? Explain the naive assumption.. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between Gaussian NB and Multinomial NB?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: How does K-means clustering work?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the k-means++ initialization?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is hierarchical clustering?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is DBSCAN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between K-means and DBSCAN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: How do you evaluate clustering?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the Davies-Bouldin index?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the Dunn index?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the Apriori algorithm?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What are association rules?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is lift, support, and confidence?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: How do you handle imbalanced datasets?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is SMOTE?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is ADASYN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is undersampling?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is oversampling?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between random undersampling and informed undersampling?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between SMOTE and ADASYN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is regularization in neural networks?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is dropout?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is batch normalization?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is layer normalization?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is early stopping?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is weight decay?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is an optimizer?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is SGD?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Adam?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is RMSprop?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Adagrad?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between Adam and SGD?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is learning rate scheduling?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is cosine annealing?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is warm-up in training?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is transfer learning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is fine-tuning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is feature extraction in transfer learning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between transfer learning and multi-task learning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "CNNs (Convolutional Neural Networks) use convolutional layers with learnable filters (kernels) that slide over input, detecting spatial patterns like edges, textures, and shapes. Architecture: Conv layers (feature extraction) → Activation (ReLU) → Pooling (downsampling: max/avg) → Fully Connected (classification). Key concepts: parameter sharing (filters reused across spatial positions), local connectivity (each neuron sees only a local region - receptive field), hierarchical feature learning.",
+      "CNNs (Convolutional Neural Networks) use convolutional layers with learnable filters (kernels) that slide over input, detecting spatial patterns like edges, textures, and shapes. Architecture: Conv layers (feature extraction) → Activation (ReLU) → Pooling (downsampling: max/avg) → Fully Connected (classification). Key concepts: parameter sharing (filters reused across spatial positions), local connectivity (each neuron sees only a local region - receptive field), hierarchical feature learning.",
+      "For fresher ML Engineer: What is max pooling vs average pooling?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "CNNs (Convolutional Neural Networks) use convolutional layers with learnable filters (kernels) that slide over input, detecting spatial patterns like edges, textures, and shapes. Architecture: Conv layers (feature extraction) → Activation (ReLU) → Pooling (downsampling: max/avg) → Fully Connected (classification). Key concepts: parameter sharing (filters reused across spatial positions), local connectivity (each neuron sees only a local region - receptive field), hierarchical feature learning.",
+      "CNNs (Convolutional Neural Networks) use convolutional layers with learnable filters (kernels) that slide over input, detecting spatial patterns like edges, textures, and shapes. Architecture: Conv layers (feature extraction) → Activation (ReLU) → Pooling (downsampling: max/avg) → Fully Connected (classification). Key concepts: parameter sharing (filters reused across spatial positions), local connectivity (each neuron sees only a local region - receptive field), hierarchical feature learning.",
+      "RNNs process sequential data by maintaining a hidden state that captures information from previous steps. Problem: vanishing/exploding gradients for long sequences. LSTM (Long Short-Term Memory) solves this with gating mechanisms: forget gate (what to discard), input gate (what to store), output gate (what to output), plus a cell state for long-term memory. GRU is a simpler variant. Modern alternatives: Transformers with self-attention (no recurrence, handles long-range dependencies better).",
+      "RNNs process sequential data by maintaining a hidden state that captures information from previous steps. Problem: vanishing/exploding gradients for long sequences. LSTM (Long Short-Term Memory) solves this with gating mechanisms: forget gate (what to discard), input gate (what to store), output gate (what to output), plus a cell state for long-term memory. GRU is a simpler variant. Modern alternatives: Transformers with self-attention (no recurrence, handles long-range dependencies better).",
+      "RNNs process sequential data by maintaining a hidden state that captures information from previous steps. Problem: vanishing/exploding gradients for long sequences. LSTM (Long Short-Term Memory) solves this with gating mechanisms: forget gate (what to discard), input gate (what to store), output gate (what to output), plus a cell state for long-term memory. GRU is a simpler variant. Modern alternatives: Transformers with self-attention (no recurrence, handles long-range dependencies better).",
+      "For fresher ML Engineer: What is GRU?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "RNNs process sequential data by maintaining a hidden state that captures information from previous steps. Problem: vanishing/exploding gradients for long sequences. LSTM (Long Short-Term Memory) solves this with gating mechanisms: forget gate (what to discard), input gate (what to store), output gate (what to output), plus a cell state for long-term memory. GRU is a simpler variant. Modern alternatives: Transformers with self-attention (no recurrence, handles long-range dependencies better).",
+      "RNNs process sequential data by maintaining a hidden state that captures information from previous steps. Problem: vanishing/exploding gradients for long sequences. LSTM (Long Short-Term Memory) solves this with gating mechanisms: forget gate (what to discard), input gate (what to store), output gate (what to output), plus a cell state for long-term memory. GRU is a simpler variant. Modern alternatives: Transformers with self-attention (no recurrence, handles long-range dependencies better).",
+      "For fresher ML Engineer: What is word embedding?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Word2Vec?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is GloVe?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is FastText?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is TF-IDF?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the bag-of-words model?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is an autoencoder?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is a variational autoencoder?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is GAN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between generator and discriminator in GAN?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is reinforcement learning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between policy-based and value-based RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Q-learning?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is an environment in RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is an agent in RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is a state in RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is an action in RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is a reward in RL?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the exploration-exploitation tradeoff?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is epsilon-greedy?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is model evaluation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the holdout method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is k-fold cross-validation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is stratified cross-validation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is leave-one-out cross-validation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the bias-variance decomposition of error?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the confusion matrix for multi-class classification?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is macro-averaged F1 score?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is micro-averaged F1 score?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is weighted-averaged F1 score?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is log loss?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is hinge loss?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is Huber loss?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between MAE and MSE?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is MAPE?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is SMAPE?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the difference between RMSE and RMSLE?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the Kolmogorov-Smirnov test?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For fresher ML Engineer: What is the Shapiro-Wilk test?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge."
+    ],
+    "Junior": [
+      "For junior ML Engineer: Design an end-to-end ML system for predicting customer churn.. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you handle missing values in production ML systems?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is feature store? Explain its architecture.. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Feast?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a model registry?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is MLflow? Explain tracking, projects, models, and registry.. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is DVC? How does it differ from Git LFS?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is experiment tracking? Why is it important?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you version ML models?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between model versioning and data versioning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a containerized ML model? How do you build one?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: Write a Dockerfile for a simple ML model serving API.. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Kubernetes? How does it help with ML deployment?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a pod in Kubernetes?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a deployment in Kubernetes?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a service in Kubernetes?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between Kubernetes and Docker Swarm?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Kubeflow?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What are the components of Kubeflow?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is TFX (TensorFlow Extended)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Apache Airflow? How do you use it for ML pipelines?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a DAG in Airflow?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What are operators and tasks in Airflow?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between Airflow and Luigi?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Apache Spark? How is it used for ML?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is MLlib in Spark?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between RDD and DataFrame in Spark?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What are transformations and actions in Spark?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is lazy evaluation in Spark?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Spark ML pipeline?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you build a feature engineering pipeline at scale?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between batch features and real-time features?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Apache Kafka? How is it used in ML systems?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a Kafka topic?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a producer and consumer in Kafka?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is streaming ML?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is online learning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between batch learning and online learning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the perceptron algorithm?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Vowpal Wabbit?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the FTRL algorithm?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you deploy a model as a REST API?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Flask? How do you use it for ML serving?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is FastAPI? How does it compare to Flask?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is TensorFlow Serving?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is TorchServe?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is NVIDIA Triton Inference Server?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between batch inference and real-time inference?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is throughput in model serving?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is latency in model serving?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is P99 latency?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you benchmark ML model serving performance?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is model quantization?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is INT8 quantization?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is FP16 quantization?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is weight quantization vs activation quantization?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is post-training quantization?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is quantization-aware training?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is model pruning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is structured pruning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is unstructured pruning?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is knowledge distillation?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between student model and teacher model?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is soft labeling in distillation?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the temperature parameter in distillation?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is ONNX?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is ONNX Runtime?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is TensorRT?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is OpenVINO?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between ONNX and TensorRT?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is model interpretability?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is SHAP?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is LIME?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between SHAP and LIME?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is partial dependence plot?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is permutation importance?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is accumulated local effects plot?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between global and local explanations?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you handle data drift?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is concept drift?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is data drift?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between concept drift and data drift?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the Population Stability Index?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the Kullback-Leibler divergence for drift detection?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the Wasserstein distance?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the Kolmogorov-Smirnov test for drift detection?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is monitoring in ML? What metrics do you track?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between model monitoring and model observability?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Evidently AI?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is WhyLabs?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is Arize AI?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a data drift dashboard?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: How do you set up alerts for model degradation?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is model retraining? When should you retrain?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is periodic retraining?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is continuous training?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is the difference between periodic and continuous training?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is a shadow deployment strategy?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is canary deployment strategy?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For junior ML Engineer: What is blue-green deployment strategy?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic."
+    ],
+    "Middle": [
+      "For middle ML Engineer: Design a real-time ML inference system serving 1 million requests per second.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How would you architect a feature platform serving 100+ models?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a feature store that handles both batch and real-time features.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you implement feature validation in production?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is a feature engineering platform? How would you design one?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you handle time-based feature leakage?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is feature backfilling? How do you do it at scale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a system for automated feature engineering.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is automated feature selection? Compare methods.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you implement distributed training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is data parallelism?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is model parallelism?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is pipeline parallelism?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is tensor parallelism?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between synchronous and asynchronous distributed training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is all-reduce in distributed training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Horovod? How does it work?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is NCCL?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is parameter server architecture?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design an experiment tracking system for a team of 50 ML engineers.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is a hyperparameter optimization system at scale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Bayesian optimization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Hyperband?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between Hyperband and Bayesian optimization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Optuna?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Ray Tune?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the ASHA scheduler?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is population-based training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you optimize hyperparameters for deep learning?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a model versioning and lineage system.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is model lineage? Why is it important?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is data lineage?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you track data provenance in ML pipelines?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is a metadata store for ML?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Amundsen?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is DataHub?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between Amundsen and DataHub?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a CI/CD pipeline for ML models.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is continuous integration for ML?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is continuous delivery for ML?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is continuous training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between CI/CD and CI/CD for ML?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you test ML pipelines?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is model validation in CI/CD?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is data validation in CI/CD?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Great Expectations? How do you use it in ML pipelines?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is TensorFlow Data Validation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is schema validation for ML data?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a recommendation system infrastructure at scale.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How would you build a real-time personalization pipeline?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a search ranking ML system.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is learning to rank?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is pointwise, pairwise, and listwise ranking?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is NDCG?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is MRR (Mean Reciprocal Rank)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is MAP (Mean Average Precision)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you implement collaborative filtering at scale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is matrix factorization? How do you scale it?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Alternating Least Squares?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the cold start problem in recommendations?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you handle the cold start problem in production?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design an ad click-through rate prediction system.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is CTR prediction? What models are commonly used?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the Criteo dataset?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the DeepFM model?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Wide and Deep learning?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is DCN (Deep Cross Network)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between DeepFM and Wide&Deep?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a real-time bidding system for online ads.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a fraud detection system at scale.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is anomaly detection in high-dimensional data?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is isolation forest at scale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you handle real-time fraud detection?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between batch and real-time fraud detection?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a natural language processing pipeline for production.. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you serve large language models in production?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is model parallelism for LLMs?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is vLLM?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between vLLM and TensorRT-LLM?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is continuous batching?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "Transformers process sequences using self-attention instead of recurrence. Self-attention computes weighted sums of all positions: Q (query) × K (key)^T → attention scores → softmax → multiply by V (values). Multi-head attention runs this in parallel across representation subspaces. Architecture: encoder (bidirectional, BERT-style) + decoder (auto-regressive, GPT-style). Positional encoding adds sequence order. Transformers enable parallel computation, capture long-range dependencies, and scale to massive datasets.",
+      "For middle ML Engineer: How do you optimize LLM inference?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is speculative decoding?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is KV-cache optimization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: Design a multi-modal ML system (text + image).. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is CLIP?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you deploy computer vision models at scale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is image segmentation in production?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is object detection in production?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "CNNs (Convolutional Neural Networks) use convolutional layers with learnable filters (kernels) that slide over input, detecting spatial patterns like edges, textures, and shapes. Architecture: Conv layers (feature extraction) → Activation (ReLU) → Pooling (downsampling: max/avg) → Fully Connected (classification). Key concepts: parameter sharing (filters reused across spatial positions), local connectivity (each neuron sees only a local region - receptive field), hierarchical feature learning.",
+      "For middle ML Engineer: How do you build a real-time video analytics pipeline?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is ML infrastructure cost optimization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you choose between CPU and GPU for inference?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is spot instance training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is autoscaling for ML inference?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: How do you manage GPU resources in a Kubernetes cluster?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Kubernetes GPU scheduling?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is Kubernetes device plugin?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is MIG (Multi-Instance GPU)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between MIG and time-slicing?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is data center networking for distributed training?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is RDMA?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is InfiniBand?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is the difference between InfiniBand and Ethernet?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is NVLink?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For middle ML Engineer: What is NVSwitch?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices."
+    ],
+    "Senior": [
+      "For senior ML Engineer: Design a global ML platform serving 1000+ models across multiple business units.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How would you design an ML infrastructure strategy for a company going from 10 to 1000 ML models?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the platform engineering approach to MLOps?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a multi-tenant ML platform with resource isolation.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement cost allocation for ML infrastructure?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is chargeback in ML platform context?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you design an ML platform for regulated industries (finance, healthcare)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What are the compliance requirements for ML in healthcare (HIPAA)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What are the compliance requirements for ML in finance (SOX, GDPR)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement audit trails for ML decisions?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a system for model governance at scale.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model risk management?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the FRB SR 11-7 guidance?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model validation in banking?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is independent model validation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement fair ML systems in production?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is algorithmic fairness? How do you measure it?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is demographic parity?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is equal opportunity?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is equalized odds?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is disparate impact?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you detect bias in ML models at scale?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is AIF360?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is What-If Tool?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you mitigate bias in ML pipelines?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is adversarial debiasing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a federated learning infrastructure.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is cross-device federated learning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is cross-silo federated learning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you handle non-IID data in federated learning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is FedAvg?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is differential privacy in federated learning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is secure aggregation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an ML system with differential privacy guarantees.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the privacy budget in differential privacy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is epsilon in differential privacy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the Laplace mechanism?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the Gaussian mechanism?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is RAPPOR?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an online learning platform serving millions of users.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement real-time feature computation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is streaming feature engineering?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you handle out-of-order data in streaming ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is watermarking in stream processing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is exactly-once processing in streaming?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you build a real-time ML pipeline with Kafka and Flink?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Apache Flink? How is it used for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between Kafka Streams and Flink?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a large-scale graph ML system.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Graph Neural Network at scale?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is PinSage?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is GraphSAGE?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between transductive and inductive graph learning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you train GNNs on billion-node graphs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is cluster-GCN?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is GraphSAINT?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a large language model serving infrastructure.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the inference cost of LLMs? How do you optimize it?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model sharding for LLMs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is tensor parallelism for LLMs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is pipeline parallelism for LLMs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is sequence parallelism?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement speculative decoding in production?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "Transformers process sequences using self-attention instead of recurrence. Self-attention computes weighted sums of all positions: Q (query) × K (key)^T → attention scores → softmax → multiply by V (values). Multi-head attention runs this in parallel across representation subspaces. Architecture: encoder (bidirectional, BERT-style) + decoder (auto-regressive, GPT-style). Positional encoding adds sequence order. Transformers enable parallel computation, capture long-range dependencies, and scale to massive datasets.",
+      "Transformers process sequences using self-attention instead of recurrence. Self-attention computes weighted sums of all positions: Q (query) × K (key)^T → attention scores → softmax → multiply by V (values). Multi-head attention runs this in parallel across representation subspaces. Architecture: encoder (bidirectional, BERT-style) + decoder (auto-regressive, GPT-style). Positional encoding adds sequence order. Transformers enable parallel computation, capture long-range dependencies, and scale to massive datasets.",
+      "Transformers process sequences using self-attention instead of recurrence. Self-attention computes weighted sums of all positions: Q (query) × K (key)^T → attention scores → softmax → multiply by V (values). Multi-head attention runs this in parallel across representation subspaces. Architecture: encoder (bidirectional, BERT-style) + decoder (auto-regressive, GPT-style). Positional encoding adds sequence order. Transformers enable parallel computation, capture long-range dependencies, and scale to massive datasets.",
+      "Transformers process sequences using self-attention instead of recurrence. Self-attention computes weighted sums of all positions: Q (query) × K (key)^T → attention scores → softmax → multiply by V (values). Multi-head attention runs this in parallel across representation subspaces. Architecture: encoder (bidirectional, BERT-style) + decoder (auto-regressive, GPT-style). Positional encoding adds sequence order. Transformers enable parallel computation, capture long-range dependencies, and scale to massive datasets.",
+      "For senior ML Engineer: How do you implement continuous batching in production?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an LLM fine-tuning platform.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is LoRA?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is QLoRA?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is prefix tuning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is adapter tuning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between full fine-tuning and parameter-efficient fine-tuning?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is RLHF? How does it work?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is PPO?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is DPO?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between RLHF and DPO?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an AutoML platform at scale.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is neural architecture search?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is ENAS?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is DARTS?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between NAS and Hyperparameter Optimization?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a causality ML platform.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is causal inference in ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is DoWhy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is EconML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is causal graph?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an ML observability platform.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What are the key metrics for ML observability?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model performance monitoring?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is data quality monitoring?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you build an alerting system for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the runbook for model degradation incidents?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a data quality platform for ML.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is data contract for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you enforce data quality SLAs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between data quality and data validity?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an ML testing framework.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is unit testing for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is integration testing for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model validation testing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is data validation testing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is differential testing for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is invariance testing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is directional expectation testing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is model comparison testing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you implement A/B testing for ML models?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is interleaving experiments?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a multi-armed bandit system for model selection.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is infrastructure as code for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Terraform? How is it used for ML infrastructure?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Kubernetes operator for ML workloads?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Kueue?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is Volcano scheduler for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between Volcano and Kueue?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you design a GPU cluster scheduler for ML training?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is gang scheduling?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is bin-packing scheduling?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design a cost-optimized ML infrastructure.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is preemptible VM training?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you handle spot instance interruptions in ML training?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is checkpointing in distributed training?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is elastic training?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between horizontal and vertical scaling for ML?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is serverless ML inference?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: Design an MLOps maturity model for an organization.. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What are the levels of MLOps maturity?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you assess MLOps maturity?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is the difference between MLOps Level 0, 1, and 2?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you build an MLOps roadmap?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What are the key stakeholders for an ML platform team?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: How do you measure the success of an ML platform?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For senior ML Engineer: What is ML platform adoption metrics?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions."
+    ]
+  },
+  "tags": {
+    "Intern": [
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#debugging",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#debugging",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#example",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#process",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#process",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ]
+    ],
+    "Fresher": [
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#debugging",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ]
+    ],
+    "Junior": [
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#feature-store"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#implementation",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#ml-pipeline",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#ml-pipeline",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#metrics",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#training",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#junior",
+        "#medium",
+        "#concept"
+      ]
+    ],
+    "Middle": [
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#feature-store"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#implementation",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#training",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#optimization",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#optimization",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#optimization",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#deep-learning"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#ml-pipeline"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#ml-pipeline"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#ml-pipeline",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#deep-learning",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#optimization",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#optimization",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#middle",
+        "#hard",
+        "#concept"
+      ]
+    ],
+    "Senior": [
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#mlops",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#metrics",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#tool",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#ml-pipeline"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#process",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#process",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#ml-pipeline",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#debugging",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#optimization",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#rationale",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#metrics"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#tool"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#training",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#training"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#training",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#mlops"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#mlops"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#mlops"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#concept",
+        "#mlops",
+        "#comparison"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#mlops",
+        "#implementation"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#metrics"
+      ],
+      [
+        "#machine-learning-engineer",
+        "#senior",
+        "#hard",
+        "#metrics",
+        "#concept"
+      ]
+    ]
   }
 }

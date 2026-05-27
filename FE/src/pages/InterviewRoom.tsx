@@ -172,17 +172,17 @@ const InterviewRoom = () => {
     outOfTen: language === 'vi' ? '/10' : '/10',
   };
   const levelLabels: Record<string, { vi: string; en: string }> = {
-    intern: { vi: 'Thực tập sinh', en: 'Intern' },
+    intern: { vi: 'Intern', en: 'Intern' },
     fresher: { vi: 'Fresher', en: 'Fresher' },
     junior: { vi: 'Junior', en: 'Junior' },
-    mid: { vi: 'Trung cấp', en: 'Mid-level' },
+    mid: { vi: 'Mid-level', en: 'Mid-level' },
     senior: { vi: 'Senior', en: 'Senior' },
   };
 
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState('');
-  const [sttLanguage, setSttLanguage] = useState<SttLanguage>(DEFAULT_STT_LANGUAGE);
+  const [sttLanguage, setSttLanguage] = useState<SttLanguage>(language === 'vi' ? 'vi' : 'en');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -249,7 +249,7 @@ const InterviewRoom = () => {
     const autoComplete = async () => {
       setIsCompleting(true);
       try {
-        await sessionsApi.complete(id);
+        await sessionsApi.complete(id, { generateReport: false });
         sessionStorage.removeItem(`session_${id}`);
         toast({
           title: copy.timeExpiredTitle,
@@ -558,7 +558,7 @@ const InterviewRoom = () => {
       // Last question — complete the session
       setIsCompleting(true);
       try {
-        const completed = await sessionsApi.complete(id!);
+        const completed = await sessionsApi.complete(id!, { generateReport: false });
         setCompletedSession(completed);
         // Clean up sessionStorage
         sessionStorage.removeItem(`session_${id}`);
@@ -579,7 +579,7 @@ const InterviewRoom = () => {
   const handleEndSession = async () => {
     setEndDialogOpen(false);
     try {
-      await sessionsApi.complete(id!);
+      await sessionsApi.complete(id!, { generateReport: false });
       sessionStorage.removeItem(`session_${id}`);
     } catch {
       // Still return to the session list if the best-effort completion call fails.
@@ -621,7 +621,7 @@ const InterviewRoom = () => {
               <Progress value={progress} className="h-2" />
             </div>
             <span className="text-xs text-muted-foreground hidden sm:inline capitalize">
-              {(roleLabelMap[session.role]?.[language] || session.role)} • {(levelLabels[session.level]?.[language] || session.level)}
+              {(roleLabelMap[session.role]?.en || session.role)} • {(levelLabels[session.level]?.en || session.level)}
             </span>
           </div>
           
@@ -663,7 +663,7 @@ const InterviewRoom = () => {
                 <div>
                   <h3 className="font-semibold text-foreground text-lg">AI Interviewer</h3>
                   <p className="text-sm text-muted-foreground capitalize">
-                    {roleLabelMap[session.role]?.[language] || session.role} • {levelLabels[session.level]?.[language] || session.level}
+                    {roleLabelMap[session.role]?.en || session.role} • {levelLabels[session.level]?.en || session.level}
                   </p>
                 </div>
               </div>
@@ -717,45 +717,49 @@ const InterviewRoom = () => {
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div
-                      aria-label={copy.sttLanguage}
-                      className="inline-flex rounded-md border border-input bg-background p-0.5"
-                      role="group"
-                    >
-                      <Button
-                        aria-label={copy.vietnameseVoice}
-                        aria-pressed={sttLanguage === 'vi'}
-                        className="h-8 px-3 text-xs"
-                        disabled={isRecording || isTranscribing}
-                        onClick={() => setSttLanguage('vi')}
-                        size="sm"
-                        type="button"
-                        variant={sttLanguage === 'vi' ? 'secondary' : 'ghost'}
-                      >
-                        VI
-                      </Button>
-                      <Button
-                        aria-label={copy.englishVoice}
-                        aria-pressed={sttLanguage === 'en'}
-                        className="h-8 px-3 text-xs"
-                        disabled={isRecording || isTranscribing}
-                        onClick={() => setSttLanguage('en')}
-                        size="sm"
-                        type="button"
-                        variant={sttLanguage === 'en' ? 'secondary' : 'ghost'}
-                      >
-                        EN
-                      </Button>
-                    </div>
-                    <Button
-                      variant={isRecording ? "destructive" : "outline"}
-                      size="sm"
-                      onClick={isRecording ? handleStopRecording : handleStartRecording}
-                      disabled={isTimeUp || isTranscribing}
-                    >
-                      {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                      {isRecording ? copy.stop : copy.voice}
-                    </Button>
+                    {session?.mode === 'voice' && (
+                      <>
+                        <div
+                          aria-label={copy.sttLanguage}
+                          className="inline-flex rounded-md border border-input bg-background p-0.5"
+                          role="group"
+                        >
+                          <Button
+                            aria-label={copy.vietnameseVoice}
+                            aria-pressed={sttLanguage === 'vi'}
+                            className="h-8 px-3 text-xs"
+                            disabled={isRecording || isTranscribing}
+                            onClick={() => setSttLanguage('vi')}
+                            size="sm"
+                            type="button"
+                            variant={sttLanguage === 'vi' ? 'secondary' : 'ghost'}
+                          >
+                            VI
+                          </Button>
+                          <Button
+                            aria-label={copy.englishVoice}
+                            aria-pressed={sttLanguage === 'en'}
+                            className="h-8 px-3 text-xs"
+                            disabled={isRecording || isTranscribing}
+                            onClick={() => setSttLanguage('en')}
+                            size="sm"
+                            type="button"
+                            variant={sttLanguage === 'en' ? 'secondary' : 'ghost'}
+                          >
+                            EN
+                          </Button>
+                        </div>
+                        <Button
+                          variant={isRecording ? "destructive" : "outline"}
+                          size="sm"
+                          onClick={isRecording ? handleStopRecording : handleStartRecording}
+                          disabled={isTimeUp || isTranscribing}
+                        >
+                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          {isRecording ? copy.stop : copy.voice}
+                        </Button>
+                      </>
+                    )}
                   </div>
                   <Button 
                     variant="accent" 

@@ -559,5 +559,3960 @@
       "How do you build a culture of technical excellence in accounting?",
       "How do you stay current with emerging accounting issues?"
     ]
+  },
+  "answers": {
+    "Intern": [
+      "For a intern Accountant: What is double-entry bookkeeping?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the accounting equation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are the five main accounts in accounting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a journal entry?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a ledger?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a trial balance?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "Double-entry accounting: every transaction affects at least two accounts with equal debits and credits. Debit (Dr) = left side: increases assets and expenses, decreases liabilities and equity. Credit (Cr) = right side: increases liabilities, equity, and revenue, decreases assets and expenses. Accounting equation: Assets = Liabilities + Equity. Journal entries always balance: Debits = Credits. Example: buying equipment with cash: Dr Equipment (asset up), Cr Cash (asset down).",
+      "For a intern Accountant: What are the four basic financial statements?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an income statement?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a balance sheet?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a cash flow statement?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a statement of changes in equity?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the accounting cycle?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "Accrual accounting records revenues when earned and expenses when incurred, regardless of cash flow. Revenue Recognition Principle: recognize when earned (product delivered/service performed). Matching Principle: match expenses to related revenues. Accrued Revenue (asset): earned but not yet billed. Accrued Expenses (liability): incurred but not yet paid. Prepaid Expenses (asset): paid in advance. Deferred Revenue (liability): cash received before earning. Accrual accounting gives a more accurate picture than cash basis.",
+      "For a intern Accountant: What is revenue recognition?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the matching principle?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the going concern assumption?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the economic entity assumption?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the monetary unit assumption?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the periodicity assumption?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is materiality in accounting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is consistency principle?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is conservatism principle?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is full disclosure principle?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "For a intern Accountant: What is accounts receivable?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is accounts payable?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is accrued expenses?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is prepaid expenses?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is unearned revenue?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "For a intern Accountant: What are fixed assets?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are intangible assets?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is amortization?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is goodwill?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is impairment?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is inventory?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is FIFO?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is LIFO?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is weighted average cost method?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the difference between periodic and perpetual inventory?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is cost of goods sold (COGS)?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: How do you calculate COGS?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is gross profit?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a chart of accounts?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a general ledger?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a subsidiary ledger?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a control account?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an adjusting entry?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are the types of adjusting entries?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a closing entry?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are temporary accounts vs permanent accounts?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a post-closing trial balance?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a worksheet in accounting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a bank reconciliation?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: Why is bank reconciliation important?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are outstanding checks?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are deposits in transit?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is petty cash?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: How do you manage petty cash?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the imprest system?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a voucher?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an invoice?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a purchase order?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a receipt?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a credit note?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a debit note?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is sales tax?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is VAT (Value Added Tax)?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is withholding tax?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is payroll accounting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is gross pay vs net pay?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is FICA?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a W-2 form?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a 1099 form?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the accounting for payroll taxes?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is internal control?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are the types of internal controls?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is segregation of duties?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an audit trail?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a budget?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is variance analysis?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is favorable vs unfavorable variance?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is cost accounting?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the difference between product cost and period cost?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are direct materials?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are direct labor?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is manufacturing overhead?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is prime cost?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is conversion cost?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is job order costing?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is process costing?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is activity-based costing (ABC)?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is a cost driver?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is the high-low method?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are fixed costs?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are variable costs?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What are mixed costs?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is contribution margin?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is break-even point?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is margin of safety?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is operating leverage?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an accounting information system (AIS)?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is an ERP system?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is QuickBooks?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn.",
+      "For a intern Accountant: What is SAP FICO?. This question tests fundamental understanding expected from an intern position. Focus on demonstrating basic knowledge and willingness to learn."
+    ],
+    "Fresher": [
+      "For a fresher Accountant: How do you prepare a trial balance?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the process of preparing financial statements?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record a sale on credit?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record a purchase on credit?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record cash received from customers?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record payment to suppliers?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "Depreciation allocates the cost of a fixed asset over its useful life. Methods: (1) Straight-Line: (Cost - Salvage Value) / Useful Life - simplest, equal expense each year. (2) Double-Declining Balance: 2 × Straight-Line Rate × Book Value - accelerated, higher expense early. (3) Units of Production: based on actual usage. Journal entry: Dr Depreciation Expense (P&L), Cr Accumulated Depreciation (contra-asset). Asset book value = Cost - Accumulated Depreciation.",
+      "For a fresher Accountant: How do you record bad debt expense?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the allowance method for bad debts?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the direct write-off method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate bad debt expense?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the aging of accounts receivable method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record inventory purchases?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record inventory sales under FIFO?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record inventory sales under LIFO?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record a year-end inventory adjustment?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the lower of cost or market (LCM) rule?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record goodwill impairment?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record an asset sale with gain or loss?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record a bond issuance?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record interest expense on bonds?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record bond amortization (straight-line vs effective interest)?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record a stock issuance?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record treasury stock transactions?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record dividend payments?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record stock dividends and stock splits?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate basic EPS?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate diluted EPS?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the treasury stock method for options?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the if-converted method for convertible securities?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a bank reconciliation step by step?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What adjustments are needed in a bank reconciliation?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record NSF checks?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record bank service charges?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record interest income from bank?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare adjusting entries for accrued revenues?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare adjusting entries for accrued expenses?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare adjusting entries for prepaid expenses?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare adjusting entries for unearned revenues?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "Accrual accounting records revenues when earned and expenses when incurred, regardless of cash flow. Revenue Recognition Principle: recognize when earned (product delivered/service performed). Matching Principle: match expenses to related revenues. Accrued Revenue (asset): earned but not yet billed. Accrued Expenses (liability): incurred but not yet paid. Prepaid Expenses (asset): paid in advance. Deferred Revenue (liability): cash received before earning. Accrual accounting gives a more accurate picture than cash basis.",
+      "For a fresher Accountant: How do you prepare closing entries?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What accounts are closed at year-end?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare the post-closing trial balance?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a classified balance sheet?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What are current vs non-current assets?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What are current vs non-current liabilities?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a multi-step income statement?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate gross profit margin?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate operating margin?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate net profit margin?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a single-step vs multi-step income statement?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a statement of cash flows using the indirect method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a statement of cash flows using the direct method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the difference between operating, investing, and financing activities?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you classify a dividend payment on the cash flow statement?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "Accrual accounting records revenues when earned and expenses when incurred, regardless of cash flow. Revenue Recognition Principle: recognize when earned (product delivered/service performed). Matching Principle: match expenses to related revenues. Accrued Revenue (asset): earned but not yet billed. Accrued Expenses (liability): incurred but not yet paid. Prepaid Expenses (asset): paid in advance. Deferred Revenue (liability): cash received before earning. Accrual accounting gives a more accurate picture than cash basis.",
+      "For a fresher Accountant: How do you prepare a statement of retained earnings?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you prepare a statement of changes in equity?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is OCI (Other Comprehensive Income)?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What items go into OCI?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is accumulated other comprehensive income (AOCI)?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for income taxes?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a deferred tax asset?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a deferred tax liability?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What creates deferred tax assets and liabilities?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate the effective tax rate?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for net operating loss (NOL) carryforwards?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a valuation allowance on deferred tax assets?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for leases under ASC 842?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the right-of-use asset and lease liability?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you calculate the lease liability?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record operating lease expense?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for finance leases?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for a sale and leaseback transaction?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for contingencies?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a provision?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is a contingent liability?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for warranties?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for environmental liabilities?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for restructuring charges?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for asset retirement obligations?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for government grants?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for research and development costs?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for software development costs?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for business combinations?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the acquisition method under ASC 805?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you allocate purchase price in a business combination?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is goodwill and how is it calculated?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for non-controlling interest?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for step acquisitions?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for a bargain purchase?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What are consolidation eliminations?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you eliminate intercompany transactions?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you eliminate intercompany profits in inventory?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is downstream vs upstream intercompany sale?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you account for foreign currency transactions?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the spot rate vs forward rate?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you record exchange rate gains and losses?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is functional currency vs reporting currency?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: How do you translate foreign currency financial statements?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the current rate method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge.",
+      "For a fresher Accountant: What is the temporal method?. As a fresher, you should have solid theoretical understanding and some practical exposure to this concept. Show enthusiasm and foundational knowledge."
+    ],
+    "Junior": [
+      "For a junior Accountant: How do you manage the full accounting close process from start to finish?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the month-end close checklist?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you ensure all transactions are captured in the correct period?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is cutoff testing in the accounting close?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you reconcile all balance sheet accounts monthly?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you investigate and resolve reconciling items?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is a roll-forward schedule?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you prepare a fixed asset roll-forward?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you prepare an intangible asset roll-forward?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you prepare an accrued liabilities roll-forward?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the process for SOX compliance in accounting?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are SOX key controls?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is a control deficiency vs significant deficiency vs material weakness?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you document internal controls?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is a control narrative and control matrix?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you test the operating effectiveness of controls?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are the COSO internal control components?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the control environment?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is risk assessment in internal control?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is control activities?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is information and communication in internal control?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is monitoring in internal control?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you implement segregation of duties?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you mitigate segregation of duties conflicts in a small company?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is IT general controls (ITGC)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are the key areas of ITGC?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you test application controls?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you manage user access controls in ERP?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is a journal entry approval process?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the importance of a proper approval matrix?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you handle accounting for complex revenue arrangements?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is revenue recognition under ASC 606 (five-step model)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are performance obligations in a contract?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the transaction price allocation?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you recognize revenue over time vs at a point in time?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for variable consideration?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the constraint on variable consideration?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for contract modifications?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for warranties (assurance vs service type)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for principal vs agent considerations?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for licensing of intellectual property?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the difference between a right-to-use and right-to-access license?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for bill-and-hold arrangements?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for customer options for additional goods?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for customer loyalty programs?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for non-refundable upfront fees?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for contract costs (incremental costs of obtaining a contract)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for fulfillment costs?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the impairment of contract assets?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you transition from ASC 605 to ASC 606?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for share-based payments under ASC 718?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the fair value measurement of stock options?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the Black-Scholes model for stock options?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are key assumptions in Black-Scholes (volatility, risk-free rate, expected life)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for restricted stock awards and units?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for performance-based vesting conditions?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the graded vesting attribution method?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for forfeitures?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for employee stock purchase plans (ESPP)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for modications of share-based awards?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for income tax effects of share-based payments?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for derivatives and hedging under ASC 815?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is a derivative instrument?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the difference between a fair value hedge and a cash flow hedge?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you document hedge effectiveness?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the shortcut method for hedge accounting?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the long-haul method for hedge accounting?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for net investment hedges?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for embedded derivatives?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you bifurcate an embedded derivative?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for foreign currency derivatives?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for interest rate swaps?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for commodity derivatives?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for fair value measurements under ASC 820?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the fair value hierarchy (Level 1, 2, 3 inputs)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What are Level 3 inputs and how do you value them?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: When do you need to use a valuation specialist?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you perform a fair value analysis of an acquired intangible?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you perform a fair value analysis of goodwill impairment?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the two-step goodwill impairment test (under ASC 350)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the qualitative impairment test?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the quantitative impairment test?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you calculate the fair value of a reporting unit?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you allocate goodwill to reporting units?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you perform undiscounted cash flow test for long-lived assets?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for impairment of indefinite-lived intangible assets?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for impairment of definite-lived intangible assets?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for impairment of equity method investments?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for impairments of debt securities under ASC 326?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the current expected credit losses (CECL) model?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you calculate expected credit losses?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the pool-based approach for CECL?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for loan loss provisions?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for troubled debt restructurings (TDRs)?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for debt modifications?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for extinguishments of debt?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for debt issuance costs?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for convertible debt?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for convertible debt with beneficial conversion feature?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for debt with detachable warrants?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you apply the if-converted method for EPS?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the two-class method for EPS?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you account for participating securities?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you prepare segment reporting under ASC 280?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is an operating segment?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you identify reportable segments?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: What is the management approach to segment reporting?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic.",
+      "For a junior Accountant: How do you measure segment profit or loss?. This expects practical experience. You should demonstrate hands-on knowledge and ability to work independently on this topic."
+    ],
+    "Middle": [
+      "For a middle Accountant: How do you manage the accounting integration of an acquisition?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you establish the opening balance sheet for an acquisition?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you integrate acquired company accounting policies?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you harmonize accounting policies across a global organization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the process for adopting a new accounting standard?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you manage the transition from one accounting standard to another?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you implement revenue recognition under ASC 606 across the organization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you implement lease accounting under ASC 842?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you implement CECL under ASC 326?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the project plan for a new standard implementation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you assess the impact of a new standard on the financial statements?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you communicate accounting changes to stakeholders?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you manage the SEC reporting process?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the 10-K preparation process?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the 10-Q preparation process?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the 8-K filing process?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you prepare Management Discussion and Analysis (MD&A)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you prepare critical accounting estimates disclosures?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you prepare the footnote disclosures for financial statements?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you ensure XBRL tagging compliance?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you manage the quarterly review process with external auditors?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you manage the annual audit process?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you prepare the audit committee package?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What goes into the audit committee presentation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you respond to auditor requests efficiently?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you identify and communicate accounting risks to management?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you evaluate whether a transaction is a business combination or asset acquisition?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What factors distinguish a business from a set of assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for an asset acquisition vs business combination?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for in-process research and development (IPR&D)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a step acquisition where control is gained?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a partial disposal of a subsidiary?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a deconsolidation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a reverse acquisition?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a common control transaction?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a spin-off?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a split-off?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a carve-out and prepare carve-out financial statements?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What are the SEC requirements for carve-out financial statements?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you allocate corporate costs in a carve-out?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a joint venture formation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you assess whether a joint venture is corporate or contractual?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a change in ownership of a subsidiary without loss of control?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a change in ownership of a subsidiary with loss of control?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for a discontinued operation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What qualifies as a discontinued operation under ASC 205?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you present discontinued operations on the income statement?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for assets held for sale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What are the criteria for classification as held for sale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you measure a disposal group classified as held for sale?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for the impairment of a disposal group?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for deferred taxes in a business combination?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for indemnification assets in a business combination?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for contingent consideration in a business combination?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for pre-existing relationships in a business combination?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for acquisition-related costs?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you calculate goodwill in a bargain purchase?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you handle negative goodwill?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for pushdown accounting?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: When is pushdown accounting elected?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you perform the goodwill impairment test annually?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the qualitative assessment for goodwill impairment?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you assign goodwill to reporting units?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you determine reporting units?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for goodwill in a partial disposal?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for the sale of a portion of a reporting unit?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for the reorganization of reporting units?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you measure fair value of a reporting unit?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the market approach for reporting unit valuation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the income approach for reporting unit valuation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for intangible asset impairment?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the difference between indefinite-lived and definite-lived intangible impairment?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you test impairment of indefinite-lived intangible assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you test impairment of definite-lived intangible assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for impairment of long-lived assets (held and used)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you test long-lived assets for impairment?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the recoverability test for long-lived assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the fair value test for long-lived assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you group assets for impairment testing (asset group level)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for impairment of equity method investments?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the OTTI (Other-Than-Temporary Impairment) model for debt securities?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How has CECL changed the impairment model for financial instruments?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you calculate expected credit losses for a portfolio of loans?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the probability of default (PD) and loss given default (LGD)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you incorporate reasonable and supportable forecasts in CECL?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you distinguish between purchasing and originating credit-impaired (POCI) assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for credit losses on available-for-sale debt securities?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for credit losses on held-to-maturity debt securities?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for an allowance for credit losses on off-balance-sheet exposures?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you prepare allowance for loan losses analysis?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the vintage analysis method for credit losses?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for deferred compensation plans?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for defined benefit pension plans?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What are the key assumptions in pension accounting?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you calculate pension expense?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the projected benefit obligation (PBO)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the accumulated benefit obligation (ABO)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the vested benefit obligation (VBO)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for pension plan assets?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for actuarial gains and losses?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What is the corridor approach for actuarial gains and losses?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for plan curtailments and settlements?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for multiemployer pension plans?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for defined contribution plans?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for postretirement benefits other than pensions (OPEB)?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for deferred acquisition costs (DAC) in insurance?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for reinsurance transactions?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for insurance premiums?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you manage intercompany accounting in a global organization?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you establish intercompany transfer pricing policies?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: What are the arm's length principle rules?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for intercompany dividends?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for intercompany loans and interest?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you account for intercompany management fees?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices.",
+      "For a middle Accountant: How do you handle intercompany eliminations in consolidation?. At middle level, you need to show deep understanding, ability to mentor others, and knowledge of trade-offs and best practices."
+    ],
+    "Senior": [
+      "For a senior Accountant: How do you develop and implement accounting policies for a global organization?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of complex business transactions?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you advise the CEO and board on the accounting impact of strategic decisions?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you lead the adoption of new accounting standards across the organization?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage a team of accounting professionals?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you develop the accounting department structure?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you recruit and retain top accounting talent?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you set performance metrics for your accounting team?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you develop career paths for accounting professionals?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate the effectiveness of your accounting processes?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you implement continuous improvement in the accounting function?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the accounting function's budget?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you justify additional resources for the accounting department?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate and select accounting ERP systems?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you lead an ERP implementation project from the accounting perspective?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage change when implementing new accounting systems?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you balance standardization vs local customization in global accounting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage shared service centers vs centralized accounting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate outsourcing options for accounting functions?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage relationships with external auditors?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you negotiate audit fees?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate the quality of your external auditors?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the auditor rotation process?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare the audit committee for sensitive accounting issues?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you communicate with the audit committee on complex accounting matters?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you identify and report material weaknesses in internal controls?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you remediate material weaknesses?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you develop a SOX compliance program?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you implement a risk-based approach to internal controls?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the control environment of the organization?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you foster a culture of ethical financial reporting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you develop a fraud prevention program?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What are the components of a fraud risk assessment?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you detect and investigate accounting fraud?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What are the red flags of financial statement fraud?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you handle a whistleblower complaint related to accounting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you implement a whistleblower hotline?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you ensure compliance with the Foreign Corrupt Practices Act (FCPA)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage an FCPA investigation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What is the importance of tone at the top in accounting ethics?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you handle a dispute with the external auditor on an accounting treatment?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare for a SEC comment letter response?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the SEC comment letter process?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you respond to an SEC investigation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate whether to restate financial statements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the restatement process?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you communicate a restatement to stakeholders?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of an IPO?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare a company for an IPO from an accounting perspective?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What accounting changes are required when going public?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare S-1 financial statements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for an IPO's costs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the IPO quiet period?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of going private?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for a de-SPAC transaction?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate the accounting implications of a SPAC merger?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What are the accounting challenges of a SPAC transaction?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for earnouts in a SPAC transaction?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for warrants in a SPAC transaction?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for a business combination with a SPAC?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of a bankruptcy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for fresh-start reporting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for debt restructuring in bankruptcy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for liabilities subject to compromise?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare financial statements in bankruptcy?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage accounting through a Chapter 11 process?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of a liquidation?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for liquidating dividends?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare liquidation basis financial statements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting implications of corporate restructuring?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for employee separation costs in restructuring?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for facility closure costs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for contract termination costs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for digital assets and cryptocurrencies?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "For a senior Accountant: How do you account for cryptocurrencies as intangible assets?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for stablecoins?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for crypto mining?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for crypto lending and borrowing?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for a crypto custody business?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for tokens issued in an ICO?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How is the AICPA guidance on digital assets evolving?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for environmental credits and carbon offsets?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for renewable energy certificates (RECs)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for sustainability-linked debt instruments?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare ESG-related disclosures in financial reporting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What is the SASB framework for industry-specific ESG metrics?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you prepare for mandatory ESG reporting requirements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for supply chain financing arrangements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for reverse factoring programs?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the accounting for consignment inventory?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for take-or-pay contracts?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for throughput agreements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for service concession arrangements (IFRIC 12)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you account for infrastructure grants and contributions?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage the accounting implications of Brexit?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage accounting implications of global tax reform (Pillar Two)?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you assess the impact of the OECD's BEPS initiative on tax accounting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you manage transfer pricing documentation requirements?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you evaluate the accounting implications of a material transaction?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you build a technical accounting memo?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: What goes into a well-documented accounting position paper?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "GAAP (Generally Accepted Accounting Principles, US) and IFRS (International Financial Reporting Standards, 140+ countries) are accounting frameworks. Key differences: (1) LIFO inventory is allowed under GAAP, prohibited under IFRS, (2) Development costs are expensed under GAAP, capitalized under IFRS, (3) Revenue recognition: GAAP is more rules-based, IFRS more principles-based, (4) Lease accounting classification differs. Convergence efforts continue but differences remain. IFRS tends to be simpler and more flexible.",
+      "For a senior Accountant: How do you evaluate multiple acceptable accounting treatments?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you support an accounting conclusion with authoritative literature?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you develop training programs for accounting staff on new standards?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you mentor and develop senior managers in the accounting function?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you build a culture of technical excellence in accounting?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions.",
+      "For a senior Accountant: How do you stay current with emerging accounting issues?. This requires strategic thinking, architectural decisions, and experience handling complex scenarios. Show leadership and ability to drive solutions."
+    ]
+  },
+  "tags": {
+    "Intern": [
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#bookkeeping",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#gaap"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#ifrs",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#ifrs",
+        "#concept",
+        "#gaap"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#debugging"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#rationale"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#internal-control",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#internal-control"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#debugging"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#intern",
+        "#easy",
+        "#concept"
+      ]
+    ],
+    "Fresher": [
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#financial-statements",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#ifrs",
+        "#gaap"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#tax",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#fresher",
+        "#easy",
+        "#concept"
+      ]
+    ],
+    "Junior": [
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#debugging"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#internal-control"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#internal-control"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#internal-control",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#internal-control",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#internal-control",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#metrics",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#metrics"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#junior",
+        "#medium",
+        "#metrics"
+      ]
+    ],
+    "Middle": [
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#process",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#process",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#metrics"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#metrics"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#comparison",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#pros-cons"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#pros-cons"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#pros-cons"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept",
+        "#pros-cons"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#pros-cons"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#middle",
+        "#hard",
+        "#interview-question"
+      ]
+    ],
+    "Senior": [
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#metrics"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#comparison"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#process",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#internal-control"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#internal-control",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#audit"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#process"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#financial-statements"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#concept",
+        "#gaap"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#tool",
+        "#metrics",
+        "#concept"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#tax"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#interview-question"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#gaap"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting",
+        "#implementation"
+      ],
+      [
+        "#accountant",
+        "#senior",
+        "#hard",
+        "#accounting"
+      ]
+    ]
   }
 }

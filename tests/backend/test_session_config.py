@@ -216,3 +216,67 @@ def test_create_session_rotates_repeated_first_question(monkeypatch):
     assert response.status_code == 200
     assert response.json()["questions"][0]["id"] == 3
     assert fake_db.executemany_params[1][0][1] == 3
+
+
+def test_complete_session_can_schedule_report_generation_without_waiting(monkeypatch):
+    app = FastAPI()
+    app.include_router(sessions_router, prefix="/api/sessions")
+
+    session_id = uuid.UUID("33333333-3333-3333-3333-333333333333")
+    user = _build_user()
+    scheduled = []
+
+    class CompleteFakeDb:
+        async def fetchrow(self, query, *params):
+            if "SELECT id, role, level, major, status" in query:
+                return {
+                    "id": session_id,
+                    "role": "frontend",
+                    "level": "junior",
+                    "major": "technology",
+                    "status": "IN_PROGRESS",
+                    "mode": "text",
+                    "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
+                    "completed_at": None,
+                    "time_limit_minutes": 25,
+                    "evaluation_report": None,
+                    "practice_plan": None,
+                }
+            if "UPDATE sessions" in query:
+                return {
+                    "id": session_id,
+                    "user_id": user.id,
+                    "major": "technology",
+                    "role": "frontend",
+                    "level": "junior",
+                    "mode": "text",
+                    "status": "COMPLETED",
+                    "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
+                    "completed_at": datetime(2026, 5, 5, 0, 5, tzinfo=timezone.utc),
+                    "time_limit_minutes": 25,
+                    "evaluation_report": None,
+                    "practice_plan": None,
+                }
+            if "SELECT AVG(score)" in query:
+                return {"avg_score": 8.0, "cnt": 1}
+            raise AssertionError(f"Unexpected query: {query}")
+
+    async def override_db():
+        yield CompleteFakeDb()
+
+    def fake_schedule_report(*, session_id, language):
+        scheduled.append((session_id, language))
+
+    monkeypatch.setattr(sessions_module, "_schedule_session_report_generation", fake_schedule_report)
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    client = TestClient(app)
+    response = client.put(f"/api/sessions/{session_id}/complete?generate_report=false")
+
+    assert response.status_code == 200
+    assert scheduled == [(session_id, "en")]
+    assert response.json()["status"] == "COMPLETED"
+    assert response.json()["evaluation_report"] is None
+    assert response.json()["practice_plan"] is None

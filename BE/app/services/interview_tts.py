@@ -13,11 +13,8 @@ logger = logging.getLogger(__name__)
 TtsGenerator = Callable[[str, Path], None]
 
 
-def _clamp_script(text: str) -> str:
-    normalized = re.sub(r"\s+", " ", text).strip()
-    if len(normalized) <= settings.kitten_tts_max_chars:
-        return normalized
-    return f"{normalized[: settings.kitten_tts_max_chars].rsplit(' ', 1)[0]}."
+def _normalize_script(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _extract_priority_improvement(feedback: str) -> str | None:
@@ -67,29 +64,23 @@ def _detect_feedback_language(feedback: str) -> str:
 def build_feedback_tts_script(*, score: float, feedback: str, language: str | None = None) -> str:
     script_language = "vi" if str(language or _detect_feedback_language(feedback)).strip().lower() == "vi" else "en"
     score_text = f"{score:.1f}"
-    improvement = _extract_priority_improvement(feedback)
-    english_improvement = f"One priority improvement: {improvement}." if improvement else "Review the written rubric feedback for the next concrete improvement."
-    vietnamese_improvement = (
-        f"Một ưu tiên cần cải thiện: {improvement}."
-        if improvement
-        else "Hãy xem phần nhận xét theo rubric để biết bước cải thiện cụ thể tiếp theo."
-    )
+    normalized_feedback = _normalize_script(feedback)
     vietnamese_parts = [
         f"Điểm rubric của bạn là {score_text} trên 10.",
         _vietnamese_score_message(score),
-        vietnamese_improvement,
+        normalized_feedback,
     ]
 
     english_parts = [
         f"Your rubric score is {score_text} out of 10.",
         _english_score_message(score),
-        english_improvement,
+        normalized_feedback,
     ]
 
     if getattr(settings, "interview_tts_script_language", "vi") != "bilingual":
-        return _clamp_script(" ".join(vietnamese_parts if script_language == "vi" else english_parts))
+        return _normalize_script(" ".join(vietnamese_parts if script_language == "vi" else english_parts))
 
-    return _clamp_script(
+    return _normalize_script(
         " ".join(
             ["Vietnamese feedback."]
             + vietnamese_parts

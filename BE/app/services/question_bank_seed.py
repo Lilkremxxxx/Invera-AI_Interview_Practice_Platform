@@ -107,7 +107,7 @@ async def ensure_question_bank_minimum(
     min_count: int,
 ) -> None:
     current_count = await db.fetchval(
-        "SELECT COUNT(*)::int FROM questions WHERE major = $1 AND role = $2 AND level = $3",
+        "SELECT COUNT(*)::int FROM questions WHERE major = $1 AND role = $2 AND level = $3 AND user_id IS NULL",
         major,
         role,
         level,
@@ -117,7 +117,7 @@ async def ensure_question_bank_minimum(
         return
 
     existing_rows = await db.fetch(
-        "SELECT text, text_en FROM questions WHERE major = $1 AND role = $2 AND level = $3",
+        "SELECT text, text_en FROM questions WHERE major = $1 AND role = $2 AND level = $3 AND user_id IS NULL",
         major,
         role,
         level,
@@ -193,3 +193,124 @@ async def ensure_question_bank_minimum(
 
     if inserted < needed:
         raise RuntimeError(f"Could not seed enough questions for {major}/{role}/{level}.")
+
+
+async def _batch_translate_to_vi(items: list[dict]) -> dict[int, dict]:
+    system_prompt = """
+You are a professional translator. Translate technical and professional interview question components from English to Vietnamese.
+
+You will receive a JSON list of questions to translate, where each question has "id", "text", "category", and "ideal_answer" fields.
+Translate the "text", "category", and "ideal_answer" fields of each question into natural, professional Vietnamese.
+Keep any technical terms (e.g. API, SQL, Docker, React, etc.) in English where they are commonly used by Vietnamese software developers.
+
+Return STRICT JSON only with this shape:
+{
+  "translations": [
+    {
+      "id": 123,
+      "text_vi": "Vietnamese question text",
+      "category_vi": "Vietnamese category",
+      "ideal_answer_vi": "Vietnamese ideal answer"
+    }
+  ]
+}
+""".strip()
+
+    user_prompt = json.dumps({"questions": items}, ensure_ascii=False)
+
+    response = await create_chat_completion(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        temperature=0.0,
+    )
+
+    payload = _parse_json_content(response["content"])
+    translations = payload.get("translations")
+    if not isinstance(translations, list):
+        raise ValueError("Invalid translation payload structure")
+
+    result = {}
+    for item in translations:
+        q_id = int(item["id"])
+        result[q_id] = {
+            "text_vi": str(item.get("text_vi") or "").strip(),
+            "category_vi": str(item.get("category_vi") or "").strip(),
+            "ideal_answer_vi": str(item.get("ideal_answer_vi") or "").strip(),
+        }
+    return result
+
+
+async def translate_questions_to_vi_if_needed(db: asyncpg.Connection, questions: list[dict | asyncpg.Record]) -> list[dict]:
+    mutable_questions = [dict(q) for q in questions]
+
+    untranslated_indices = []
+    untranslated_payloads = []
+    for idx, q in enumerate(mutable_questions):
+        text_en = q.get("text_en") or q.get("text")
+        text_vi = q.get("text_vi")
+        if text_en and text_vi == text_en:
+            untranslated_indices.append(idx)
+            untranslated_payloads.append(q)
+
+    if not untranslated_payloads:
+        return mutable_questions
+
+    # Fetch original ideal_answer_en from DB
+    question_ids = [q["id"] for q in untranslated_payloads]
+    rows = await db.fetch(
+        "SELECT id, text_en, category_en, ideal_answer_en FROM questions WHERE id = ANY($1)",
+        question_ids
+    )
+    row_map = {r["id"]: r for r in rows}
+
+    # Prepare translation inputs
+    to_translate = []
+    for q in untranslated_payloads:
+        q_id = q["id"]
+        r = row_map.get(q_id)
+        if r:
+            to_translate.append({
+                "id": q_id,
+                "text": r["text_en"] or q.get("text") or "",
+                "category": r["category_en"] or q.get("category") or "",
+                "ideal_answer": r["ideal_answer_en"] or ""
+            })
+
+    if not to_translate:
+        return mutable_questions
+
+    # Call DeepSeek to translate them in batch
+    try:
+        translated_map = await _batch_translate_to_vi(to_translate)
+        
+        # Save translations back to DB and update local questions list
+        for idx in untranslated_indices:
+            q = mutable_questions[idx]
+            q_id = q["id"]
+            trans = translated_map.get(q_id)
+            if trans:
+                text_vi = trans["text_vi"]
+                category_vi = trans["category_vi"]
+                ideal_answer_vi = trans["ideal_answer_vi"]
+
+                # Update DB
+                await db.execute(
+                    """
+                    UPDATE questions
+                    SET text_vi = $1, category_vi = $2, ideal_answer_vi = $3
+                    WHERE id = $4
+                    """,
+                    text_vi, category_vi, ideal_answer_vi, q_id
+                )
+
+                # Update local dictionary
+                q["text_vi"] = text_vi
+                q["category_vi"] = category_vi
+                q["ideal_answer_vi"] = ideal_answer_vi
+                
+    except Exception as e:
+        import logging
+        logger = logging.getLogger("app.services.question_bank_seed")
+        logger.error(f"Failed to batch translate questions to Vietnamese: {e}", exc_info=True)
+
+    return mutable_questions

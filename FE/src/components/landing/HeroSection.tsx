@@ -1,11 +1,37 @@
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle2, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MascotDecoration } from './MascotDecoration';
 
 export const HeroSection = () => {
   const { t } = useLanguage();
+  const [showVideo, setShowVideo] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (showVideo) {
+        videoRef.current.play().catch((err) => {
+          console.warn("Video auto-play failed: ", err);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [showVideo]);
+
+  useEffect(() => {
+    if (showVideo && videoContainerRef.current) {
+      const timer = setTimeout(() => {
+        videoContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [showVideo]);
+
   return (
     <section className="relative min-h-screen bg-background overflow-hidden">
       <MascotDecoration
@@ -67,14 +93,47 @@ export const HeroSection = () => {
             <Button 
               variant="outline" 
               size="xl" 
-              asChild
-              className="w-full sm:w-auto font-semibold border-2 hover:bg-muted"
+              className={`w-full sm:w-auto font-semibold border-2 hover:bg-muted gap-2 transition-all duration-300 ${
+                showVideo ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary' : ''
+              }`}
+              onClick={() => setShowVideo(!showVideo)}
             >
-              <Link to="#demo" className="gap-2">
-                <Play className="w-5 h-5" />
-                {t('hero', 'ctaDemo')}
-              </Link>
+              <Play className={`w-5 h-5 transition-transform duration-300 ${showVideo ? 'rotate-90 scale-110' : ''}`} />
+              {t('hero', 'ctaDemo')}
             </Button>
+          </div>
+
+          {/* Video Player Section with premium expansion animation */}
+          <div 
+            ref={videoContainerRef}
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${
+              showVideo 
+                ? 'grid-rows-[1fr] opacity-100 mb-12 sm:mb-16 scale-100' 
+                : 'grid-rows-[0fr] opacity-0 mb-0 scale-95 pointer-events-none'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="max-w-4xl mx-auto px-4 pb-2">
+                <div className="relative aspect-video rounded-2xl border border-border bg-black overflow-hidden group shadow-2xl shadow-primary/30 dark:shadow-white/10 transition-shadow duration-300">
+                  <video 
+                    ref={videoRef}
+                    src="/demo.mp4" 
+                    controls 
+                    className="w-full h-full object-cover"
+                    preload="auto"
+                    playsInline
+                  />
+                  {/* Close button that fades in on video hover */}
+                  <button 
+                    onClick={() => setShowVideo(false)}
+                    className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-all border border-white/10 opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 duration-200 shadow-md hover:scale-105"
+                    aria-label="Close video"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Social Proof - Clear contrast */}
@@ -99,7 +158,6 @@ export const HeroSection = () => {
           </div>
 
         </div>
-
         {/* Hero Image/Mockup - Clean card with clear borders */}
         <div 
           className="mt-16 sm:mt-20 lg:mt-24 max-w-6xl mx-auto animate-slide-up px-4"

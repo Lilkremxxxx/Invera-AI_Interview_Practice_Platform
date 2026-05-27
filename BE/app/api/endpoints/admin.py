@@ -156,6 +156,7 @@ async def _find_duplicate_question(
         WHERE major = $1
           AND role = $2
           AND level = $3
+          AND user_id IS NULL
         ORDER BY id DESC
         """,
         major,
@@ -187,6 +188,7 @@ async def _find_prompt_similar_question(
         WHERE major = $1
           AND role = $2
           AND level = $3
+          AND user_id IS NULL
         ORDER BY id DESC
         """,
         major,
@@ -232,7 +234,7 @@ async def admin_stats(
             (SELECT COUNT(*) FROM sessions WHERE status = 'COMPLETED') AS completed_sessions,
             (SELECT COUNT(*) FROM answers) AS total_answers,
             (SELECT ROUND(AVG(score)::numeric, 1)::float FROM answers WHERE score > 0) AS avg_score,
-            (SELECT COUNT(*) FROM questions) AS total_questions
+            (SELECT COUNT(*) FROM questions WHERE user_id IS NULL) AS total_questions
         """
     )
     return dict(stats)
@@ -754,7 +756,7 @@ async def admin_list_questions(
     role: Optional[str] = None,
     level: Optional[str] = None,
 ):
-    clauses: list[str] = []
+    clauses: list[str] = ["user_id IS NULL"]
     params: list[str] = []
 
     if major:
@@ -767,7 +769,7 @@ async def admin_list_questions(
         params.append(level)
         clauses.append(f"level = ${len(params)}")
 
-    where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    where_sql = f"WHERE {' AND '.join(clauses)}"
     rows = await db.fetch(
         f"SELECT * FROM questions {where_sql} ORDER BY major, role, level, id",
         *params,

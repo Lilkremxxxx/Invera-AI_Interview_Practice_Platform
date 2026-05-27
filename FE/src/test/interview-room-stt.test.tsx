@@ -408,4 +408,41 @@ describe("InterviewRoom STT", () => {
 
     expect(synthesizeFeedbackAudio).not.toHaveBeenCalled();
   });
+
+  it("ends an in-progress session without waiting for report generation", async () => {
+    completeSession.mockResolvedValue({
+      id: "session-1",
+      user_id: "user-1",
+      major: "frontend",
+      role: "frontend",
+      level: "junior",
+      mode: "voice",
+      status: "COMPLETED",
+      created_at: "2026-05-05T00:00:00Z",
+      completed_at: "2026-05-05T00:01:00Z",
+      avg_score: null,
+      question_count: 0,
+      time_limit_minutes: null,
+      evaluation_report: null,
+      practice_plan: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/app/interview/session-1"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+          <Route path="/app/sessions" element={<div>Sessions list</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("textbox");
+    fireEvent.click(screen.getByRole("button", { name: /^end$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /end session/i }));
+
+    await waitFor(() => {
+      expect(completeSession).toHaveBeenCalledWith("session-1", { generateReport: false });
+      expect(screen.getByText("Sessions list")).toBeInTheDocument();
+    });
+  });
 });

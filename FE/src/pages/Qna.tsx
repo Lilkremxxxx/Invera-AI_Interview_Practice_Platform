@@ -344,9 +344,9 @@ export default function Qna() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-4 px-2 sm:px-4">
-      <Card className="rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)] overflow-hidden">
-        <div className="flex h-[82vh] min-h-[720px] flex-col">
+    <div className="w-full h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4.5rem)] flex flex-col px-1 sm:px-2 pb-1 sm:pb-2">
+      <Card className="flex-1 flex flex-col rounded-[32px] border border-border/70 bg-background/95 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)] overflow-hidden min-h-0">
+        <div className="flex flex-1 flex-col min-h-0">
           {/* Header */}
           <div className="border-b border-border/70 px-5 py-4 md:px-6">
             <div className="flex items-center justify-between gap-4">
@@ -370,7 +370,7 @@ export default function Qna() {
           {/* Main Area */}
           <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 bg-slate-50/20 dark:bg-slate-950/20">
             {loading ? (
-              <div className="max-w-4xl mx-auto space-y-4">
+              <div className="w-full space-y-4">
                 <Skeleton className="h-20 w-3/5 rounded-[24px]" />
                 <Skeleton className="ml-auto h-16 w-2/5 rounded-[24px]" />
                 <Skeleton className="h-48 w-full rounded-[28px]" />
@@ -391,7 +391,7 @@ export default function Qna() {
             ) : messages.length === 0 ? (
               /* Welcome Panel when there are no messages */
               <div className="flex h-full flex-col justify-center items-center py-6">
-                <div className="max-w-3xl w-full px-4 text-center space-y-6">
+                <div className="w-full px-4 text-center space-y-6">
                   {/* Hero Header */}
                   <div className="space-y-3">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25">
@@ -451,7 +451,7 @@ export default function Qna() {
               </div>
             ) : (
               /* Chat Thread Messages List */
-              <div className="mx-auto max-w-4xl space-y-6">
+              <div className="w-full space-y-6">
                 {messages.map((item) => (
                   <div
                     key={item.id}
@@ -549,7 +549,7 @@ export default function Qna() {
 
           {/* Composer Input Area */}
           <div className="border-t border-border bg-background/50 backdrop-blur-md px-4 py-4 md:px-6">
-            <div className="mx-auto max-w-4xl space-y-3 rounded-[24px] border border-border bg-card shadow-lg p-3 transition-all duration-200 focus-within:border-cyan-500/40 focus-within:shadow-cyan-500/5">
+            <div className="w-full space-y-3 rounded-[24px] border border-border bg-card shadow-lg p-3 transition-all duration-200 focus-within:border-cyan-500/40 focus-within:shadow-cyan-500/5">
               {quotedText && (
                 <div className="flex items-start justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-2.5">
                   <div className="min-w-0 flex-1">

@@ -26,10 +26,10 @@ import { roleLabelMap } from '@/lib/mock-data';
 import { formatScore, getScoreTextClass, SCORE_MAX } from '@/lib/score';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
-  intern: { vi: 'Thực tập sinh', en: 'Intern' },
+  intern: { vi: 'Intern', en: 'Intern' },
   fresher: { vi: 'Fresher', en: 'Fresher' },
   junior: { vi: 'Junior', en: 'Junior' },
-  mid: { vi: 'Trung cấp', en: 'Mid-level' },
+  mid: { vi: 'Mid-level', en: 'Mid-level' },
   senior: { vi: 'Senior', en: 'Senior' },
 };
 
@@ -192,6 +192,7 @@ const Dashboard = () => {
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis domain={[0, SCORE_MAX]} tick={{ fontSize: 12 }} />
                   <Tooltip
+                    isAnimationActive={false}
                     formatter={(value: number) => [`${Number(value).toFixed(1)}/10`, t('dashboard', 'avgScore')]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -291,10 +292,10 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h4 className="font-medium text-foreground">
-                        {roleLabelMap[session.role]?.[language] || session.role}
+                        {roleLabelMap[session.role]?.en || session.role}
                       </h4>
                       <p className="text-sm text-muted-foreground capitalize">
-                        {levelLabels[session.level]?.[language] || session.level} • {session.question_count ?? 0} {t('dashboard', 'questions')} • {session.mode}
+                        {levelLabels[session.level]?.en || session.level} • {session.question_count ?? 0} {t('dashboard', 'questions')} • {session.mode}
                       </p>
                     </div>
                   </div>

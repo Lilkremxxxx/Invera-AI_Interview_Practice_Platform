@@ -62,6 +62,16 @@ const NewSession = () => {
     return new Map(catalog.map((item) => [`${item.major}:${item.role}`, item] as const));
   }, [catalog]);
 
+  const getMajorTotalQuestions = (majorId: string) => {
+    const fromCatalog = catalog
+      .filter((item) => item.major === majorId)
+      .reduce((sum, item) => sum + item.total_questions, 0);
+    if (fromCatalog > 0) return fromCatalog;
+    return roles
+      .filter((r) => r.major === majorId)
+      .reduce((sum, r) => sum + r.questions, 0);
+  };
+
   const selectedMajor = sessionMajors.find((major) => major.id === config.major);
   const selectedRole = roles.find(r => r.id === config.role);
   const selectedLevel = levels.find(level => level.id === config.level);
@@ -72,8 +82,13 @@ const NewSession = () => {
     : availableQuestionCount > 0
       ? Math.min(config.questionCount, availableQuestionCount)
       : config.questionCount;
+  const isProOrAbove =
+    user?.is_admin ||
+    (user?.plan_status === 'active' &&
+      (user?.plan_tier === 'pro' || user?.plan_tier === 'premium'));
   const canStartNewSession = user?.can_start_new_session ?? true;
-  const estimatedTimeMinutes = requestedQuestionCount == null ? null : requestedQuestionCount * 5;
+  const minutesPerQuestion = isProOrAbove ? 10 : 5;
+  const estimatedTimeMinutes = requestedQuestionCount == null ? null : requestedQuestionCount * minutesPerQuestion;
   const selectedDifficulty = difficulties.find((difficulty) => difficulty.id === config.difficulty);
   const isStep1Complete = Boolean(config.role);
   const isStep2Complete = Boolean(config.level);
@@ -111,9 +126,9 @@ const NewSession = () => {
       ? 'Bạn cần chọn đủ cấu hình ở bước 3.'
       : 'You need to finish the options in step 3.',
     fixedTimeLimitBody: language === 'vi'
-      ? 'Hệ thống tự tính 5 phút cho mỗi câu hỏi, bất kể mode.'
-      : 'The system automatically allocates 5 minutes per question, regardless of mode.',
-    minutesPerQuestion: language === 'vi' ? '5 phút / câu' : '5 min / question',
+      ? `Hệ thống tự tính ${minutesPerQuestion} phút cho mỗi câu hỏi, bất kể mode.`
+      : `The system automatically allocates ${minutesPerQuestion} minutes per question, regardless of mode.`,
+    minutesPerQuestion: language === 'vi' ? `${minutesPerQuestion} phút / câu` : `${minutesPerQuestion} min / question`,
     estimatedDuration: language === 'vi' ? 'Tổng thời gian ước tính' : 'Estimated total time',
   };
 
@@ -245,8 +260,13 @@ const NewSession = () => {
                               : "border-border hover:border-accent/50"
                           )}
                         >
-                          <p className="font-medium text-foreground">{major.name[language]}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{major.description[language]}</p>
+                          <p className="font-medium text-foreground flex justify-between items-center gap-2">
+                            <span>{major.name['en']}</span>
+                            <span className="text-xs font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full shrink-0">
+                              {getMajorTotalQuestions(major.id)}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">{major.description['en']}</p>
                         </button>
                       ))}
                     </div>
@@ -275,7 +295,7 @@ const NewSession = () => {
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{role.icon}</span>
                           <div>
-                            <p className="font-medium text-foreground">{role.name[language]}</p>
+                            <p className="font-medium text-foreground">{role.name['en']}</p>
                             <p className="text-xs text-muted-foreground">
                               {catalogByRole.get(`${role.major}:${role.id}`)?.total_questions ?? role.questions} {copy.questionWord}
                             </p>
@@ -314,9 +334,9 @@ const NewSession = () => {
                     >
                       <RadioGroupItem value={level.id} id={level.id} />
                       <div>
-                        <p className="font-medium text-foreground">{level.name[language]}</p>
+                        <p className="font-medium text-foreground">{level.name['en']}</p>
                         <p className="text-sm text-muted-foreground">
-                          {level.description[language]}
+                          {level.description['en']}
                           {config.role
                             ? levelCount > 0
                               ? ` · ${levelCount} ${copy.questionWord}`
@@ -463,19 +483,19 @@ const NewSession = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{copy.chooseMajor}</span>
                   <span className="font-medium text-foreground">
-                    {selectedMajor ? selectedMajor.name[language] : '—'}
+                    {selectedMajor ? selectedMajor.name['en'] : '—'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'role')}</span>
                   <span className="font-medium text-foreground">
-                    {selectedRole ? selectedRole.name[language] : t('newSession', 'notSelected')}
+                    {selectedRole ? selectedRole.name['en'] : t('newSession', 'notSelected')}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'level')}</span>
                   <span className="font-medium text-foreground capitalize">
-                    {selectedLevel?.name[language] ?? t('newSession', 'notSelected')}
+                    {selectedLevel?.name['en'] ?? t('newSession', 'notSelected')}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
