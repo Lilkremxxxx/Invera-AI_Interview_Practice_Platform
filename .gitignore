@@ -46,3 +46,14 @@ FE/.env*
 .antigravitycli/
 tmp/
 private_uploads/
+
+# Cloudflare & Sensitive configs
+deploy/cloudflared/*.json
+deploy/cloudflared/*.pem
+deploy/cloudflared/config.yml
+.cloudflared/
+cloudflared/*.json
+cloudflared/*.pem
+*.key
+*.pem
+*.crt
