@@ -57,3 +57,9 @@ cloudflared/*.pem
 *.key
 *.pem
 *.crt
+
+# Hidden folders
+deploy/
+docker_config/
+scripts/
+Documentation/
