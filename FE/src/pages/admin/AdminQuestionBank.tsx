@@ -144,6 +144,9 @@ export function AdminQuestionBank() {
   const [role, setRole] = useState('');
   const [level, setLevel] = useState('');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -291,18 +294,35 @@ export function AdminQuestionBank() {
   }, [generatorForm.major]);
 
   const loadQuestions = async (
+    nextPage = 1,
     nextMajor = major,
     nextRole = role,
     nextLevel = level,
+    nextSearch = search,
   ) => {
     setLoading(true);
     try {
-      const rows = await adminApi.getQuestions({
+      const res = await adminApi.getQuestions({
         major: nextMajor || undefined,
         role: nextRole || undefined,
         level: nextLevel || undefined,
+        search: nextSearch || undefined,
+        page: nextPage,
+        size: 20,
       });
-      setQuestions(rows);
+
+      if (res && 'items' in res) {
+        setQuestions(res.items);
+        setTotalQuestions(res.total);
+        setCurrentPage(res.page);
+        setTotalPages(res.pages);
+      } else {
+        const rows = res as AdminQuestionOut[];
+        setQuestions(rows);
+        setTotalQuestions(rows.length);
+        setCurrentPage(1);
+        setTotalPages(1);
+      }
     } catch (err) {
       toast({
         title: copy.loadErrorTitle,
@@ -315,42 +335,22 @@ export function AdminQuestionBank() {
   };
 
   useEffect(() => {
-    loadQuestions('', '', '');
+    loadQuestions(1, '', '', '', '');
   }, []);
-
-  const filteredQuestions = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return questions;
-    return questions.filter((question) => {
-      const haystack = [
-        question.major || '',
-        question.text,
-        question.category,
-        question.difficulty,
-        question.role,
-        question.level,
-        ...(question.tags || []),
-        question.ideal_answer || '',
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(keyword);
-    });
-  }, [questions, search]);
 
   const handleFilterSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    await loadQuestions(major, role, level);
+    await loadQuestions(1, major, role, level, search);
   };
 
   const handleDelete = async (questionId: number) => {
     try {
       await adminApi.deleteQuestion(questionId);
-      setQuestions((current) => current.filter((question) => question.id !== questionId));
       toast({
         title: copy.deletedTitle,
         description: copy.deletedDescription(questionId),
       });
+      await loadQuestions(currentPage, major, role, level, search);
     } catch (err) {
       toast({
         title: copy.deleteErrorTitle,
@@ -600,14 +600,14 @@ export function AdminQuestionBank() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
           </div>
-        ) : filteredQuestions.length === 0 ? (
+        ) : questions.length === 0 ? (
           <Card className="border-border/50 shadow-sm">
             <CardContent className="py-12 text-center text-sm text-muted-foreground">
               {copy.noMatch}
             </CardContent>
           </Card>
         ) : (
-          filteredQuestions.map((question) => (
+          questions.map((question) => (
             <Card key={question.id} className="border-border/50 shadow-sm">
               <CardHeader className="gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -660,6 +660,57 @@ export function AdminQuestionBank() {
           ))
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {!loading && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/50 pt-4 mt-6">
+          <p className="text-sm text-muted-foreground">
+            {language === 'vi' 
+              ? `Hiển thị ${(currentPage - 1) * 20 + 1} - ${Math.min(currentPage * 20, totalQuestions)} trong tổng số ${totalQuestions} câu hỏi`
+              : `Showing ${(currentPage - 1) * 20 + 1} - ${Math.min(currentPage * 20, totalQuestions)} of ${totalQuestions} questions`}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => loadQuestions(currentPage - 1, major, role, level, search)}
+            >
+              {language === 'vi' ? 'Trước' : 'Previous'}
+            </Button>
+            <div className="flex items-center gap-1 flex-wrap justify-center">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .map((p, idx, arr) => {
+                  const items = [];
+                  if (idx > 0 && p - arr[idx - 1] > 1) {
+                    items.push(<span key={`ellipsis-${p}`} className="px-2 text-muted-foreground">...</span>);
+                  }
+                  items.push(
+                    <Button
+                      key={p}
+                      variant={currentPage === p ? 'accent' : 'outline'}
+                      size="sm"
+                      className="w-9 h-9 p-0 font-medium"
+                      onClick={() => loadQuestions(p, major, role, level, search)}
+                    >
+                      {p}
+                    </Button>
+                  );
+                  return items;
+                })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => loadQuestions(currentPage + 1, major, role, level, search)}
+            >
+              {language === 'vi' ? 'Sau' : 'Next'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">

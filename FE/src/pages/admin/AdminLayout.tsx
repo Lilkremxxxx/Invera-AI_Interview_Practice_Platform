@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShieldCheck, LogOut, ArrowLeft, LibraryBig } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, LogOut, ArrowLeft, LibraryBig, Users, MonitorPlay, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -20,11 +20,15 @@ export function AdminLayout() {
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, exact: true },
-    { name: 'Question Bank', path: '/admin/questions', icon: LibraryBig, exact: false },
+    { name: language === 'vi' ? 'Ngân hàng câu hỏi' : 'Question Bank', path: '/admin/questions', icon: LibraryBig, exact: false },
+    { name: language === 'vi' ? 'Quản lý User' : 'User Management', path: '/admin/users', icon: Users, exact: false },
+    { name: language === 'vi' ? 'Quản lý Session' : 'Sessions', path: '/admin/sessions', icon: MonitorPlay, exact: false },
+    { name: language === 'vi' ? 'Doanh thu' : 'Revenue', path: '/admin/revenue', icon: DollarSign, exact: false },
     ...(user?.is_primary_admin
       ? [{ name: 'Admin Access', path: '/admin/access', icon: ShieldCheck, exact: false }]
       : []),
   ];
+
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
