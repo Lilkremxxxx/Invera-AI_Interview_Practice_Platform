@@ -2,14 +2,16 @@ import uuid
 import random
 import asyncio
 import subprocess
+import json
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import asyncpg
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from jose import JWTError, jwt
 
 from app.db.session import create_pool, get_db
-from app.api.endpoints.auth import get_current_user
+from app.api.endpoints.auth import get_current_user, _load_user_out_by_email
 from app.core.config import settings
 from app.core.question_bank import (
     QUESTION_BANK_ROLES,
@@ -31,6 +33,11 @@ from app.services.question_bank_seed import ensure_question_bank_minimum, transl
 from app.services.scoring import ScoringRequest, score_answer
 from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
 from app.services.transcript_cleanup import correct_transcript_text
+from app.core.security import SECRET_KEY, ALGORITHM
+from app.services.interview_stt_realtime import (
+    InterviewRealtimeSttRuntimeError,
+    VoskRealtimeSession,
+)
 
 router = APIRouter()
 
@@ -56,8 +63,12 @@ MODE_LABELS = {
     "text": {"vi": "Văn bản", "en": "Text"},
     "voice": {"vi": "Giọng nói", "en": "Voice"},
     "video": {"vi": "Video", "en": "Video"},
+    "camera": {"vi": "Camera", "en": "Camera"},
 }
-ALLOWED_SESSION_MODES = {"text", "voice"}
+ALLOWED_SESSION_MODES = {"voice", "camera"}
+STT_SEMAPHORE = asyncio.Semaphore(max(1, settings.interview_stt_concurrency))
+TTS_SEMAPHORE = asyncio.Semaphore(max(1, settings.interview_tts_concurrency))
+SCORING_SEMAPHORE = asyncio.Semaphore(max(1, settings.deepseek_scoring_concurrency))
 
 
 async def _require_export_access(
@@ -82,6 +93,50 @@ async def _require_export_access(
     raise HTTPException(status_code=403, detail=detail)
 
 
+def _normalize_question_text(text: str | None) -> str:
+    if not text:
+        return ""
+    import re
+    text = text.lower()
+    text = re.sub(r"[^\w\s\d]", "", text)
+    return " ".join(text.split())
+
+
+def _are_questions_duplicate(q1, q2) -> bool:
+    texts1 = {
+        _normalize_question_text(q1.get("text")),
+        _normalize_question_text(q1.get("text_en")),
+        _normalize_question_text(q1.get("text_vi")),
+    } - {""}
+    
+    texts2 = {
+        _normalize_question_text(q2.get("text")),
+        _normalize_question_text(q2.get("text_en")),
+        _normalize_question_text(q2.get("text_vi")),
+    } - {""}
+    
+    if not texts1 or not texts2:
+        return False
+        
+    if texts1.intersection(texts2):
+        return True
+        
+    for t1 in texts1:
+        w1 = set(t1.split())
+        if not w1:
+            continue
+        for t2 in texts2:
+            w2 = set(t2.split())
+            if not w2:
+                continue
+            intersection = len(w1.intersection(w2))
+            union = len(w1.union(w2))
+            if union > 0 and (intersection / union) > 0.75:
+                return True
+                
+    return False
+
+
 async def _fetch_session_questions(
     db: asyncpg.Connection,
     *,
@@ -90,7 +145,8 @@ async def _fetch_session_questions(
     level: str,
     count: int,
 ):
-    return await db.fetch(
+    limit = max(150, count * 10)
+    candidates = await db.fetch(
         """
         SELECT id, major, role, level, text, text_en, text_vi,
                category, category_en, category_vi,
@@ -100,8 +156,23 @@ async def _fetch_session_questions(
         ORDER BY RANDOM()
         LIMIT $4
         """,
-        major, role, level, count,
+        major, role, level, limit,
     )
+    
+    unique_questions = []
+    for cand in candidates:
+        is_dup = False
+        for uq in unique_questions:
+            if _are_questions_duplicate(cand, uq):
+                is_dup = True
+                break
+        if not is_dup:
+            unique_questions.append(cand)
+            if len(unique_questions) >= count:
+                break
+                
+    return unique_questions
+
 
 
 def _avoid_repeated_first_question(questions, previous_first_question_id):
@@ -121,6 +192,18 @@ def _humanize_role_label(role: str) -> str:
 
 
 def _serialize_answer_row(answer_row, *, tts_script: str | None = None, tts_audio_url: str | None = None) -> AnswerOut:
+    import json
+    raw_telemetry = answer_row.get("telemetry_data")
+    telemetry_dict = None
+    if raw_telemetry:
+        if isinstance(raw_telemetry, str):
+            try:
+                telemetry_dict = json.loads(raw_telemetry)
+            except ValueError:
+                pass
+        elif isinstance(raw_telemetry, dict):
+            telemetry_dict = raw_telemetry
+
     return AnswerOut(
         id=answer_row["id"],
         session_id=answer_row["session_id"],
@@ -128,10 +211,69 @@ def _serialize_answer_row(answer_row, *, tts_script: str | None = None, tts_audi
         answer_text=sanitize_user_text(answer_row["answer_text"]),
         score=float(answer_row["score"]),
         feedback=answer_row["feedback"],
+        telemetry_data=telemetry_dict,
         tts_script=tts_script,
         tts_audio_url=tts_audio_url,
         submitted_at=answer_row["submitted_at"],
     )
+
+
+async def _cleanup_transcript_for_question(
+    *,
+    db: asyncpg.Connection,
+    session_id: uuid.UUID,
+    question_id: int | None,
+    transcript: str,
+    language: str | None,
+) -> str:
+    if question_id is None:
+        return transcript
+
+    question_row = await db.fetchrow(
+        """
+        SELECT q.id, q.text, q.text_en, q.text_vi
+        FROM questions q
+        JOIN session_question_sets sq
+          ON sq.question_id = q.id
+         AND sq.session_id = $1
+        WHERE q.id = $2
+        """,
+        session_id, question_id,
+    )
+    if not question_row:
+        return transcript
+
+    cleanup_language = "vi" if str(language or "").strip().lower() == "vi" else "en"
+    return await correct_transcript_text(
+        transcript=transcript,
+        question_text=localized_question_field(question_row, "text", cleanup_language),
+        language=cleanup_language,
+    )
+
+
+async def _authenticate_ws_user(websocket: WebSocket, db: asyncpg.Connection) -> UserOut:
+    token = websocket.query_params.get("token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token.",
+        )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str | None = payload.get("sub")
+        if not email:
+          raise HTTPException(
+              status_code=status.HTTP_401_UNAUTHORIZED,
+              detail="Invalid access token.",
+          )
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token.",
+        ) from exc
+
+    return await _load_user_out_by_email(db, email)
 
 
 async def _load_session_bundle(
@@ -150,7 +292,7 @@ async def _load_session_bundle(
     answers_rows = await db.fetch(
         """
         SELECT a.id, a.session_id, a.question_id, a.answer_text,
-               a.score::float AS score, a.feedback, a.submitted_at
+               a.score::float AS score, a.feedback, a.telemetry_data, a.submitted_at
         FROM answers a
         WHERE a.session_id = $1
         ORDER BY a.submitted_at
@@ -254,6 +396,20 @@ async def _generate_session_report_background(*, session_id: uuid.UUID, language
     try:
         pool = await create_pool()
         async with pool.acquire() as conn:
+            # Poll database for pending answers
+            max_wait = 180  # 3 minutes maximum wait time
+            wait_interval = 2
+            waited = 0
+            while waited < max_wait:
+                pending_count = await conn.fetchval(
+                    "SELECT COUNT(*)::int FROM answers WHERE session_id = $1 AND feedback = 'PENDING'",
+                    session_id,
+                )
+                if pending_count == 0:
+                    break
+                await asyncio.sleep(wait_interval)
+                waited += wait_interval
+
             session_row = await conn.fetchrow(
                 """
                 SELECT id, role, level, major, status, evaluation_report, practice_plan
@@ -285,8 +441,8 @@ async def _generate_session_report_background(*, session_id: uuid.UUID, language
                 practice_plan,
                 session_id,
             )
-    except Exception:
-        print(f"Error generating background session report for {session_id}")
+    except Exception as e:
+        print(f"Error generating background session report for {session_id}: {e}")
 
 
 def _schedule_session_report_generation(*, session_id: uuid.UUID, language: str) -> None:
@@ -648,7 +804,11 @@ async def get_session(
     # Lazy generation if completed but report/plan is missing
     evaluation_report = session_row["evaluation_report"]
     practice_plan = session_row["practice_plan"]
-    if session_row["status"] == "COMPLETED" and (not evaluation_report or not practice_plan):
+    pending_count = await db.fetchval(
+        "SELECT COUNT(*)::int FROM answers WHERE session_id = $1 AND feedback = 'PENDING'",
+        session_id,
+    )
+    if session_row["status"] == "COMPLETED" and pending_count == 0 and (not evaluation_report or not practice_plan):
         from app.services.evaluation import generate_session_evaluation_and_plan
         evaluation_report, practice_plan = await generate_session_evaluation_and_plan(
             db,
@@ -689,9 +849,185 @@ async def get_session(
     )
 
 
+async def process_voice_answer_background(
+    answer_id: uuid.UUID,
+    session_id: uuid.UUID,
+    question_id: int,
+    audio_bytes: bytes,
+    filename: str,
+    language: str | None,
+    feedback_language: str,
+    force_feedback_language: bool,
+):
+    try:
+        async with STT_SEMAPHORE:
+            transcript = await asyncio.wait_for(
+                asyncio.to_thread(
+                    transcribe_audio_bytes,
+                    audio_bytes=audio_bytes,
+                    original_filename=filename,
+                    language=language,
+                ),
+                timeout=settings.interview_stt_timeout_seconds,
+            )
+    except Exception as exc:
+        transcript = f"[Lỗi STT: {str(exc)}]"
+        print(f"Error in STT transcription for answer_id={answer_id}: {exc}")
+
+    pool = await create_pool()
+    async with pool.acquire() as db:
+        cleaned_transcript = await _cleanup_transcript_for_question(
+            db=db,
+            session_id=session_id,
+            question_id=question_id,
+            transcript=transcript,
+            language=language,
+        )
+        cleaned_answer_text = sanitize_user_text(cleaned_transcript)
+
+        question_row = await db.fetchrow(
+            """
+            SELECT q.text, q.text_en, q.text_vi,
+                   q.category, q.category_en, q.category_vi,
+                   q.difficulty,
+                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                   s.role, s.level, s.major
+            FROM questions q
+            JOIN sessions s ON s.id = $2
+            WHERE q.id = $1
+            """,
+            question_id, session_id,
+        )
+        if not question_row:
+            return
+
+        try:
+            async with SCORING_SEMAPHORE:
+                score, feedback = await score_answer(
+                    ScoringRequest(
+                        answer_text=cleaned_answer_text,
+                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                        question_text=localized_question_field(question_row, "text", feedback_language),
+                        role=question_row["role"],
+                        level=question_row["level"],
+                        category=localized_question_field(question_row, "category", feedback_language),
+                        difficulty=question_row["difficulty"],
+                        major=question_row["major"],
+                        preferred_language=feedback_language,
+                        force_language=force_feedback_language,
+                        telemetry_data=None,
+                    )
+                )
+        except Exception as exc:
+            score = 0
+            feedback = f"Lỗi chấm điểm: {str(exc)}"
+
+        await db.execute(
+            """
+            UPDATE answers
+            SET answer_text = $1, score = $2, feedback = $3, submitted_at = NOW()
+            WHERE id = $4
+            """,
+            cleaned_answer_text, score, feedback, answer_id,
+        )
+
+
+async def process_video_answer_background(
+    answer_id: uuid.UUID,
+    session_id: uuid.UUID,
+    question_id: int,
+    video_bytes: bytes,
+    filename: str,
+    telemetry_data_str: str | None,
+    language: str | None,
+    feedback_language: str,
+    force_feedback_language: bool,
+):
+    try:
+        async with STT_SEMAPHORE:
+            transcript = await asyncio.wait_for(
+                asyncio.to_thread(
+                    transcribe_audio_bytes,
+                    audio_bytes=video_bytes,
+                    original_filename=filename,
+                    language=language,
+                ),
+                timeout=settings.interview_stt_timeout_seconds,
+            )
+    except Exception as exc:
+        transcript = f"[Lỗi STT: {str(exc)}]"
+        print(f"Error in video STT transcription for answer_id={answer_id}: {exc}")
+
+    pool = await create_pool()
+    async with pool.acquire() as db:
+        cleaned_transcript = await _cleanup_transcript_for_question(
+            db=db,
+            session_id=session_id,
+            question_id=question_id,
+            transcript=transcript,
+            language=language,
+        )
+        cleaned_answer_text = sanitize_user_text(cleaned_transcript)
+
+        question_row = await db.fetchrow(
+            """
+            SELECT q.text, q.text_en, q.text_vi,
+                   q.category, q.category_en, q.category_vi,
+                   q.difficulty,
+                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                   s.role, s.level, s.major
+            FROM questions q
+            JOIN sessions s ON s.id = $2
+            WHERE q.id = $1
+            """,
+            question_id, session_id,
+        )
+        if not question_row:
+            return
+
+        import json
+        telemetry_dict = None
+        if telemetry_data_str:
+            try:
+                telemetry_dict = json.loads(telemetry_data_str)
+            except Exception:
+                pass
+
+        try:
+            async with SCORING_SEMAPHORE:
+                score, feedback = await score_answer(
+                    ScoringRequest(
+                        answer_text=cleaned_answer_text,
+                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                        question_text=localized_question_field(question_row, "text", feedback_language),
+                        role=question_row["role"],
+                        level=question_row["level"],
+                        category=localized_question_field(question_row, "category", feedback_language),
+                        difficulty=question_row["difficulty"],
+                        major=question_row["major"],
+                        preferred_language=feedback_language,
+                        force_language=force_feedback_language,
+                        telemetry_data=telemetry_dict,
+                    )
+                )
+        except Exception as exc:
+            score = 0
+            feedback = f"Lỗi chấm điểm: {str(exc)}"
+
+        await db.execute(
+            """
+            UPDATE answers
+            SET answer_text = $1, score = $2, feedback = $3, telemetry_data = $4, submitted_at = NOW()
+            WHERE id = $5
+            """,
+            cleaned_answer_text, score, feedback, telemetry_data_str, answer_id,
+        )
+
+
 @router.post("/{session_id}/stt", response_model=AnswerTranscriptOut)
 async def transcribe_session_audio(
     session_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     language: str | None = Form(None),
     question_id: int | None = Form(None),
@@ -723,39 +1059,341 @@ async def transcribe_session_audio(
             detail=f"File audio vượt quá giới hạn {settings.interview_stt_max_upload_mb}MB.",
         )
 
-    try:
-        transcript = transcribe_audio_bytes(
-            audio_bytes=raw_bytes,
-            original_filename=audio.filename or "recording.webm",
-            language=language,
-        )
-    except InterviewSttRuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except subprocess.CalledProcessError as exc:
-        detail = exc.stderr.strip() or "Không thể chuyển audio thành transcript lúc này."
-        raise HTTPException(status_code=500, detail=detail) from exc
-
-    if question_id is not None:
-        question_row = await db.fetchrow(
+    existing = await db.fetchrow(
+        "SELECT id FROM answers WHERE session_id = $1 AND question_id = $2",
+        session_id, question_id,
+    )
+    if existing:
+        answer_id = existing["id"]
+        await db.execute(
             """
-            SELECT q.id, q.text, q.text_en, q.text_vi
-            FROM questions q
-            JOIN session_question_sets sq
-              ON sq.question_id = q.id
-             AND sq.session_id = $1
-            WHERE q.id = $2
+            UPDATE answers
+            SET answer_text = 'Đang xử lý...', score = 0, feedback = 'PENDING', submitted_at = NOW()
+            WHERE id = $1
+            """,
+            answer_id,
+        )
+    else:
+        answer_id = await db.fetchval(
+            """
+            INSERT INTO answers (session_id, question_id, answer_text, score, feedback)
+            VALUES ($1, $2, 'Đang xử lý...', 0, 'PENDING')
+            RETURNING id
             """,
             session_id, question_id,
         )
-        if question_row:
-            cleanup_language = "vi" if str(language or "").strip().lower() == "vi" else "en"
-            transcript = await correct_transcript_text(
-                transcript=transcript,
-                question_text=localized_question_field(question_row, "text", cleanup_language),
-                language=cleanup_language,
-            )
 
-    return AnswerTranscriptOut(text=transcript)
+    ui_language = resolve_ui_language(request)
+    feedback_language = "vi" if str(language or ui_language).strip().lower() == "vi" else "en"
+
+    background_tasks.add_task(
+        process_voice_answer_background,
+        answer_id=answer_id,
+        session_id=session_id,
+        question_id=question_id,
+        audio_bytes=raw_bytes,
+        filename=audio.filename or "recording.webm",
+        language=language,
+        feedback_language=feedback_language,
+        force_feedback_language=language is not None,
+    )
+
+    return AnswerTranscriptOut(text="Đang xử lý...")
+
+
+@router.post("/{session_id}/answer-video", response_model=AnswerTranscriptOut)
+async def transcribe_session_video(
+    session_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    video: UploadFile = File(...),
+    language: str | None = Form(None),
+    telemetry_data: str | None = Form(None),
+    question_id: int | None = Form(None),
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    session_row = await db.fetchrow(
+        """
+        SELECT id, status
+        FROM sessions
+        WHERE id = $1 AND user_id = $2
+        """,
+        session_id, current_user.id,
+    )
+    if not session_row:
+        raise HTTPException(status_code=404, detail="Session không tồn tại")
+    if session_row["status"] != "IN_PROGRESS":
+        raise HTTPException(status_code=400, detail="Session đã hoàn thành, không thể dùng video STT nữa.")
+
+    _validate_stt_upload(video)
+    raw_bytes = await video.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="File video trống.")
+
+    max_bytes = settings.interview_stt_max_upload_mb * 1024 * 1024
+    if len(raw_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File video vượt quá giới hạn {settings.interview_stt_max_upload_mb}MB.",
+        )
+
+    import json
+    telemetry_json = None
+    if telemetry_data:
+        try:
+            json.loads(telemetry_data)
+            telemetry_json = telemetry_data
+        except ValueError:
+            pass
+
+    existing = await db.fetchrow(
+        "SELECT id FROM answers WHERE session_id = $1 AND question_id = $2",
+        session_id, question_id,
+    )
+    if existing:
+        answer_id = existing["id"]
+        await db.execute(
+            """
+            UPDATE answers
+            SET answer_text = 'Đang xử lý...', score = 0, feedback = 'PENDING', telemetry_data = $1, submitted_at = NOW()
+            WHERE id = $2
+            """,
+            telemetry_json, answer_id,
+        )
+    else:
+        answer_id = await db.fetchval(
+            """
+            INSERT INTO answers (session_id, question_id, answer_text, score, feedback, telemetry_data)
+            VALUES ($1, $2, 'Đang xử lý...', 0, 'PENDING', $3)
+            RETURNING id
+            """,
+            session_id, question_id, telemetry_json,
+        )
+
+    ui_language = resolve_ui_language(request)
+    feedback_language = "vi" if str(language or ui_language).strip().lower() == "vi" else "en"
+
+    background_tasks.add_task(
+        process_video_answer_background,
+        answer_id=answer_id,
+        session_id=session_id,
+        question_id=question_id,
+        video_bytes=raw_bytes,
+        filename=video.filename or "recording.webm",
+        telemetry_data_str=telemetry_json,
+        language=language,
+        feedback_language=feedback_language,
+        force_feedback_language=language is not None,
+    )
+
+    return AnswerTranscriptOut(text="Đang xử lý...")
+
+
+@router.websocket("/{session_id}/stt-stream")
+async def stream_session_stt(
+    websocket: WebSocket,
+    session_id: uuid.UUID,
+    db: asyncpg.Connection = Depends(get_db),
+):
+    if not settings.interview_stt_realtime_enabled:
+        await websocket.close(code=1013, reason="Realtime STT is disabled.")
+        return
+
+    try:
+        current_user = await _authenticate_ws_user(websocket, db)
+    except HTTPException:
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
+    session_row = await db.fetchrow(
+        """
+        SELECT id, status
+        FROM sessions
+        WHERE id = $1 AND user_id = $2
+        """,
+        session_id, current_user.id,
+    )
+    if not session_row:
+        await websocket.close(code=4404, reason="Session not found")
+        return
+    if session_row["status"] != "IN_PROGRESS":
+        await websocket.close(code=4400, reason="Session is not in progress")
+        return
+
+    language = websocket.query_params.get("language")
+    question_id_raw = websocket.query_params.get("question_id")
+    question_id = int(question_id_raw) if question_id_raw and question_id_raw.isdigit() else None
+    sample_rate_raw = websocket.query_params.get("sample_rate")
+    sample_rate = int(sample_rate_raw) if sample_rate_raw and sample_rate_raw.isdigit() else 16000
+
+    await websocket.accept()
+    sequence = 0
+    try:
+        realtime_session = await asyncio.to_thread(
+            VoskRealtimeSession,
+            language=language,
+            sample_rate=sample_rate,
+        )
+    except (InterviewRealtimeSttRuntimeError, ValueError) as exc:
+        await websocket.send_json({
+            "type": "error",
+            "seq": sequence,
+            "detail": str(exc),
+            "recoverable": False,
+        })
+        await websocket.close(code=1011, reason=str(exc))
+        return
+
+    try:
+        while True:
+            message = await websocket.receive()
+            chunk_bytes = message.get("bytes")
+            text_message = message.get("text")
+
+            if text_message:
+                try:
+                    payload = json.loads(text_message)
+                except ValueError:
+                    payload = None
+
+                if isinstance(payload, dict) and payload.get("type") == "stop":
+                    final_text = await asyncio.to_thread(realtime_session.finalize)
+                    if final_text:
+                        sequence += 1
+                        await websocket.send_json({
+                            "type": "final",
+                            "seq": sequence,
+                            "text": final_text,
+                            "is_final": True,
+                        })
+                    await websocket.send_json({"type": "stopped", "seq": sequence})
+                    break
+                continue
+
+            if not chunk_bytes:
+                print(f"[WS-STT] Received message without bytes", flush=True)
+                continue
+            
+            chunk_len = len(chunk_bytes)
+            print(f"[WS-STT] Received chunk of size {chunk_len} bytes", flush=True)
+            if chunk_len < settings.interview_stt_realtime_min_chunk_bytes:
+                print(f"[WS-STT] Skipped chunk of size {chunk_len} (min is {settings.interview_stt_realtime_min_chunk_bytes})", flush=True)
+                continue
+
+            sequence += 1
+            try:
+                print(f"[WS-STT] Processing chunk {sequence} through Vosk...", flush=True)
+                async with STT_SEMAPHORE:
+                    result = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            realtime_session.accept_chunk,
+                            chunk_bytes,
+                            ".webm",
+                        ),
+                        timeout=settings.interview_stt_timeout_seconds,
+                    )
+                print(f"[WS-STT] Vosk result for chunk {sequence}: {result}", flush=True)
+            except TimeoutError:
+                print(f"[WS-STT] Timeout processing chunk {sequence}", flush=True)
+                await websocket.send_json({
+                    "type": "error",
+                    "seq": sequence,
+                    "detail": "Realtime STT timed out.",
+                    "recoverable": True,
+                })
+                continue
+            except (ValueError, InterviewRealtimeSttRuntimeError, subprocess.CalledProcessError) as exc:
+                detail = exc.stderr.strip() if isinstance(exc, subprocess.CalledProcessError) and exc.stderr else str(exc)
+                print(f"[WS-STT] Exception processing chunk {sequence}: {detail}", flush=True)
+                await websocket.send_json({
+                    "type": "error",
+                    "seq": sequence,
+                    "detail": detail,
+                    "recoverable": True,
+                })
+                continue
+
+            transcript = str(result.get("text", "")).strip()
+            message_type = str(result.get("type", "partial"))
+            is_final = bool(result.get("is_final"))
+            # Do not run LLM cleanup on realtime streaming chunks to avoid latency and hallucinations.
+            pass
+
+            if transcript:
+                await websocket.send_json({
+                    "type": message_type,
+                    "seq": sequence,
+                    "text": transcript,
+                    "is_final": is_final,
+                })
+    except (WebSocketDisconnect, RuntimeError):
+        return
+
+
+async def process_text_answer_background(
+    answer_id: uuid.UUID,
+    session_id: uuid.UUID,
+    question_id: int,
+    answer_text: str,
+    telemetry_data_str: str | None,
+    feedback_language: str,
+    force_feedback_language: bool,
+):
+    pool = await create_pool()
+    async with pool.acquire() as db:
+        question_row = await db.fetchrow(
+            """
+            SELECT q.text, q.text_en, q.text_vi,
+                   q.category, q.category_en, q.category_vi,
+                   q.difficulty,
+                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                   s.role, s.level, s.major
+            FROM questions q
+            JOIN sessions s ON s.id = $2
+            WHERE q.id = $1
+            """,
+            question_id, session_id,
+        )
+        if not question_row:
+            return
+
+        import json
+        telemetry_dict = None
+        if telemetry_data_str:
+            try:
+                telemetry_dict = json.loads(telemetry_data_str)
+            except Exception:
+                pass
+
+        try:
+            async with SCORING_SEMAPHORE:
+                score, feedback = await score_answer(
+                    ScoringRequest(
+                        answer_text=answer_text,
+                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                        question_text=localized_question_field(question_row, "text", feedback_language),
+                        role=question_row["role"],
+                        level=question_row["level"],
+                        category=localized_question_field(question_row, "category", feedback_language),
+                        difficulty=question_row["difficulty"],
+                        major=question_row["major"],
+                        preferred_language=feedback_language,
+                        force_language=force_feedback_language,
+                        telemetry_data=telemetry_dict,
+                    )
+                )
+        except Exception as exc:
+            score = 0
+            feedback = f"Lỗi chấm điểm: {str(exc)}"
+
+        await db.execute(
+            """
+            UPDATE answers
+            SET score = $1, feedback = $2, submitted_at = NOW()
+            WHERE id = $3
+            """,
+            score, feedback, answer_id,
+        )
 
 
 # ─── POST /sessions/{id}/answers ─────────────────────────────────────────────
@@ -764,6 +1402,7 @@ async def submit_answer(
     session_id: uuid.UUID,
     body: AnswerSubmit,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: asyncpg.Connection = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
@@ -831,21 +1470,8 @@ async def submit_answer(
     force_feedback_language = body.output_language is not None
     cleaned_answer_text = sanitize_user_text(body.answer_text)
 
-    # Score the answer
-    score, feedback = await score_answer(
-        ScoringRequest(
-            answer_text=cleaned_answer_text,
-            ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
-            question_text=localized_question_field(question_row, "text", feedback_language),
-            role=session_row["role"],
-            level=session_row["level"],
-            category=localized_question_field(question_row, "category", feedback_language),
-            difficulty=question_row["difficulty"],
-            major=session_row["major"],
-            preferred_language=feedback_language,
-            force_language=force_feedback_language,
-        )
-    )
+    import json
+    telemetry_json = json.dumps(body.telemetry_data) if body.telemetry_data else None
 
     # Upsert answer (allow retry)
     existing = await db.fetchrow(
@@ -857,24 +1483,34 @@ async def submit_answer(
         answer_row = await db.fetchrow(
             """
             UPDATE answers
-            SET answer_text = $1, score = $2, feedback = $3, submitted_at = NOW()
-            WHERE session_id = $4 AND question_id = $5
-            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, submitted_at
+            SET answer_text = $1, score = 0, feedback = 'PENDING', telemetry_data = $2, submitted_at = NOW()
+            WHERE session_id = $3 AND question_id = $4
+            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, telemetry_data, submitted_at
             """,
-            cleaned_answer_text, score, feedback, session_id, body.question_id,
+            cleaned_answer_text, telemetry_json, session_id, body.question_id,
         )
     else:
         answer_row = await db.fetchrow(
             """
-            INSERT INTO answers (session_id, question_id, answer_text, score, feedback)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, submitted_at
+            INSERT INTO answers (session_id, question_id, answer_text, score, feedback, telemetry_data)
+            VALUES ($1, $2, $3, 0, 'PENDING', $4)
+            RETURNING id, session_id, question_id, answer_text, score::float AS score, feedback, telemetry_data, submitted_at
             """,
-            session_id, body.question_id, cleaned_answer_text, score, feedback,
+            session_id, body.question_id, cleaned_answer_text, telemetry_json,
         )
 
-    tts_script = build_feedback_tts_script(score=score, feedback=feedback, language=feedback_language)
-    return _serialize_answer_row(answer_row, tts_script=tts_script)
+    background_tasks.add_task(
+        process_text_answer_background,
+        answer_id=answer_row["id"],
+        session_id=session_id,
+        question_id=body.question_id,
+        answer_text=cleaned_answer_text,
+        telemetry_data_str=telemetry_json,
+        feedback_language=feedback_language,
+        force_feedback_language=force_feedback_language,
+    )
+
+    return _serialize_answer_row(answer_row)
 
 
 @router.post("/{session_id}/answers/{answer_id}/tts", response_model=AnswerTtsOut)
@@ -900,11 +1536,12 @@ async def synthesize_answer_feedback_tts(
         score=float(answer_row["score"]),
         feedback=answer_row["feedback"],
     )
-    tts_audio_url = await asyncio.to_thread(
-        synthesize_feedback_audio,
-        answer_id=str(answer_row["id"]),
-        script=tts_script,
-    )
+    async with TTS_SEMAPHORE:
+        tts_audio_url = await asyncio.to_thread(
+            synthesize_feedback_audio,
+            answer_id=str(answer_row["id"]),
+            script=tts_script,
+        )
 
     return AnswerTtsOut(tts_script=tts_script, tts_audio_url=tts_audio_url)
 

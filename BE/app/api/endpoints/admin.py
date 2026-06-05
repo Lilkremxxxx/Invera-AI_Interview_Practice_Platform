@@ -234,10 +234,24 @@ async def admin_stats(
             (SELECT COUNT(*) FROM sessions WHERE status = 'COMPLETED') AS completed_sessions,
             (SELECT COUNT(*) FROM answers) AS total_answers,
             (SELECT ROUND(AVG(score)::numeric, 1)::float FROM answers WHERE score > 0) AS avg_score,
-            (SELECT COUNT(*) FROM questions WHERE user_id IS NULL) AS total_questions
+            (SELECT COUNT(*) FROM questions WHERE user_id IS NULL) AS total_questions,
+            (SELECT COUNT(DISTINCT user_id) FROM sessions) AS active_users,
+            (SELECT COALESCE(SUM(amount_vnd), 0)::int FROM payment_orders WHERE status = 'succeeded' AND paid_at IS NOT NULL) AS total_revenue
         """
     )
-    return dict(stats)
+    
+    role_rows = await db.fetch(
+        "SELECT role, COUNT(*)::int as count FROM questions WHERE user_id IS NULL GROUP BY role"
+    )
+    level_rows = await db.fetch(
+        "SELECT level, COUNT(*)::int as count FROM questions WHERE user_id IS NULL GROUP BY level"
+    )
+    
+    result = dict(stats)
+    result["role_distribution"] = {r["role"]: r["count"] for r in role_rows if r["role"]}
+    result["level_distribution"] = {r["level"]: r["count"] for r in level_rows if r["level"]}
+    return result
+
 
 
 @router.get("/users", response_model=list[AdminManagedUserOut])
@@ -473,9 +487,50 @@ async def admin_delete_user(
     if _is_primary_admin_email(target["email"]):
         raise HTTPException(status_code=400, detail="Không thể xóa tài khoản admin chính.")
 
+    # Retrieve user files and answer IDs for disk cleanup
+    user_files = await db.fetchrow(
+        "SELECT avatar_path, resume_path FROM users WHERE id = $1",
+        user_id
+    )
+    answer_rows = await db.fetch(
+        """
+        SELECT a.id::text AS answer_id
+        FROM answers a
+        JOIN sessions s ON a.session_id = s.id
+        WHERE s.user_id = $1
+        """,
+        user_id
+    )
+
+    # Perform file deletion on disk
+    import shutil
+    from app.services.profile_files import delete_public_file, delete_private_file
+
+    if user_files:
+        if user_files["avatar_path"]:
+            delete_public_file(user_files["avatar_path"])
+        if user_files["resume_path"]:
+            delete_private_file(user_files["resume_path"])
+
+    # Clean up the directories recursively
+    avatar_dir = settings.uploads_dir / "avatars" / user_id
+    if avatar_dir.exists():
+        shutil.rmtree(avatar_dir, ignore_errors=True)
+
+    resume_dir = settings.private_uploads_dir / "resumes" / user_id
+    if resume_dir.exists():
+        shutil.rmtree(resume_dir, ignore_errors=True)
+
+    # Delete all TTS audio files for the user's answers
+    for row in answer_rows:
+        ans_id = row["answer_id"]
+        tts_file = settings.uploads_dir / "interview-tts" / f"{ans_id}.wav"
+        tts_file.unlink(missing_ok=True)
+
     await db.execute("DELETE FROM users WHERE id = $1", user_id)
     await db.execute("DELETE FROM admin_invites WHERE email = $1", _normalize_email(target["email"]))
     return {"deleted": user_id, "email": target["email"]}
+
 
 
 @router.get("/users/{user_id}/resume")
@@ -755,9 +810,12 @@ async def admin_list_questions(
     major: Optional[str] = None,
     role: Optional[str] = None,
     level: Optional[str] = None,
+    search: Optional[str] = None,
+    page: Optional[int] = None,
+    size: int = 20,
 ):
     clauses: list[str] = ["user_id IS NULL"]
-    params: list[str] = []
+    params: list[object] = []
 
     if major:
         params.append(major)
@@ -768,13 +826,41 @@ async def admin_list_questions(
     if level:
         params.append(level)
         clauses.append(f"level = ${len(params)}")
+    if search:
+        params.append(f"%{search.strip().lower()}%")
+        clauses.append(
+            f"(LOWER(text) LIKE ${len(params)} OR LOWER(category) LIKE ${len(params)} OR EXISTS (SELECT 1 FROM unnest(tags) t WHERE LOWER(t) LIKE ${len(params)}))"
+        )
 
     where_sql = f"WHERE {' AND '.join(clauses)}"
-    rows = await db.fetch(
-        f"SELECT * FROM questions {where_sql} ORDER BY major, role, level, id",
-        *params,
-    )
-    return [localized_question_dict(r, include_ideal_answer=True) for r in rows]
+
+    if page is not None:
+        total = await db.fetchval(
+            f"SELECT COUNT(*) FROM questions {where_sql}",
+            *params,
+        )
+        offset = (page - 1) * size
+        params.extend([size, offset])
+        rows = await db.fetch(
+            f"SELECT * FROM questions {where_sql} ORDER BY major, role, level, id LIMIT ${len(params)-1} OFFSET ${len(params)}",
+            *params,
+        )
+        import math
+        pages = math.ceil(total / size)
+        return {
+            "items": [localized_question_dict(r, include_ideal_answer=True) for r in rows],
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages,
+        }
+    else:
+        rows = await db.fetch(
+            f"SELECT * FROM questions {where_sql} ORDER BY major, role, level, id",
+            *params,
+        )
+        return [localized_question_dict(r, include_ideal_answer=True) for r in rows]
+
 
 
 @router.post("/questions")
@@ -960,3 +1046,216 @@ async def admin_delete_question(
     if not row:
         raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại!")
     return {"deleted": question_id}
+
+
+async def sync_pending_payos_orders(db: asyncpg.Connection) -> None:
+    if not (settings.payos_client_id and settings.payos_api_key and settings.payos_checksum_key):
+        return
+
+    # Find pending payos orders in the last 3 days (limit to 20 to prevent performance bottlenecks)
+    pending_orders = await db.fetch(
+        """
+        SELECT provider_order_ref
+        FROM payment_orders
+        WHERE provider = 'payos' AND status = 'pending' AND created_at > NOW() - INTERVAL '3 days'
+        ORDER BY created_at DESC
+        LIMIT 20
+        """
+    )
+    if not pending_orders:
+        return
+
+    import asyncio
+    from app.services.payos import get_payment_link_information
+    from app.api.endpoints.billing import _mark_payment_result, send_payment_success_email
+
+    async def sync_one(order_ref: str):
+        try:
+            payment_info = await get_payment_link_information(
+                api_base_url=settings.payos_api_base_url,
+                client_id=settings.payos_client_id or "",
+                api_key=settings.payos_api_key or "",
+                order_id_or_code=order_ref,
+            )
+            payos_status = payment_info.get("status")
+            if payos_status == "PAID":
+                updated = await _mark_payment_result(
+                    db,
+                    provider_order_ref=order_ref,
+                    status="succeeded",
+                    provider_transaction_no=payment_info.get("id") or (payment_info.get("transactions") and payment_info["transactions"][0].get("reference")) or None,
+                    provider_response_code="00",
+                    raw_payload=payment_info,
+                )
+                if updated:
+                    try:
+                        await send_payment_success_email(
+                            recipient=updated["email"],
+                            plan_tier=updated["plan_tier"],
+                            billing_period=updated["billing_period"],
+                            amount_vnd=updated["amount_vnd"],
+                            order_ref=updated["provider_order_ref"],
+                        )
+                    except Exception as exc:
+                        import logging
+                        logging.getLogger(__name__).warning("Payment success email failed in sync pending: %s", exc)
+            elif payos_status in ("CANCELLED", "EXPIRED"):
+                await _mark_payment_result(
+                    db,
+                    provider_order_ref=order_ref,
+                    status="failed",
+                    provider_transaction_no=None,
+                    provider_response_code="01",
+                    raw_payload=payment_info,
+                )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Failed to sync pending PayOS order %s: %s", order_ref, exc)
+
+    await asyncio.gather(*(sync_one(row["provider_order_ref"]) for row in pending_orders))
+
+
+@router.get("/revenue")
+async def admin_revenue(
+    db: asyncpg.Connection = Depends(get_db),
+    _: UserOut = Depends(require_admin),
+):
+    try:
+        await sync_pending_payos_orders(db)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Failed to sync pending PayOS orders: %s", exc)
+
+    daily_rows = await db.fetch(
+        """
+        SELECT 
+            DATE(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::text AS day,
+            SUM(amount_vnd)::int AS revenue
+        FROM payment_orders
+        WHERE status = 'succeeded' AND paid_at IS NOT NULL
+        GROUP BY day
+        ORDER BY day DESC
+        LIMIT 30
+        """
+    )
+    monthly_rows = await db.fetch(
+        """
+        SELECT 
+            TO_CHAR(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
+            SUM(amount_vnd)::int AS revenue
+        FROM payment_orders
+        WHERE status = 'succeeded' AND paid_at IS NOT NULL
+        GROUP BY month
+        ORDER BY month DESC
+        """
+    )
+    total_val = await db.fetchval(
+        """
+        SELECT COALESCE(SUM(amount_vnd), 0)::int
+        FROM payment_orders
+        WHERE status = 'succeeded' AND paid_at IS NOT NULL
+        """
+    )
+    
+    return {
+        "daily": [{"day": r["day"], "revenue": r["revenue"]} for r in reversed(daily_rows)],
+        "monthly": [{"month": r["month"], "revenue": r["revenue"]} for r in reversed(monthly_rows)],
+        "total_revenue": total_val,
+    }
+
+
+@router.get("/sessions")
+async def admin_list_sessions(
+    db: asyncpg.Connection = Depends(get_db),
+    _: UserOut = Depends(require_admin),
+    limit: int = 50,
+    offset: int = 0,
+    search: Optional[str] = None,
+    major: Optional[str] = None,
+    role: Optional[str] = None,
+    level: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    clauses: list[str] = []
+    params: list[object] = []
+
+    if major:
+        params.append(major)
+        clauses.append(f"s.major = ${len(params)}")
+    if role:
+        params.append(role)
+        clauses.append(f"s.role = ${len(params)}")
+    if level:
+        params.append(level)
+        clauses.append(f"s.level = ${len(params)}")
+    if status:
+        params.append(status)
+        clauses.append(f"s.status = ${len(params)}")
+    if search:
+        params.append(f"%{search.strip().lower()}%")
+        clauses.append(
+            f"(LOWER(u.email) LIKE ${len(params)} OR LOWER(COALESCE(u.full_name, '')) LIKE ${len(params)})"
+        )
+
+    where_sql = ""
+    if clauses:
+        where_sql = f"WHERE {' AND '.join(clauses)}"
+
+    # 1. Get total count
+    total = await db.fetchval(
+        f"""
+        SELECT COUNT(*) 
+        FROM sessions s
+        LEFT JOIN users u ON s.user_id = u.id
+        {where_sql}
+        """,
+        *params,
+    )
+
+    # 2. Get paginated rows
+    params.extend([limit, offset])
+    rows = await db.fetch(
+        f"""
+        SELECT
+            s.id, s.user_id, s.major, s.role, s.level, s.mode, s.status,
+            s.created_at, s.completed_at, s.time_limit_minutes,
+            u.email AS user_email, u.full_name AS user_full_name,
+            COUNT(DISTINCT sq.question_id)::int AS question_count,
+            AVG(a.score)::float AS avg_score
+        FROM sessions s
+        LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN session_question_sets sq ON sq.session_id = s.id
+        LEFT JOIN answers a ON a.session_id = s.id
+        {where_sql}
+        GROUP BY s.id, u.email, u.full_name
+        ORDER BY s.created_at DESC
+        LIMIT ${len(params)-1} OFFSET ${len(params)}
+        """,
+        *params,
+    )
+
+    items = []
+    for r in rows:
+        items.append({
+            "id": str(r["id"]),
+            "user_id": str(r["user_id"]),
+            "user_email": r["user_email"],
+            "user_full_name": r["user_full_name"],
+            "major": r["major"],
+            "role": r["role"],
+            "level": r["level"],
+            "mode": r["mode"],
+            "status": r["status"],
+            "created_at": r["created_at"],
+            "completed_at": r["completed_at"],
+            "question_count": r["question_count"],
+            "avg_score": round(r["avg_score"], 1) if r["avg_score"] is not None else None,
+            "time_limit_minutes": r["time_limit_minutes"],
+        })
+
+    return {
+        "items": items,
+        "total": total,
+    }
+
+

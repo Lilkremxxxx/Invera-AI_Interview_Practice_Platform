@@ -202,12 +202,12 @@ async def _ensure_primary_admin_privilege(db: asyncpg.Connection, email: str) ->
         SET is_admin = TRUE,
             updated_at = NOW()
         WHERE email = $1
-          AND provider = 'local'
           AND email_verified = TRUE
           AND is_admin = FALSE
         """,
         _normalize_email(email),
     )
+
 
 
 async def _activate_admin_invite_if_needed(db: asyncpg.Connection, email: str) -> bool:
@@ -632,11 +632,8 @@ async def process_oauth_login(
 ) -> str:
     """Chỉ cho OAuth đăng nhập vào account đã tồn tại và trả về JWT."""
     normalized_email = _normalize_email(email)
-    if _is_primary_admin_email(normalized_email) or await _pending_admin_invite_exists(db, normalized_email):
-        raise HTTPException(
-            status_code=403,
-            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
-        )
+    await _activate_admin_invite_if_needed(db, normalized_email)
+    await _ensure_primary_admin_privilege(db, normalized_email)
 
     user = await db.fetchrow("SELECT id, email, is_admin FROM users WHERE email = $1", normalized_email)
     
@@ -647,11 +644,6 @@ async def process_oauth_login(
                 "Tài khoản chưa tồn tại trong hệ thống. "
                 "Vui lòng đăng ký trước, sau đó mới đăng nhập bằng Google hoặc GitHub."
             ),
-        )
-    if user["is_admin"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
         )
 
     # Update provider info if needed (link account)
@@ -685,11 +677,8 @@ async def process_oauth_signup(
     full_name: Optional[str] = None,
 ) -> dict[str, object]:
     normalized_email = _normalize_email(email)
-    if _is_primary_admin_email(normalized_email) or await _pending_admin_invite_exists(db, normalized_email):
-        raise HTTPException(
-            status_code=403,
-            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
-        )
+    await _activate_admin_invite_if_needed(db, normalized_email)
+    await _ensure_primary_admin_privilege(db, normalized_email)
 
     user = await db.fetchrow(
         """
@@ -700,15 +689,10 @@ async def process_oauth_signup(
         normalized_email,
     )
 
-    if user and user["is_admin"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Tài khoản admin chỉ được phép đăng nhập bằng email và mật khẩu.",
-        )
-
     if user and user["email_verified"]:
         access_token = await process_oauth_login(db, normalized_email, provider, provider_id, full_name)
         return {"action": "login", "access_token": access_token}
+
 
     if user is None:
         generated_password = hash_password(secrets.token_urlsafe(32))

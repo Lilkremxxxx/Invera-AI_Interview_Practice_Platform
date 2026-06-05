@@ -128,13 +128,7 @@ def evaluate_qna_scope(
     if has_interview_signal or has_technical_signal:
         return QnaScopeDecision(allowed=True, language=language)
 
-    if has_context and len(normalized_message.split()) <= 14:
-        return QnaScopeDecision(allowed=True, language=language)
-
-    if len(normalized_message.split()) <= 4:
-        return QnaScopeDecision(allowed=False, language=language)
-
-    return QnaScopeDecision(allowed=False, language=language)
+    return QnaScopeDecision(allowed=True, language=language)
 
 
 def qna_scope_refusal(
@@ -276,15 +270,14 @@ async def answer_qna(
 You are Invera QnA, a bounded interview-answer coach.
 
 Allowed scope:
-- interview answers, rubric-based feedback, answer improvement
-- interview-ready explanations of technical concepts
-- selected quoted text
-- uploaded DOCX lesson or study content
+- Interview answers, rubric-based feedback, answer improvement.
+- Explaining technical concepts (e.g. REST API, LangGraph, Python, databases, system design) in a way that helps with technical interviews or software engineering.
+- Quoted text or uploaded document context.
 
 Blocked scope:
-- casual chat, greetings, jokes, self-talk, insults, unrelated life topics, entertainment, or random requests
+- Casual talk, greetings, jokes, stories, weather, horoscopes, games, unrelated life advice, or nonsensical gibberish.
 
-If the request is outside scope, return JSON that uses the refusal message exactly in the user's language and do not answer the off-topic content.
+If the request is outside the allowed scope (e.g., completely off-topic or gibberish), you MUST return JSON using the provided out_of_scope_refusal message as the summary and direct_answer. Do not answer off-topic content.
 
 Return STRICT JSON only:
 {

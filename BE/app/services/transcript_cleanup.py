@@ -11,14 +11,18 @@ from app.services.deepseek_client import DeepSeekAPIError, create_chat_completio
 logger = logging.getLogger(__name__)
 
 
-def _cleanup_is_plausible(original: str, corrected: str) -> bool:
+def _cleanup_is_plausible(original: str, corrected: str, question: str = "") -> bool:
     original_clean = sanitize_user_text(original)
     corrected_clean = sanitize_user_text(corrected)
+    question_clean = sanitize_user_text(question)
+    
     if not corrected_clean:
         return False
 
     original_words = re.findall(r"\w+", original_clean, flags=re.UNICODE)
     corrected_words = re.findall(r"\w+", corrected_clean, flags=re.UNICODE)
+    question_words = re.findall(r"\w+", question_clean, flags=re.UNICODE)
+    
     if not original_words:
         return False
 
@@ -26,6 +30,31 @@ def _cleanup_is_plausible(original: str, corrected: str) -> bool:
         return False
     if len(corrected_clean) > max(len(original_clean) + 80, int(len(original_clean) * 1.7)):
         return False
+
+    # Check if corrected text is just copying the question
+    if question_clean:
+        corrected_norm = re.sub(r"\s+", "", corrected_clean.lower())
+        question_norm = re.sub(r"\s+", "", question_clean.lower())
+        
+        # If corrected is identical to the question
+        if corrected_norm == question_norm:
+            return False
+            
+        # If corrected is a large part of the question, but the original was not
+        if len(question_words) > 3:
+            if corrected_norm in question_norm and len(corrected_words) > len(original_words) + 2:
+                return False
+                
+            corrected_set = set(w.lower() for w in corrected_words)
+            question_set = set(w.lower() for w in question_words)
+            original_set = set(w.lower() for w in original_words)
+            
+            corrected_overlap = len(corrected_set.intersection(question_set)) / len(corrected_set) if corrected_set else 0
+            original_overlap = len(original_set.intersection(question_set)) / len(original_set) if original_set else 0
+            
+            if corrected_overlap > 0.85 and original_overlap < 0.5 and len(corrected_words) > len(original_words):
+                return False
+                
     return True
 
 
@@ -68,4 +97,5 @@ Return strict JSON only: {{"text": "corrected transcript"}}
         logger.warning("Transcript cleanup failed; using raw transcript: %s", exc)
         return original
 
-    return corrected if _cleanup_is_plausible(original, corrected) else original
+    return corrected if _cleanup_is_plausible(original, corrected, question) else original
+

@@ -15,6 +15,7 @@ from app.api.endpoints.qna import router as qna_router
 from app.api.endpoints.sessions import router as sessions_router
 from app.core.config import settings
 from app.db.session import create_pool, close_pool
+from app.services.deepseek_client import close_deepseek_client
 
 # Filter out Chrome DevTools Protocol requests from logs
 class EndpointFilter(logging.Filter):
@@ -156,6 +157,7 @@ async def startup_event():
             "016_add_additional_sessions.sql",
             "017_add_user_resume_and_cv_questions.sql",
             "018_add_session_evaluation_and_plan.sql",
+            "019_add_answer_telemetry.sql",
         ]
         async with pool.acquire() as conn:
             for migration in migrations:
@@ -172,6 +174,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     print("🛑 Shutting down server...")
+    await close_deepseek_client()
     await close_pool()
     print("✅ Server stopped!")
 

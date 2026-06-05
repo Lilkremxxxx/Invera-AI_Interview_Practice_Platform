@@ -65,6 +65,7 @@ class ScoringRequest:
     major: str = "technology"
     preferred_language: str = "en"
     force_language: bool = False
+    telemetry_data: dict[str, Any] | None = None
 
 
 def _tokenize(text: str) -> set[str]:
@@ -119,7 +120,7 @@ def _looks_like_gibberish(text: str) -> bool:
     alpha_chars = re.sub(r"[^a-zA-ZÀ-ỹ]", "", cleaned)
     diversity = len(unique_chars) / max(len(alpha_chars), 1)
 
-    return suspicious_ratio >= 0.6 or (len(alpha_chars) >= 18 and diversity < 0.28)
+    return suspicious_ratio >= 0.6 or (18 <= len(alpha_chars) < 45 and diversity < 0.28)
 
 
 def _detect_question_type(category: str, question_text: str) -> str:
@@ -422,6 +423,16 @@ Rules:
 - Do NOT calculate the overall score yourself. The overall score will be calculated programmatically in Python from the criteria scores and their weights.
 - The quick summary has two separate ideas: "summary" must summarize the candidate's answer, and "weakness_summary" must summarize missing or weak parts.
 - Write every field (summary, weakness_summary, evidence, missing, strengths, gaps, improvements, better_outline, follow_up) in {lang_name} only.
+
+### Non-Verbal Video Telemetry Evaluation (If present as candidate_video_telemetry):
+If the candidate's response was recorded with a webcam, you will see a `candidate_video_telemetry` object containing ratios from client-side tracking:
+- `gazeRatio` (0.0 to 1.0): Time candidate maintained eye contact with the camera. A ratio < 0.6 indicates looking away too often or reading.
+- `smileRatio` (0.0 to 1.0): Time candidate was smiling. Higher values (>0.2) show a friendly and positive demeanor.
+- `slouchRatio` (0.0 to 1.0): Time candidate sat with a slouched/slouching posture. A ratio > 0.3 indicates poor posture/slouching.
+- `handGestures` (integer >= 0): The count of hand gestures detected. Moderate count (5 to 15) suggests natural body language. 0 suggests stiffness. Extremely high suggests fidgeting or distraction.
+- `fidgetRatio` (0.0 to 1.0): Time candidate showed nervous repetitive fidgeting movements. A ratio > 0.3 indicates high nervousness.
+
+Use these metrics to influence the evaluation of the **Communication** criterion (and mention constructive non-verbal feedback in the `improvements` or `gaps` list). For example, if eye contact is poor (< 0.6), suggest looking directly at the camera. If slouching is high (> 0.3), suggest keeping a straight posture. Keep the tone professional, encouraging, and constructive.
 """.strip()
 
 
@@ -1040,11 +1051,7 @@ def _quick_guard_result(request: ScoringRequest) -> dict[str, Any] | None:
     if words < OFF_TOPIC_WORD_MINIMUM or not answer_tokens:
         return None
 
-    overlap_question = len(answer_tokens & question_tokens) / max(len(question_tokens), 1) if question_tokens else 0.0
-    overlap_ideal = len(answer_tokens & ideal_tokens) / max(len(ideal_tokens), 1) if ideal_tokens else 0.0
-    relevance = max(overlap_question, overlap_ideal)
-    if relevance < OFF_TOPIC_RELEVANCE_THRESHOLD:
-        return _off_topic_result(request, relevance)
+    # Relaxed off-topic check: let the LLM perform semantic relevance grading
     return None
 
 
@@ -1589,27 +1596,28 @@ async def _score_with_deepseek(request: ScoringRequest) -> tuple[float, str]:
                 },
             }
         )
-    user_payload = json.dumps(
-        {
-            "product": "Invera",
-            "objective": "Evaluate an interview answer and explain how to improve it for an actual interviewer.",
-            "industry_major": request.major,
-            "candidate_context": {
-                "target_role": request.role,
-                "seniority_level": request.level,
-            },
-            "question": {
-                "text": request.question_text,
-                "category": request.category,
-                "difficulty": request.difficulty,
-                "question_type_hint": task_type,
-            },
-            "reference_answer_anchor": request.ideal_answer,
-            "candidate_answer": request.answer_text,
-            "rubric_criteria": criteria_payload,
+    user_payload_dict = {
+        "product": "Invera",
+        "objective": "Evaluate an interview answer and explain how to improve it for an actual interviewer.",
+        "industry_major": request.major,
+        "candidate_context": {
+            "target_role": request.role,
+            "seniority_level": request.level,
         },
-        ensure_ascii=False,
-    )
+        "question": {
+            "text": request.question_text,
+            "category": request.category,
+            "difficulty": request.difficulty,
+            "question_type_hint": task_type,
+        },
+        "reference_answer_anchor": request.ideal_answer,
+        "candidate_answer": request.answer_text,
+        "rubric_criteria": criteria_payload,
+    }
+    if request.telemetry_data:
+        user_payload_dict["candidate_video_telemetry"] = request.telemetry_data
+
+    user_payload = json.dumps(user_payload_dict, ensure_ascii=False)
     response = await create_chat_completion(
         system_prompt=_rubric_prompt(task_type, request.level, request.preferred_language, request.major, request.role),
         user_prompt=user_payload,
@@ -1662,6 +1670,7 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
         major=request.major,
         preferred_language=normalize_supported_language(preferred_language, request.preferred_language),
         force_language=request.force_language,
+        telemetry_data=request.telemetry_data,
     )
 
     if not effective_request.answer_text.strip():

@@ -190,40 +190,46 @@ def compute_entitlement(
         else:
             base_limit = 5
 
-        total_limit = base_limit + additional_sessions
+        remaining_base = max(0, base_limit - sessions_used)
+        total_limit = sessions_used + remaining_base + additional_sessions
+        can_start = (sessions_used < base_limit) or (additional_sessions > 0)
         return {
             "plan_tier": normalized_tier,
             "plan_status": ACTIVE_STATUS,
             "plan_billing_period": normalized_period,
             "session_limit": total_limit,
             "sessions_used": sessions_used,
-            "can_start_new_session": sessions_used < total_limit,
+            "can_start_new_session": can_start,
             "can_use_qna": normalized_tier in QNA_ENABLED_PLAN_TIERS,
             "is_billing_exempt": False,
         }
 
     if normalized_tier in PURCHASABLE_PLAN_TIERS:
-        total_limit = TRIAL_SESSION_LIMIT + additional_sessions
+        remaining_base = max(0, TRIAL_SESSION_LIMIT - sessions_used)
+        total_limit = sessions_used + remaining_base + additional_sessions
+        can_start = (sessions_used < TRIAL_SESSION_LIMIT) or (additional_sessions > 0)
         return {
             "plan_tier": normalized_tier,
             "plan_status": EXPIRED_STATUS,
             "plan_billing_period": normalized_period,
             "session_limit": total_limit,
             "sessions_used": sessions_used,
-            "can_start_new_session": sessions_used < total_limit,
+            "can_start_new_session": can_start,
             "can_use_qna": False,
             "is_billing_exempt": False,
         }
 
-    trial_limit = TRIAL_SESSION_LIMIT + additional_sessions
-    trial_status = ACTIVE_STATUS if sessions_used < trial_limit else TRIAL_EXHAUSTED_STATUS
+    remaining_base = max(0, TRIAL_SESSION_LIMIT - sessions_used)
+    trial_limit = sessions_used + remaining_base + additional_sessions
+    trial_status = ACTIVE_STATUS if (sessions_used < TRIAL_SESSION_LIMIT or additional_sessions > 0) else TRIAL_EXHAUSTED_STATUS
+    can_start = (sessions_used < TRIAL_SESSION_LIMIT) or (additional_sessions > 0)
     return {
         "plan_tier": FREE_TRIAL_PLAN,
         "plan_status": trial_status,
         "plan_billing_period": None,
         "session_limit": trial_limit,
         "sessions_used": sessions_used,
-        "can_start_new_session": sessions_used < trial_limit,
+        "can_start_new_session": can_start,
         "can_use_qna": False,
         "is_billing_exempt": False,
     }

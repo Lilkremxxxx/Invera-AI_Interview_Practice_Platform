@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -10,6 +11,28 @@ from app.core.config import settings
 
 class DeepSeekAPIError(RuntimeError):
     pass
+
+
+_clients: dict[float, httpx.AsyncClient] = {}
+_clients_lock = asyncio.Lock()
+
+
+async def _get_deepseek_client(timeout_seconds: float) -> httpx.AsyncClient:
+    async with _clients_lock:
+        client = _clients.get(timeout_seconds)
+        if client is None or client.is_closed:
+            client = httpx.AsyncClient(timeout=timeout_seconds)
+            _clients[timeout_seconds] = client
+        return client
+
+
+async def close_deepseek_client() -> None:
+    async with _clients_lock:
+        clients = list(_clients.values())
+        _clients.clear()
+
+    for client in clients:
+        await client.aclose()
 
 
 async def create_chat_completion(
@@ -45,9 +68,9 @@ async def create_chat_completion(
     endpoint = settings.deepseek_api_base_url.rstrip("/") + "/chat/completions"
 
     try:
-        async with httpx.AsyncClient(timeout=timeout_seconds or settings.deepseek_timeout_seconds) as client:
-            response = await client.post(endpoint, headers=headers, json=payload)
-            response.raise_for_status()
+        client = await _get_deepseek_client(timeout_seconds or settings.deepseek_timeout_seconds)
+        response = await client.post(endpoint, headers=headers, json=payload)
+        response.raise_for_status()
     except httpx.HTTPStatusError as exc:
         body = exc.response.text[:800]
         raise DeepSeekAPIError(

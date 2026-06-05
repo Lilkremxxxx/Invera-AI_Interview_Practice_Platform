@@ -112,13 +112,24 @@ class Settings:
     whisper_en_model_name: str = os.getenv("WHISPER_EN_MODEL_NAME", "small.en")
     interview_stt_language: str = os.getenv("INTERVIEW_STT_LANGUAGE", "auto")
     interview_stt_max_upload_mb: int = int(os.getenv("INTERVIEW_STT_MAX_UPLOAD_MB", "25"))
+    interview_stt_concurrency: int = int(os.getenv("INTERVIEW_STT_CONCURRENCY", "1"))
+    interview_stt_timeout_seconds: float = float(os.getenv("INTERVIEW_STT_TIMEOUT_SECONDS", "180"))
     interview_stt_cleanup_enabled: bool = os.getenv("INTERVIEW_STT_CLEANUP_ENABLED", "true").lower() == "true"
     interview_stt_cleanup_max_tokens: int = int(os.getenv("INTERVIEW_STT_CLEANUP_MAX_TOKENS", "160"))
+    interview_stt_realtime_enabled: bool = os.getenv("INTERVIEW_STT_REALTIME_ENABLED", "true").lower() == "true"
+    interview_stt_realtime_chunk_ms: int = int(os.getenv("INTERVIEW_STT_REALTIME_CHUNK_MS", "1250"))
+    interview_stt_realtime_min_chunk_bytes: int = int(os.getenv("INTERVIEW_STT_REALTIME_MIN_CHUNK_BYTES", "4096"))
+    vosk_runtime_root_raw: str | None = os.getenv("VOSK_RUNTIME_ROOT")
+    vosk_model_vi_dir_name: str = os.getenv("VOSK_MODEL_VI_DIR_NAME", "vosk-model-small-vn-0.4")
+    vosk_model_en_dir_name: str = os.getenv("VOSK_MODEL_EN_DIR_NAME", "vosk-model-small-en-us-0.15")
     whisper_runtime_root_raw: str | None = os.getenv("WHISPER_RUNTIME_ROOT")
     interview_tts_enabled: bool = os.getenv("INTERVIEW_TTS_ENABLED", "true").lower() == "true"
     interview_tts_engine: str = os.getenv("INTERVIEW_TTS_ENGINE", "vieneu").lower()
     interview_tts_english_engine: str = os.getenv("INTERVIEW_TTS_ENGLISH_ENGINE", "kokoro").lower()
     interview_tts_script_language: str = os.getenv("INTERVIEW_TTS_SCRIPT_LANGUAGE", "vi").lower()
+    interview_tts_concurrency: int = int(os.getenv("INTERVIEW_TTS_CONCURRENCY", "1"))
+    interview_tts_max_chars: int = int(os.getenv("INTERVIEW_TTS_MAX_CHARS", "700"))
+    deepseek_scoring_concurrency: int = int(os.getenv("DEEPSEEK_SCORING_CONCURRENCY", "3"))
     kitten_tts_voice: str = os.getenv("KITTEN_TTS_VOICE", "expr-voice-2-f")
     kitten_tts_speed: float = float(os.getenv("KITTEN_TTS_SPEED", "1.25"))
     kitten_tts_sample_rate: int = int(os.getenv("KITTEN_TTS_SAMPLE_RATE", "24000"))
@@ -155,6 +166,28 @@ class Settings:
         return self.project_root / ".runtime" / "whisper.cpp"
 
     @cached_property
+    def vosk_runtime_root(self) -> Path:
+        if self.vosk_runtime_root_raw:
+            return Path(self.vosk_runtime_root_raw)
+        backend_path = self.backend_dir / ".runtime" / "vosk"
+        if backend_path.exists():
+            return backend_path
+        return self.project_root / ".runtime" / "vosk"
+
+
+    @cached_property
+    def vosk_model_vi_path(self) -> Path:
+        large_path = self.vosk_runtime_root / "vosk-model-vn-0.4"
+        if large_path.exists():
+            return large_path
+        return self.vosk_runtime_root / self.vosk_model_vi_dir_name
+
+
+    @cached_property
+    def vosk_model_en_path(self) -> Path:
+        return self.vosk_runtime_root / self.vosk_model_en_dir_name
+
+    @cached_property
     def kokoro_runtime_root(self) -> Path:
         return self.project_root / ".runtime" / "kokoro"
 
@@ -184,7 +217,11 @@ class Settings:
 
     @cached_property
     def whisper_model_path(self) -> Path:
+        medium_path = self.whisper_models_dir / "ggml-medium.bin"
+        if medium_path.exists():
+            return medium_path
         return self.whisper_models_dir / f"ggml-{self.whisper_model_name}.bin"
+
 
     @cached_property
     def whisper_en_model_path(self) -> Path:

@@ -32,6 +32,53 @@ def _extract_priority_improvement(feedback: str) -> str | None:
     return None
 
 
+def _extract_priority_improvements(feedback: str, *, limit: int = 3) -> list[str]:
+    improvements: list[str] = []
+    in_priority_section = False
+
+    for line in feedback.splitlines():
+        cleaned = line.strip()
+        if not cleaned:
+            continue
+
+        lower = cleaned.lower().rstrip(":")
+        if lower in {"priority improvements", "ưu tiên cải thiện", "ưu tiên cải thiện chính"}:
+            in_priority_section = True
+            continue
+        if in_priority_section and cleaned.endswith(":"):
+            break
+
+        if not in_priority_section:
+            continue
+
+        item = cleaned.lstrip("-• ").strip()
+        if item:
+            improvements.append(item.rstrip("."))
+        if len(improvements) >= limit:
+            break
+
+    if improvements:
+        return improvements
+
+    fallback = _extract_priority_improvement(feedback)
+    return [fallback] if fallback else []
+
+
+def _trim_to_sentence_boundary(text: str, max_chars: int) -> str:
+    if max_chars <= 0 or len(text) <= max_chars:
+        return text
+
+    clipped = text[:max_chars].rstrip()
+    sentence_end = max(clipped.rfind("."), clipped.rfind("!"), clipped.rfind("?"))
+    if sentence_end >= max_chars * 0.55:
+        return clipped[: sentence_end + 1].strip()
+
+    word_end = clipped.rfind(" ")
+    if word_end >= max_chars * 0.55:
+        return f"{clipped[:word_end].rstrip()}."
+    return f"{clipped.rstrip('.')}."
+
+
 def _english_score_message(score: float) -> str:
     if score >= 8.5:
         return "This is a strong interview answer. Keep the clear structure and concrete judgment."
@@ -78,7 +125,34 @@ def build_feedback_tts_script(*, score: float, feedback: str, language: str | No
     ]
 
     if getattr(settings, "interview_tts_script_language", "vi") != "bilingual":
-        return _normalize_script(" ".join(vietnamese_parts if script_language == "vi" else english_parts))
+        full_script = _normalize_script(" ".join(vietnamese_parts if script_language == "vi" else english_parts))
+        max_chars = int(getattr(settings, "interview_tts_max_chars", 0) or 0)
+        if max_chars <= 0 or len(full_script) <= max_chars:
+            return full_script
+
+        improvements = _extract_priority_improvements(feedback)
+        if script_language == "vi":
+            score_part = f"Điểm rubric của bạn là {score_text} trên 10."
+            score_message = _vietnamese_score_message(score)
+            priority_label = "Ưu tiên cải thiện"
+        else:
+            score_part = f"Your rubric score is {score_text} out of 10."
+            score_message = _english_score_message(score)
+            priority_label = "Priority improvements"
+        priority_part = f"{priority_label}: " + "; ".join(improvements) + "." if improvements else ""
+
+        if improvements:
+            for count in range(len(improvements), 0, -1):
+                priority_part = f"{priority_label}: " + "; ".join(improvements[:count]) + "."
+                compact_script = _normalize_script(" ".join([score_part, score_message, priority_part]))
+                if len(compact_script) <= max_chars:
+                    return compact_script
+                compact_script = _normalize_script(" ".join([score_part, priority_part]))
+                if len(compact_script) <= max_chars:
+                    return compact_script
+
+        compact_script = _normalize_script(" ".join([score_part, score_message, priority_part]))
+        return _trim_to_sentence_boundary(compact_script, max_chars)
 
     return _normalize_script(
         " ".join(

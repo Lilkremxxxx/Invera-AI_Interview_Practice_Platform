@@ -8,6 +8,7 @@ class AnswerSubmit(BaseModel):
     question_id: int
     answer_text: str
     output_language: str | None = None
+    telemetry_data: Optional[dict] = None
 
 
 class AnswerOut(BaseModel):
@@ -17,6 +18,7 @@ class AnswerOut(BaseModel):
     answer_text: str
     score: float
     feedback: str
+    telemetry_data: Optional[dict] = None
     tts_script: Optional[str] = None
     tts_audio_url: Optional[str] = None
     submitted_at: datetime
