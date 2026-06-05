@@ -82,7 +82,7 @@ describe("NewSession configuration", () => {
     });
   });
 
-  it("shows text and voice only and calculates five minutes per question", async () => {
+  it("shows voice and camera only and calculates five minutes per question", async () => {
     render(
       <MemoryRouter initialEntries={["/app/new"]}>
         <Routes>
@@ -98,9 +98,9 @@ describe("NewSession configuration", () => {
     fireEvent.click(screen.getByText(/junior/i));
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
 
-    expect(screen.getByRole("button", { name: /text/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^text$/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /voice/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /video/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /camera/i })).toBeInTheDocument();
     expect(screen.getByText(/5 min\s*\/\s*question/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^10$/ }));

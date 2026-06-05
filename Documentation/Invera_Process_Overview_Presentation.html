@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invera AI - Comprehensive 6-Stage Process Roadmap</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           CSS VARIABLES (NEON CYBER THEME)
+           =========================================== */
+        :root {
+            --bg-primary: #020617;       /* Deep slate black */
+            --bg-secondary: #0f172a;     /* Saturated slate gray */
+            --bg-card: rgba(15, 23, 42, 0.65);
+            --text-primary: #f8fafc;     /* Clean white */
+            --text-secondary: #94a3b8;   /* Muted cool gray */
+            --accent-cyan: #06b6d4;      /* Glowing cyan */
+            --accent-magenta: #d946ef;   /* Glowing magenta */
+            --accent-glow: rgba(6, 182, 212, 0.2);
+            --border-color: rgba(255, 255, 255, 0.08);
+
+            /* Typography Scaling */
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --title-size: clamp(1.8rem, 5vw, 3.8rem);
+            --h2-size: clamp(1.3rem, 3vw, 2.2rem);
+            --h3-size: clamp(1rem, 1.8vw, 1.4rem);
+            --body-size: clamp(0.72rem, 1.25vw, 0.98rem);
+            --small-size: clamp(0.62rem, 1vw, 0.8rem);
+
+            /* Spacing Scaling */
+            --slide-padding: clamp(1.5rem, 3.5vw, 3.5rem);
+            --content-gap: clamp(0.8rem, 1.8vh, 1.8rem);
+            --element-gap: clamp(0.35rem, 0.8vh, 0.8rem);
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        /* ===========================================
+           BASE RESET & VIEWPORT SETUP
+           =========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+            font-family: var(--font-body);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* Ambient effects */
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image:
+                linear-gradient(rgba(6, 182, 212, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .gradient-glows {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background:
+                radial-gradient(ellipse at 10% 10%, rgba(6, 182, 212, 0.09) 0%, transparent 40%),
+                radial-gradient(ellipse at 90% 90%, rgba(217, 70, 239, 0.06) 0%, transparent 40%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Slide Layout */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 3;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+            gap: var(--content-gap);
+        }
+
+        /* ===========================================
+           PERSISTENT UI CONTROLS
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            z-index: 100;
+            width: 0;
+            transition: width 0.2s ease-out;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.8rem, 1.5vw, 1.8rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 99;
+        }
+
+        .nav-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            border: 1px solid var(--text-secondary);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            padding: 0;
+        }
+
+        .nav-dot:hover {
+            border-color: var(--accent-cyan);
+            transform: scale(1.3);
+        }
+
+        .nav-dot.active {
+            background-color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 6px var(--accent-cyan);
+            transform: scale(1.4);
+        }
+
+        .nav-header {
+            position: fixed;
+            top: 15px;
+            left: var(--slide-padding);
+            right: var(--slide-padding);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 90;
+            pointer-events: none;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+            color: var(--text-primary);
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: auto;
+        }
+
+        .logo-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--accent-cyan);
+            animation: pulse 2s infinite;
+        }
+
+        .deck-info {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ===========================================
+           COMPONENTS
+           =========================================== */
+        .title-display {
+            font-family: var(--font-display);
+            font-size: var(--title-size);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.015em;
+        }
+
+        .title-gradient {
+            background: linear-gradient(135deg, var(--accent-cyan) 20%, var(--accent-magenta) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-tag {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-tag::before {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 1px;
+            background-color: var(--accent-cyan);
+        }
+
+        .slide-heading {
+            font-family: var(--font-display);
+            font-size: var(--h2-size);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .body-desc {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.45;
+            max-width: 900px;
+        }
+
+        /* Grid Cards */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: clamp(0.6rem, 1.5vh, 1.2rem);
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .cyber-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: clamp(0.9rem, 1.8vh, 1.4rem);
+            display: flex;
+            flex-direction: column;
+            gap: var(--element-gap);
+            transition: all 0.3s var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .cyber-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .cyber-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(6, 182, 212, 0.25);
+            box-shadow: 0 8px 20px -8px rgba(6, 182, 212, 0.15);
+        }
+
+        .cyber-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-number {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: var(--h3-size);
+            font-weight: 600;
+        }
+
+        .card-text {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Mono highlights */
+        .highlight-box {
+            background-color: rgba(6, 182, 212, 0.025);
+            border-left: 2px solid var(--accent-cyan);
+            padding: clamp(0.6rem, 1.2vh, 1rem);
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-primary);
+            border-radius: 0 6px 6px 0;
+            line-height: 1.4;
+        }
+
+        /* Split Columns Layout */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1.2rem, 4vw, 3rem);
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--content-gap);
+        }
+
+        .right-col {
+            background-color: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: clamp(1.1rem, 2.5vh, 1.8rem);
+            display: flex;
+            flex-direction: column;
+            gap: var(--content-gap);
+            backdrop-filter: blur(6px);
+        }
+
+        /* Statistics elements */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(0.6rem, 1.5vh, 1.1rem);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: clamp(1.3rem, 3.5vh, 2.1rem);
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-label {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Tables */
+        .slide-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--body-size);
+        }
+
+        .slide-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--accent-cyan);
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            text-transform: uppercase;
+        }
+
+        .slide-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .slide-table tr:hover td {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* STAGGERED REVEALS */
+        .reveal {
+            opacity: 0;
+            transform: translateY(15px);
+            transition:
+                opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-20px);
+            transition:
+                opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.97);
+            transition:
+                opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal,
+        .slide.visible .reveal-left,
+        .slide.visible .reveal-scale {
+            opacity: 1;
+            transform: translate(0) scale(1);
+        }
+
+        .slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .slide.visible .reveal:nth-child(2) { transition-delay: 0.12s; }
+        .slide.visible .reveal:nth-child(3) { transition-delay: 0.18s; }
+        .slide.visible .reveal:nth-child(4) { transition-delay: 0.25s; }
+        .slide.visible .reveal:nth-child(5) { transition-delay: 0.32s; }
+
+        .slide.visible .cyber-card:nth-child(1) { transition-delay: 0.08s; }
+        .slide.visible .cyber-card:nth-child(2) { transition-delay: 0.15s; }
+        .slide.visible .cyber-card:nth-child(3) { transition-delay: 0.22s; }
+        .slide.visible .cyber-card:nth-child(4) { transition-delay: 0.28s; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+        }
+
+        .keyboard-hint {
+            position: fixed;
+            bottom: 15px;
+            left: var(--slide-padding);
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            opacity: 0.5;
+            z-index: 90;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .key-btn {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: 500;
+        }
+
+        /* RESPONSIVE LAYOUT */
+        @media (max-height: 680px) {
+            :root {
+                --slide-padding: clamp(0.8rem, 2.5vw, 1.8rem);
+                --content-gap: clamp(0.4rem, 1.2vh, 1.1rem);
+                --title-size: clamp(1.4rem, 3.5vw, 2.2rem);
+                --h2-size: clamp(1rem, 2.2vw, 1.5rem);
+            }
+            .keyboard-hint { display: none; }
+        }
+
+        @media (max-width: 850px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+            .right-col {
+                padding: 0.9rem;
+            }
+            .nav-dots {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar"></div>
+    <div class="cyber-grid"></div>
+    <div class="gradient-glows"></div>
+
+    <!-- Persistent Header -->
+    <header class="nav-header">
+        <div class="logo-text">
+            <div class="logo-dot"></div>
+            INVERA AI
+        </div>
+        <div class="deck-info">IB1902 · GROUP 5 · PROCESS BLUEPRINT</div>
+    </header>
+
+    <!-- SLIDE 1: Cover Page -->
+    <section class="slide">
+        <div class="slide-content" style="align-items: center; text-align: center;">
+            <div class="section-tag reveal">Product Development Cycle</div>
+            <h1 class="title-display reveal"><span class="title-gradient">INVERA AI</span><br>Comprehensive Process Blueprint</h1>
+            <p class="body-desc reveal" style="max-width: 650px; margin: 0 auto;">
+                A rigorous slide-by-slide analysis of the 6-stage product journey from ideation and definition, through technical prototyping and detailed design, to validation and market commercialization.
+            </p>
+            <div class="highlight-box reveal" style="max-width: 550px; text-align: center; border-left: none; border-bottom: 2px solid var(--accent-cyan);">
+                Class IB1902 co-founders: Bằng (CEO) · Tuấn (CTO) · Nhi (CPO) · Minh (CMO)
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 2: Agenda/Overview -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Agenda</div>
+            <h2 class="slide-heading reveal">Presentation Roadmap</h2>
+            <p class="body-desc reveal">
+                Our analysis is structured to detail each step of the product development lifecycle, highlighting specific engineering, customer validation, and financial milestones.
+            </p>
+            <div class="grid-layout reveal-scale">
+                <div class="cyber-card">
+                    <span class="card-number">STEP 01 - 02</span>
+                    <h3 class="card-title">Concept & Sizing</h3>
+                    <p class="card-text">Nhi's parts: Exploration of pain points, board pitching, TAM-SAM-SOM, and business case outline.</p>
+                </div>
+                <div class="cyber-card">
+                    <span class="card-number">STEP 03</span>
+                    <h3 class="card-title">Prototyping & MVP</h3>
+                    <p class="card-text">Tuấn's parts: Technology stack setup, running local tests, survey analysis, and GTM planning.</p>
+                </div>
+                <div class="cyber-card">
+                    <span class="card-number">STEP 04</span>
+                    <h3 class="card-title">Detailed Design</h3>
+                    <p class="card-text">Tuấn's parts: Relational database schema, migrations, DeepSeek AI rubric prompts, and API contracts.</p>
+                </div>
+                <div class="cyber-card">
+                    <span class="card-number">STEP 05 - 06</span>
+                    <h3 class="card-title">Validation & Launch</h3>
+                    <p class="card-text">Group parts: Unit tests, customer validation, financial modeling, billing systems, and live operations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 1: EXPLORATION & CONCEPT PITCHING
+         ========================================================================= -->
+
+    <!-- SLIDE 3: Step 1 - Exploration of Graduate Pain Points (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 1 · Ideation</div>
+            <h2 class="slide-heading reveal">Exploration of Graduate Pain Points</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">The "Interview Gap" in Vietnam</h3>
+                    <p class="body-desc">
+                        Vietnamese final-year students and fresh graduates face an intense employment market but lack the resources to practice mock interviews. Human coaching is expensive (cost-sensitive audience), and feedback is highly subjective.
+                    </p>
+                    <div class="highlight-box">
+                        Target users: Entry-level and Intern candidates in IT, Finance, and Business/Marketing.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Identified "Pain Points"</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>1. Cost Obstacles:</strong> Traditional 1-on-1 expert mock interviews cost between 500,000 VND and 1,500,000 VND per hour.</li>
+                        <li><strong>2. Lack of Standardization:</strong> Reviewers assess candidates on personal bias, rather than objective metrics.</li>
+                        <li><strong>3. Low Practice Frequency:</strong> Candidates cannot afford to fail multiple live rounds simply to practice.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 4: Step 1 - Exploration of Graduate Pain Points (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 1 · Ideation</div>
+            <h2 class="slide-heading reveal">Concept Inception & Narrative</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Introducing Invera AI</h3>
+                    <p class="body-desc">
+                        Invera was conceptualized as a web application that replicates the pressure of actual interview questions. It uses advanced Large Language Models to evaluate candidates against structured metrics, outputting actionable advice in real time.
+                    </p>
+                    <div class="highlight-box">
+                        Narrative: "Practice unlimited, get expert-grade feedback, pay a fraction of the cost."
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Class IB1902 Co-founder Roles</h3>
+                    <table class="slide-table">
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Name</th>
+                                <th>Operational Scope</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CEO</td>
+                                <td>Nguyễn Nhật Bằng</td>
+                                <td>Business strategy, cash flow management, merchant accounts.</td>
+                            </tr>
+                            <tr>
+                                <td>CTO</td>
+                                <td>Đoàn Minh Tuấn</td>
+                                <td>System architecture, migrations, AI APIs, deployment scripts.</td>
+                            </tr>
+                            <tr>
+                                <td>CPO</td>
+                                <td>Phạm Yến Nhi</td>
+                                <td>Product requirement specs, UX/UI layouts, rubric standardization.</td>
+                            </tr>
+                            <tr>
+                                <td>CMO</td>
+                                <td>Đỗ Nguyệt Minh</td>
+                                <td>Market surveys, AIDA acquisition funnel, growth hacking.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 5: Step 1 - Steering Committee Approval (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 1 · Pitching</div>
+            <h2 class="slide-heading reveal">Steering Committee Board Pitching</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Academic & Mentor Alignment</h3>
+                    <p class="body-desc">
+                        To secure approval and research validation, the team structured a detailed project pitch for the FPT University academic board, including course advisors Hoàng Kiên Trung and Nguyễn Thị Bắc.
+                    </p>
+                    <div class="highlight-box">
+                        Pitch Material: A comprehensive deck outlining market demand, technical viability, and financial margins.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Key Steering Concerns Addressed</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>AI Credibility:</strong> Mitigated by standardizing a structured HR-calibrated rubric instead of relying on open-ended LLM chats.</li>
+                        <li><strong>Bilingual Viability:</strong> Commitment to fully localize all questions and AI feedbacks in both Vietnamese and English.</li>
+                        <li><strong>Compliance:</strong> Addressing Vietnamese personal data regulations (Decree 13/2023) when processing resume PDFs.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 6: Step 1 - Steering Committee Approval (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 1 · Exit Criteria</div>
+            <h2 class="slide-heading reveal">Exit Criteria & Charter Sign-off</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Meeting the Milestone</h3>
+                    <p class="body-desc">
+                        Step 1 is formally completed when the idea is frozen (Concept Freeze) and the steering committee signs off on the project charter, validating the allocation of resources for product definition.
+                    </p>
+                    <div class="highlight-box">
+                        Deliverable: Approved concept statement, co-founder responsibility grid, and academic validation reports.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale" style="background-color: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.2);">
+                    <h3 class="card-title">Exit Checklist</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-family: var(--font-mono); font-size: var(--small-size);">
+                        <li>[✓] Detailed concept description written</li>
+                        <li>[✓] Core target segments identified (IT, Biz, Fin)</li>
+                        <li>[✓] Steering board formal sign-off secured</li>
+                        <li>[✓] Resource allocation (roles & budget) locked</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 2: PRODUCT DEFINITION & BUSINESS CASE
+         ========================================================================= -->
+
+    <!-- SLIDE 7: Step 2 - TAM-SAM-SOM Sizing (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 2 · Sizing</div>
+            <h2 class="slide-heading reveal">TAM-SAM-SOM Market Sizing</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Sizing the Opportunity</h3>
+                    <p class="body-desc">
+                        To build a viable business model, CPO Yến Nhi quantified the target audience size. The platform is designed for a VN-first, internet-capable demographic.
+                    </p>
+                    <div class="highlight-box">
+                        TAM: All college/university graduates and young unemployed job seekers in Vietnam (~2.5 million individuals).
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Sizing Breakdown</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value">2.5M</span>
+                            <span class="stat-label">TAM (Total Market)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">400K</span>
+                            <span class="stat-label">SAM (Serviceable)</span>
+                        </div>
+                        <div class="stat-item" style="grid-column: span 2;">
+                            <span class="stat-value" style="color: var(--accent-magenta);">50K</span>
+                            <span class="stat-label">SOM (Obtainable - Year 2-4 IT/Biz/Fin in HN/HCM)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 8: Step 2 - TAM-SAM-SOM Sizing (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 2 · Targeting</div>
+            <h2 class="slide-heading reveal">Customer Persona Profiling</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Target Personas</h3>
+                    <p class="body-desc">
+                        Focusing on senior students and fresh graduates from universities like FPT University, Academy of Finance (AOF), and NEU.
+                    </p>
+                    <div class="highlight-box">
+                        Key trait: Tech-savvy, active on social media (Facebook, TikTok), low disposable income, anxious about career entry.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Persona Characteristics</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Technology Major (IT):</strong> Technical interview practice; needs system design, DSA, and coding feedback.</li>
+                        <li><strong>✓ Business/Marketing Major:</strong> Behavioral practice; needs situation/STAR method evaluation.</li>
+                        <li><strong>✓ Finance Major:</strong> Analytical practice; needs domain knowledge and calculation reasoning feedback.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 9: Step 2 - Business Case & BMC (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 2 · BMC</div>
+            <h2 class="slide-heading reveal">Business Model Canvas</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Establishing the Core Value</h3>
+                    <p class="body-desc">
+                        The Business Model Canvas (BMC) outlines how Invera delivers value. Core value proposition: Objective, HR-calibrated mock evaluations at 90% lower cost than manual training.
+                    </p>
+                    <div class="highlight-box">
+                        Channels: University career centers, Facebook/TikTok groups, student partnerships.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">BMC Core Highlights</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size);">
+                        <li><strong>Key Partners:</strong> AI API providers (DeepSeek), payment gateways, student clubs, recruiters.</li>
+                        <li><strong>Key Activities:</strong> Platform engineering, question bank updates, prompt calibration.</li>
+                        <li><strong>Cost Structure:</strong> Server hosting, LLM token costs, domain/SSL licenses, customer acquisition.</li>
+                        <li><strong>Revenue Streams:</strong> Subscription plans, session quota purchases, referral recruitment matching fee.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 10: Step 2 - Business Case & BMC (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 2 · Pricing</div>
+            <h2 class="slide-heading reveal">Freemium Revenue Architecture</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Subscription Tier Structures</h3>
+                    <p class="body-desc">
+                        To incentivize activation, we defined a Freemium model. Free users get a lifetime session to test quality, then upgrade to paid monthly packages.
+                    </p>
+                    <div class="highlight-box">
+                        Entitlements are backend-enforced based on current active plan status.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <table class="slide-table">
+                        <thead>
+                            <tr>
+                                <th>Plan Tier</th>
+                                <th>VND / Month</th>
+                                <th>Monthly Quota</th>
+                                <th>Key Features</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Free Trial</td>
+                                <td>0 VND</td>
+                                <td>1 lifetime session</td>
+                                <td>Core mock room, standard scoring.</td>
+                            </tr>
+                            <tr>
+                                <td>Basic</td>
+                                <td>99,000 VND</td>
+                                <td>5 sessions</td>
+                                <td>QnA coaching enabled, 7m/question.</td>
+                            </tr>
+                            <tr>
+                                <td>Pro</td>
+                                <td>199,000 VND</td>
+                                <td>8 sessions</td>
+                                <td>Resume PDF uploads, PDF exports.</td>
+                            </tr>
+                            <tr>
+                                <td>Premium</td>
+                                <td>299,000 VND</td>
+                                <td>12 sessions</td>
+                                <td>Mentor matching & reviews (Service 2).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 3: PROTOTYPE & MVP DEVELOPMENT
+         ========================================================================= -->
+
+    <!-- SLIDE 11: Step 3 - Prototype Implementation (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · Prototyping</div>
+            <h2 class="slide-heading reveal">MVP Tech Stack Foundation</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">CTO Tuấn's Architectural Choices</h3>
+                    <p class="body-desc">
+                        A full-stack, zero-downtime architecture was implemented to validate technical feasibility. The stack relies on asynchronous Python and modular TypeScript React.
+                    </p>
+                    <div class="highlight-box">
+                        Frontend: React 18, Vite 5, Tailwind CSS, TanStack Query.<br>
+                        Backend: FastAPI, AsyncPG, PostgreSQL database.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Technology Integrations</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>AI Model:</strong> Connected to DeepSeek API (`deepseek-chat`) with an internal fallback keyword-matching heuristic.</li>
+                        <li><strong>SMTP Email:</strong> Connects to Gmail SMTP (App password) to send 6-digit verification codes.</li>
+                        <li><strong>Database Layer:</strong> Executed via asyncpg pool, ensuring high concurrent request handling.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 12: Step 3 - Prototype Implementation (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · Topology</div>
+            <h2 class="slide-heading reveal">Production Topology & Ingress</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Server Setup & Reverse Proxy</h3>
+                    <p class="body-desc">
+                        The production environment runs on a Linux local server. Port mapping is configured behind Cloudflare Tunnel for secure, SSL-certified ingress at `https://invera.pp.ua`.
+                    </p>
+                    <div class="highlight-box">
+                        FastAPI backend serves static files compiled from `FE/dist` for unified deployment.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Systemd User Services</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-family: var(--font-mono); font-size: var(--small-size);">
+                        <li><strong>invera-backend.service:</strong> Runs uvicorn on port 9000.</li>
+                        <li><strong>invera-frontend.service:</strong> Serves compiled SPA assets.</li>
+                        <li><strong>cloudflared.service:</strong> Manages tunnel connection to Cloudflare.</li>
+                        <li><strong>Port 127.0.0.1:18789:</strong> Verba/OpenClaw meeting recognition engine.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 13: Step 3 - Update Business Plan: Survey (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · Survey</div>
+            <h2 class="slide-heading reveal">Market Survey Demographics & Metrics</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Gathering Empirical Data</h3>
+                    <p class="body-desc">
+                        CMO Minh executed a market survey gathering 100+ responses (raw data in `Survey result.xlsx`) to validate willingness-to-pay, trust in AI, and concept clarity.
+                    </p>
+                    <div class="highlight-box">
+                        Survey group: Year 3-4 IT and Economic majors at FPT and Academy of Finance.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Core Survey Metrics</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value">100+</span>
+                            <span class="stat-label">Respondents</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">84%</span>
+                            <span class="stat-label">Mock Value Clarity</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: var(--accent-magenta);">32%</span>
+                            <span class="stat-label">Willing to Pay Upfront</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">76%</span>
+                            <span class="stat-label">Willingness to Try Free</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 14: Step 3 - Update Business Plan: Survey (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · Insights</div>
+            <h2 class="slide-heading reveal">Core Survey Insights & Strategic Pivots</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Strategic Insights</h3>
+                    <p class="body-desc">
+                        The survey data exposed a massive obstacle: while graduates found the mock concept useful, they hesitated to buy paid packages immediately. They also confused the app with a simple chatbot.
+                    </p>
+                    <div class="highlight-box">
+                        Pivot: Force high activation with a stunning Free Trial, and show visual tutorial/demo videos on landing.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Actions Taken Based on Data</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>1. Pricing Adjustment:</strong> Lowered entry barrier by offering a lifetime free session, and per-session buy-add options (30k-35k VND).</li>
+                        <li><strong>2. Chatbot vs. Platform:</strong> Redesigned UI to show structured analytics tables and charts, proving value beyond standard chats.</li>
+                        <li><strong>3. Privacy Assurances:</strong> Drafted a formal Privacy Policy following VN Decree 13/2023 to secure resume file uploads.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 15: Step 3 - GTM Planning (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · GTM</div>
+            <h2 class="slide-heading reveal">GTM Plan & AIDA Marketing Funnel</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">AIDA Funnel Execution</h3>
+                    <p class="body-desc">
+                        The Go-To-Market (GTM) plan leverages a structured AIDA marketing funnel aligned with the 7Ps marketing mix for educational software.
+                    </p>
+                    <div class="highlight-box">
+                        Focus: Turn high student traffic into active mock interview sessions.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale" style="background-color: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.25);">
+                    <h3 class="card-title">AIDA Stage Definitions</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size);">
+                        <li><strong>Awareness:</strong> Reach target students via university career centers and Facebook group communities.</li>
+                        <li><strong>Interest:</strong> Showcase demo videos showing real AI scoring feedback, rubrics, and CV-question generation.</li>
+                        <li><strong>Desire:</strong> Provide a Free Trial session so users experience the product quality firsthand.</li>
+                        <li><strong>Action:</strong> Clear pricing models with simple online payment (VNPay/PayOS).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 16: Step 3 - GTM Planning (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 3 · Acquisition</div>
+            <h2 class="slide-heading reveal">Initial Acquisition Strategies</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Bootstrapping Growth</h3>
+                    <p class="body-desc">
+                        CMO Minh designed a low-budget, organic growth strategy. Since the target audience is concentrated in university hubs, we prioritize local community engagement.
+                    </p>
+                    <div class="highlight-box">
+                        GTM Target: Onboard 500 active users within the first 60 days of launch.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Core Acquisition Channels</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Student Club Partnerships:</strong> Direct collaboration with IT/Business clubs at FPT University, NEU, FTU.</li>
+                        <li><strong>✓ SEO & Content Marketing:</strong> Articles targeting "phỏng vấn xin việc," "mock interview IT," "scoring rubric."</li>
+                        <li><strong>✓ Viral Short Videos:</strong> TikTok/YouTube reels showing "funny/stressful mock interviews with AI."</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 4: REFINEMENT OF PROTOTYPE & DETAILED PRODUCT DESIGN
+         ========================================================================= -->
+
+    <!-- SLIDE 17: Step 4 - Refinement of Prototype (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · Refinement</div>
+            <h2 class="slide-heading reveal">Front-to-Back Telemetry & Logging</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Polishing system stability</h3>
+                    <p class="body-desc">
+                        Moving from MVP to detailed design, CTO Tuấn refined backend error containment and transaction controls to ensure reliable performance.
+                    </p>
+                    <div class="highlight-box">
+                        API handlers were wrapped with strict JSON exceptions and PostgreSQL transaction rollbacks.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Implemented Refinements</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>1. Session Time Limits:</strong> Free users locked to 5 minutes, Basic to 7 minutes, Pro+ to 10 minutes per question.</li>
+                        <li><strong>2. Concurrency Semaphores:</strong> Added backend locks for scoring/audio tasks to prevent server CPU spikes.</li>
+                        <li><strong>3. Token Quotas:</strong> Added user-level limits to protect AI API endpoints against brute-force calls.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 18: Step 4 - Refinement of Prototype (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · Localization</div>
+            <h2 class="slide-heading reveal">UX Polish & Bilingual Flow</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Bilingual i18n Architecture</h3>
+                    <p class="body-desc">
+                        We refined the frontend to support both Vietnamese and English. Questions, scoring evaluations, and interface elements automatically adapt to the user's saved language preference.
+                    </p>
+                    <div class="highlight-box">
+                        Language context maps UI strings on the client and passes headers to localize backend AI responses.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">UX/UI Enhancements</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Interactivity:</strong> Added dynamic dashboard charts using Recharts, replacing placeholder lists.</li>
+                        <li><strong>✓ Audio Assist:</strong> Integrated a video tutorial player inside the New Session form.</li>
+                        <li><strong>✓ State Feedback:</strong> Added loading states (Loader2) for AI scoring actions.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 19: Step 4 - Detailed Product Design: Database (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · Database</div>
+            <h2 class="slide-heading reveal">Relational PostgreSQL Schema Design</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">18 Locked Migrations</h3>
+                    <p class="body-desc">
+                        We finalized the relational database design. It contains 18 schema migrations (`BE/migrations/` 001 to 018), managed via custom bootstrap scripts to prevent raw query errors.
+                    </p>
+                    <div class="highlight-box">
+                        Primary Key UUIDs are used for security, and composite indexes optimize query speeds on sessions.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale" style="background-color: rgba(15, 23, 42, 0.5);">
+                    <h3 class="card-title">Core DB Tables Mapping</h3>
+                    <table class="slide-table" style="font-size: var(--small-size);">
+                        <thead>
+                            <tr>
+                                <th>Table Name</th>
+                                <th>Primary Columns</th>
+                                <th>Cascade Constraints</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>users</td>
+                                <td>id, email, password_hash, plan_tier</td>
+                                <td>No delete cascade (locked)</td>
+                            </tr>
+                            <tr>
+                                <td>sessions</td>
+                                <td>id, user_id, major, role, level, status</td>
+                                <td>ON DELETE CASCADE (user)</td>
+                            </tr>
+                            <tr>
+                                <td>answers</td>
+                                <td>id, session_id, question_id, score, text</td>
+                                <td>ON DELETE CASCADE (session)</td>
+                            </tr>
+                            <tr>
+                                <td>payment_orders</td>
+                                <td>id, user_id, amount_vnd, status, ref</td>
+                                <td>ON DELETE RESTRICT (user)</td>
+                            </tr>
+                            <tr>
+                                <td>qna_threads</td>
+                                <td>id, user_id, title</td>
+                                <td>ON DELETE CASCADE (user)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 20: Step 4 - Detailed Product Design: API Specs (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · API Spec</div>
+            <h2 class="slide-heading reveal">FastAPI Routing & API Contracts</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Modular Endpoints</h3>
+                    <p class="body-desc">
+                        All endpoints are grouped inside `BE/app/api/endpoints/` and protected using JWT tokens. The backend exports Swagger specs automatically, making frontend integration easy.
+                    </p>
+                    <div class="highlight-box">
+                        Swagger Endpoint: <code>https://invera.pp.ua/api/docs</code>.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Core API Groups</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-family: var(--font-mono); font-size: var(--small-size);">
+                        <li><strong>/api/auth:</strong> Local login, Google/GitHub OAuth, OTP validation.</li>
+                        <li><strong>/api/sessions:</strong> Session creation, answer submit, PDF export.</li>
+                        <li><strong>/api/billing:</strong> VNPay checkout, IPN webhook, redeem code validation.</li>
+                        <li><strong>/api/qna:</strong> Thread management, structured Q&A payload.</li>
+                        <li><strong>/api/admin:</strong> Question Bank CRUD, paginated users, revenue lists.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 21: Step 4 - Confirm Business Plan: AI Rubric (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · Rubric</div>
+            <h2 class="slide-heading reveal">Standardizing the AI Rubric</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Standardized Evaluation Prompts</h3>
+                    <p class="body-desc">
+                        To prevent AI scoring inconsistencies, CPO Nhi standardized prompt templates inside `BE/docs/AI_SCORING_RUBRIC.md`. AI is instructed to return feedback in a JSON payload.
+                    </p>
+                    <div class="highlight-box">
+                        LLM system prompt forces DeepSeek to output evidence quotes from user answers.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">5 Rubric Criteria (Out of 10)</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size);">
+                        <li><strong>1. Relevance:</strong> Direct answer to the question, avoiding off-topic filler sentences.</li>
+                        <li><strong>2. Structure:</strong> Logic flow; ideally structured using the STAR method for behavioral questions.</li>
+                        <li><strong>3. Logical Thinking:</strong> Argument coherence, quantitative references, trade-off analysis.</li>
+                        <li><strong>4. Clarity:</strong> Professional grammar, concise sentences, communication style.</li>
+                        <li><strong>5. Completeness:</strong> Addresses all parts of the question, including secondary requests.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 22: Step 4 - Confirm Business Plan: Cost Fallback (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 4 · Cost Controls</div>
+            <h2 class="slide-heading reveal">Heuristic Fallback & Cost Controls</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Local Fallback Mechanisms</h3>
+                    <p class="body-desc">
+                        To protect business cash flow and ensure system reliability during API failures, the backend integrates local cost control checks and a keyword-matching scoring fallback.
+                    </p>
+                    <div class="highlight-box">
+                        Helps manage DeepSeek API quotas and mitigates network timeouts.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Implemented Logic</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Keyword-matching fallback:</strong> Extracts tokens and checks overlap against the question ideal answer.</li>
+                        <li><strong>✓ Gibberish Guard:</strong> Automatically assigns a low score (e.g. 0.4 - 2.5) if the answer is too short or contains gibberish patterns.</li>
+                        <li><strong>✓ Standardized Prompts:</strong> System prompt limits verbose LLM responses, saving token costs.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 5: VALIDATION & TESTING
+         ========================================================================= -->
+
+    <!-- SLIDE 23: Step 5 - Ensuring Prototype Works: Automated Tests (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · Automated Tests</div>
+            <h2 class="slide-heading reveal">Ensuring Prototype Works: Testing Suites</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Backend Unit Testing</h3>
+                    <p class="body-desc">
+                        We developed a comprehensive automated testing suite. Backend tests run via `pytest`, verifying route guards, schema validations, and security helper behaviors.
+                    </p>
+                    <div class="highlight-box">
+                        Current Status: 46 active backend test cases successfully passing.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Frontend Verification</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Vitest Framework:</strong> Frontend tests run in jsdom environment, checking components and contexts.</li>
+                        <li><strong>✓ Auth test:</strong> Verifies token storage and auto-logout on 401 responses.</li>
+                        <li><strong>✓ Build validation:</strong> Integrated <code>npm run build</code> into the reload flow to catch compilation errors early.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 24: Step 5 - Ensuring Prototype Works: Bug Fixes (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · Core Fixes</div>
+            <h2 class="slide-heading reveal">Ensuring Prototype Works: Core Bug Fixes</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Resolving Critical System Failures</h3>
+                    <p class="body-desc">
+                        During validation, the team resolved three critical functional bugs that directly impacted product quality and pricing fairness.
+                    </p>
+                    <div class="highlight-box">
+                        Fixed and verified before starting deployment.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Critical System Resolutions</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size);">
+                        <li><strong>1. Session Purchasing calculation bug:</strong> Corrected active session entitlement calculation in `plans.py` to prevent double-counting used sessions.</li>
+                        <li><strong>2. Scoring Off-topic Guard:</strong> Reprogrammed the heuristic scorer to prevent valid answers from receiving a 0 score due to strict character matching.</li>
+                        <li><strong>3. REST API / LangGraph scope check:</strong> Expanded the QnA scope filter to allow common technical questions, rather than rejecting them as off-topic.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 25: Step 5 - Validating Product: Concept Testing (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · Customer Validation</div>
+            <h2 class="slide-heading reveal">Validating Product: Customer Concept Testing</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Validating in the Eyes of the Customer</h3>
+                    <p class="body-desc">
+                        Before public launch, the product concept was tested with graduate groups (Concept Testing in Final Report Chapter 5). The feedback was positive regarding utility, but exposed user doubts.
+                    </p>
+                    <div class="highlight-box">
+                        Results: AI coaching is highly accepted, but users doubt objectivity compared to a human.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Key Feedback Points</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Transparancy is Key:</strong> Users trust scoring more when the AI cites specific parts of their answer (Evidence Quotes) in the feedback.</li>
+                        <li><strong>✓ WTP remains low:</strong> High willingness to try (Free Trial), but converting to paid requires proof of improvement.</li>
+                        <li><strong>✓ Request for Demo:</strong> Visual demo videos are critical to explain how the platform works on first visit.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 26: Step 5 - Validating Product: UX Loops (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · UX Feedback</div>
+            <h2 class="slide-heading reveal">Validating Product: Iterative UX Design</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Polishing UI spacing & elements</h3>
+                    <p class="body-desc">
+                        The design system was refined using customer UAT feedback. Spacing, charts, and loading states were adjusted to feel premium.
+                    </p>
+                    <div class="highlight-box">
+                        Added interactive demo charts to the landing page so guests can interact with mock metrics.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Implemented UX Polish</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Mascot Decoration:</strong> Introduced mascot feedback visual cues to make the AI feedback feel friendly.</li>
+                        <li><strong>✓ Dashboard Re-layout:</strong> Redesigned Dashboard cards to highlight overall scores and average readiness levels.</li>
+                        <li><strong>✓ Clean PDF report:</strong> Prepared a clean layout for exporting evaluations to PDF documents.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 27: Step 5 - Testing Financials: Modeling (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · Financials</div>
+            <h2 class="slide-heading reveal">Testing Financial Viability: CAPEX & Margins</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Capital Investment Requirements</h3>
+                    <p class="body-desc">
+                        We developed a detailed financial model in `Financial Model_Invera.xlsx` to test long-term project viability. The model projections are 100% self-funded by the co-founders.
+                    </p>
+                    <div class="highlight-box">
+                        Initial Capital (CAPEX): 105,083,060 VND.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Capital Allocation Breakdown</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size);">
+                        <li><strong>Equipment (CAPEX):</strong> 72,550,000 VND (development machines, server hardware setup, networking).</li>
+                        <li><strong>Software Development (OPEX):</strong> 32,533,060 VND (hosting, domain name, SSL certificates, initial LLM developer tokens).</li>
+                        <li><strong>Gross profit margin:</strong> Forecasted at ~82% because the variable cost per session (DeepSeek tokens) is very low (~0.05$ per call).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 28: Step 5 - Testing Financials: Viability (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 5 · Feasibility</div>
+            <h2 class="slide-heading reveal">Testing Financial Viability: NPV & IRR Forecasts</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Three-Year Feasibility Outlook</h3>
+                    <p class="body-desc">
+                        The financial model simulates cash flows for 2026-2028. It shows positive Net Present Value (NPV) and high Internal Rate of Return (IRR), confirming economic feasibility.
+                    </p>
+                    <div class="highlight-box">
+                        Discounted Payback Period: 1.6 years.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Financial Viability Metrics</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value">1.6 Yrs</span>
+                            <span class="stat-label">Payback Period</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">82%</span>
+                            <span class="stat-label">Gross Margin</span>
+                        </div>
+                        <div class="stat-item" style="grid-column: span 2;">
+                            <span class="stat-value" style="color: var(--accent-magenta);">Positive</span>
+                            <span class="stat-label">Net Present Value (NPV) & High IRR</span>
+                        </div>
+                    </div>
+                    <p class="card-text" style="font-size: var(--small-size); margin-top: 8px;">
+                        Zero early debt structure ensures operational safety during early acquisition phases.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         STEP 6: COMMERCIALIZATION & LAUNCH
+         ========================================================================= -->
+
+    <!-- SLIDE 29: Step 6 - Feature Complete (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · Commercialize</div>
+            <h2 class="slide-heading reveal">Feature Complete: Core Systems Locked</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Freezing product features</h3>
+                    <p class="body-desc">
+                        Step 6 begins with a Feature Freeze. All core features required by the software specifications are fully built, tested, and integrated.
+                    </p>
+                    <div class="highlight-box">
+                        Database migrations are closed and locked to prevent development desyncs.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Locked Features</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ Authenticated QnA thread persistence:</strong> Saves user coaching history in PostgreSQL.</li>
+                        <li><strong>✓ User CV Uploads:</strong> Secure file uploads to `private_uploads` folder with database reference links.</li>
+                        <li><strong>✓ Admin access panel:</strong> Overview charts, invitation logs, and admin action flows.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 30: Step 6 - Feature Complete: Deployment (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · Deployment</div>
+            <h2 class="slide-heading reveal">Automated Deploy & Status Scripts</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Reloading the Stack</h3>
+                    <p class="body-desc">
+                        Deployment is automated using custom shell scripts. Running `./scripts/inveractl reload` compiles frontend assets, restarts systemd user services, and re-routes Cloudflare Tunnel ingress.
+                    </p>
+                    <div class="highlight-box">
+                        Enables zero-downtime hot reloading during production code fixes.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale" style="background-color: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.25);">
+                    <h3 class="card-title">Deploy Helpers Available</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-family: var(--font-mono); font-size: var(--small-size);">
+                        <li><code>./scripts/inveractl status</code> - Check systemd services status</li>
+                        <li><code>./scripts/inveractl logs</code> - Stream system logs</li>
+                        <li><code>./scripts/inveractl smoke</code> - Run automated HTTP health checks</li>
+                        <li><code>./scripts/bootstrap_backend.sh</code> - Bootstrap virtualenv</li>
+                    </tr>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 31: Step 6 - Begin GTM Execution: Payments (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · GTM Execution</div>
+            <h2 class="slide-heading reveal">GTM: Online Payment Integrations</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Revenue Activation Flow</h3>
+                    <p class="body-desc">
+                        To transition from a class project to a commercial business, we integrated payment gateways. The backend supports PayOS payment links and VNPay checkout redirects.
+                    </p>
+                    <div class="highlight-box">
+                        Webhook callbacks automatically activate paid plans in the database.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Order Lifecycle</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>1. Create Order:</strong> User selects plan tier; backend records a pending entry in `payment_orders`.</li>
+                        <li><strong>2. Webhook / Callback:</strong> Gateway notifies backend of payment. Status updates to `succeeded` and paid timestamp is saved.</li>
+                        <li><strong>3. Admin Overview Sync:</strong> Admin panel automatically runs a sync script (PayOS sync) before loading revenue reports.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 32: Step 6 - Begin GTM Execution: Marketing (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · Campaign</div>
+            <h2 class="slide-heading reveal">GTM: Launching Growth Campaigns</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Running Active Campaigns</h3>
+                    <p class="body-desc">
+                        CMO Minh initiates the marketing launch funnel. We target students seeking internships and early career jobs, leveraging FPT University club networks for initial traffic.
+                    </p>
+                    <div class="highlight-box">
+                        Action: Conversion of landing page visitors using active Google Search Ads.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Core Campaign Steps</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>✓ University Partnerships:</strong> Pitching Invera as a class-wide mock interview prep tool for university departments.</li>
+                        <li><strong>✓ Coupon Code Redemptions:</strong> Distributing basic coupon codes (e.g. `INVERA_BASIC`) to generate trial traction.</li>
+                        <li><strong>✓ Referral discounts:</strong> Rewarding active users with free interview credits for bringing friends to the platform.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 33: Step 6 - Customer Success Involvement (1/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · Customer Success</div>
+            <h2 class="slide-heading reveal">Customer Success & Mentoring Setup</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Building the Feedback Loop</h3>
+                    <p class="body-desc">
+                        Customer Success (CS) plays a key role in post-launch retention. Invera sets up automated support forms, and routes user questions to an operational issue queue.
+                    </p>
+                    <div class="highlight-box">
+                        Allows team to detect scoring anomalies and improve AI prompt calibrations.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale" style="background-color: rgba(217, 70, 239, 0.04); border-color: rgba(217, 70, 239, 0.25);">
+                    <h3 class="card-title" style="color: var(--accent-magenta);">Mentor Matching Environment (Service 2)</h3>
+                    <p class="card-text">
+                        The ultimate vision for CS is the mentor matching platform (Service 2). Pro users can upgrade to match with experienced HR leaders for real feedback.
+                    </p>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap); font-size: var(--small-size); margin-top: 8px;">
+                        <li>• Matching HR specialists with candidates based on target job role.</li>
+                        <li>• Platform handles payment escrow, charging users and paying mentors.</li>
+                        <li>• Opportunities for recruitment referrals directly to partnering companies.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 34: Step 6 - Product Launched (2/2) -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="section-tag reveal">Step 6 · Live Launch</div>
+            <h2 class="slide-heading reveal">Live Launch Operations & KPIs</h2>
+            <div class="split-layout">
+                <div class="left-col reveal-left">
+                    <h3 class="card-title">Tracking Live Product Status</h3>
+                    <p class="body-desc">
+                        With product launch completed, CEO Nhật Bằng monitors live usage KPIs. Admin Access dashboards display active users, session counts, and subscription plans in real time.
+                    </p>
+                    <div class="highlight-box">
+                        Enables data-driven decision making on server sizing and API token costs.
+                    </div>
+                </div>
+                <div class="right-col reveal-scale">
+                    <h3 class="card-title">Primary Live KPIs</h3>
+                    <ul style="list-style-type: none; display: flex; flex-direction: column; gap: var(--element-gap);">
+                        <li><strong>1. Active Users / Day:</strong> Monitored on the admin overview panel to track retention.</li>
+                        <li><strong>2. Free-to-Paid Conversion Rate:</strong> Goal is 8% to 12% trial users upgrading to Basic/Pro monthly plans.</li>
+                        <li><strong>3. Average Scoring Value:</strong> Analyzed globally to calibrate rubric difficulty and AI prompt accuracy.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 35: Conclusion / QA -->
+    <section class="slide" style="background-color: var(--bg-secondary);">
+        <div class="slide-content" style="align-items: center; text-align: center;">
+            <div class="section-tag reveal">Finish</div>
+            <h1 class="title-display reveal">Thank You!</h1>
+            <p class="body-desc reveal" style="max-width: 600px; margin: 0 auto; color: var(--accent-cyan); font-family: var(--font-mono);">
+                Q&A Session
+            </p>
+            <p class="card-text reveal" style="margin-top: 15px;">
+                Access the presentation code or test the platform live at:
+            </p>
+            <a href="https://invera.pp.ua" target="_blank" class="reveal" style="font-family: var(--font-mono); color: var(--accent-magenta); font-size: var(--h3-size); text-decoration: none; border-bottom: 1px dashed var(--accent-magenta); margin-top: 10px; pointer-events: auto;">
+                https://invera.pp.ua
+            </a>
+        </div>
+    </section>
+
+    <div class="keyboard-hint">
+        Use <span class="key-btn">↓</span> <span class="key-btn">↑</span> <span class="key-btn">Space</span> or <span class="key-btn">Mouse Wheel</span> to navigate
+    </div>
+
+    <!-- ===========================================
+         SLIDE PRESENTATION CONTROLLER JS
+         =========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll(".slide");
+                this.totalSlides = this.slides.length;
+                this.currentSlide = 0;
+                this.isScrolling = false;
+                
+                this.progressBar = document.querySelector(".progress-bar");
+                this.navDotsContainer = document.querySelector(".nav-dots");
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupNavDots();
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupWheelNav();
+                this.updateUI();
+            }
+            
+            setupNavDots() {
+                if (!this.navDotsContainer) return;
+                this.navDotsContainer.innerHTML = "";
+                for (let i = 0; i < this.totalSlides; i++) {
+                    const dot = document.createElement("button");
+                    dot.classList.add("nav-dot");
+                    if (i === 0) dot.classList.add("active");
+                    dot.title = `Slide ${i + 1}`;
+                    dot.addEventListener("click", () => this.scrollToSlide(i));
+                    this.navDotsContainer.appendChild(dot);
+                }
+                this.dots = document.querySelectorAll(".nav-dot");
+            }
+            
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add("visible");
+                            const index = Array.from(this.slides).indexOf(entry.target);
+                            this.currentSlide = index;
+                            this.updateUI();
+                        } else {
+                            entry.target.classList.remove("visible");
+                        }
+                    });
+                }, {
+                    threshold: 0.5
+                });
+                
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+            
+            setupKeyboardNav() {
+                document.addEventListener("keydown", (e) => {
+                    if (e.target.getAttribute("contenteditable")) return;
+                    
+                    if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "Space") {
+                        e.preventDefault();
+                        this.nextSlide();
+                    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                        e.preventDefault();
+                        this.prevSlide();
+                    } else if (e.key === "PageDown") {
+                        e.preventDefault();
+                        this.nextSlide();
+                    } else if (e.key === "PageUp") {
+                        e.preventDefault();
+                        this.prevSlide();
+                    }
+                });
+            }
+            
+            setupTouchNav() {
+                let startY = 0;
+                let startX = 0;
+                
+                document.addEventListener("touchstart", (e) => {
+                    startY = e.touches[0].clientY;
+                    startX = e.touches[0].clientX;
+                }, { passive: true });
+                
+                document.addEventListener("touchend", (e) => {
+                    const endY = e.changedTouches[0].clientY;
+                    const endX = e.changedTouches[0].clientX;
+                    
+                    const diffY = startY - endY;
+                    const diffX = startX - endX;
+                    
+                    if (Math.abs(diffY) > 40 && Math.abs(diffY) > Math.abs(diffX)) {
+                        if (diffY > 0) {
+                            this.nextSlide();
+                        } else {
+                            this.prevSlide();
+                        }
+                    }
+                }, { passive: true });
+            }
+            
+            setupWheelNav() {
+                window.addEventListener("wheel", (e) => {
+                    e.preventDefault();
+                    if (this.isScrolling) return;
+                    
+                    if (e.deltaY > 15) {
+                        this.nextSlide();
+                    } else if (e.deltaY < -15) {
+                        this.prevSlide();
+                    }
+                }, { passive: false });
+            }
+            
+            nextSlide() {
+                if (this.currentSlide < this.totalSlides - 1) {
+                    this.scrollToSlide(this.currentSlide + 1);
+                }
+            }
+            
+            prevSlide() {
+                if (this.currentSlide > 0) {
+                    this.scrollToSlide(this.currentSlide - 1);
+                }
+            }
+            
+            scrollToSlide(index) {
+                if (this.isScrolling) return;
+                this.isScrolling = true;
+                
+                this.slides[index].scrollIntoView({ behavior: "smooth" });
+                this.currentSlide = index;
+                
+                setTimeout(() => {
+                    this.isScrolling = false;
+                    this.updateUI();
+                }, 500);
+            }
+            
+            updateUI() {
+                // Update progress bar
+                if (this.progressBar) {
+                    const percentage = ((this.currentSlide + 1) / this.totalSlides) * 100;
+                    this.progressBar.style.width = `${percentage}%`;
+                }
+                
+                // Update dots
+                if (this.dots) {
+                    this.dots.forEach((dot, idx) => {
+                        if (idx === this.currentSlide) {
+                            dot.classList.add("active");
+                        } else {
+                            dot.classList.remove("active");
+                        }
+                    });
+                }
+            }
+        }
+
+        // Run presentation
+        new SlidePresentation();
+    </script>
+</body>
+</html>

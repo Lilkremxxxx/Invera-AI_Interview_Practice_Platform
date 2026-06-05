@@ -141,7 +141,7 @@ describe("InterviewRoom STT", () => {
     vi.restoreAllMocks();
   });
 
-  it("uploads recorded audio on stop and appends the returned transcript", async () => {
+  it("starts local speech recognition and updates the textbox with the recognized speech", async () => {
     render(
       <MemoryRouter initialEntries={["/app/interview/session-1"]}>
         <Routes>
@@ -154,22 +154,33 @@ describe("InterviewRoom STT", () => {
     fireEvent.change(textbox, { target: { value: "typed intro" } });
 
     fireEvent.click(screen.getByRole("button", { name: /^voice$/i }));
+
+    await waitFor(() => {
+      expect(FakeSpeechRecognition.instances).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeSpeechRecognition.instances[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 1,
+          0: {
+            isFinal: true,
+            0: { transcript: "transcribed answer" },
+          },
+        },
+      });
+    });
+
     fireEvent.click(await screen.findByRole("button", { name: /^stop$/i }));
 
     await waitFor(() => {
-      expect(transcribeAnswer).toHaveBeenCalledTimes(1);
-      expect(transcribeAnswer).toHaveBeenCalledWith(
-        "session-1",
-        expect.objectContaining({ name: "session-session-1.webm" }),
-        "vi",
-        1,
-      );
-      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("typed intro");
-      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("transcribed answer");
+      expect(transcribeAnswer).not.toHaveBeenCalled();
+      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("typed intro transcribed answer");
     });
   });
 
-  it("uses backend Vietnamese STT even when browser speech recognition returns a final transcript", async () => {
+  it("uses browser speech recognition transcript without uploading when final text is available", async () => {
     transcribeAnswer.mockResolvedValue({ text: "EventListener là API để lắng nghe sự kiện." });
 
     render(
@@ -183,7 +194,7 @@ describe("InterviewRoom STT", () => {
     fireEvent.click(await screen.findByRole("button", { name: /^voice$/i }));
 
     await waitFor(() => {
-      expect(FakeSpeechRecognition.instances[0]?.lang).toBe("vi-VN");
+      expect(FakeSpeechRecognition.instances[0]?.lang).toBe("en-US");
     });
 
     act(() => {
@@ -202,13 +213,8 @@ describe("InterviewRoom STT", () => {
     fireEvent.click(screen.getByRole("button", { name: /^stop$/i }));
 
     await waitFor(() => {
-      expect(transcribeAnswer).toHaveBeenCalledWith(
-        "session-1",
-        expect.objectContaining({ name: "session-session-1.webm" }),
-        "vi",
-        1,
-      );
-      expect(screen.getByRole("textbox")).toHaveValue("EventListener là API để lắng nghe sự kiện.");
+      expect(transcribeAnswer).not.toHaveBeenCalled();
+      expect(screen.getByRole("textbox")).toHaveValue("EventListener is a line in JavaScript.");
     });
   });
 
@@ -241,15 +247,23 @@ describe("InterviewRoom STT", () => {
       expect(FakeSpeechRecognition.instances[0]?.lang).toBe("en-US");
     });
 
+    act(() => {
+      FakeSpeechRecognition.instances[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 1,
+          0: {
+            isFinal: true,
+            0: { transcript: "EventListener is an API for listening to events." },
+          },
+        },
+      });
+    });
+
     fireEvent.click(screen.getByRole("button", { name: /^stop$/i }));
 
     await waitFor(() => {
-      expect(transcribeAnswer).toHaveBeenCalledWith(
-        "session-1",
-        expect.objectContaining({ name: "session-session-1.webm" }),
-        "en",
-        1,
-      );
+      expect(transcribeAnswer).not.toHaveBeenCalled();
       expect(screen.getByRole("textbox")).toHaveValue("EventListener is an API for listening to events.");
     });
 
@@ -298,7 +312,7 @@ describe("InterviewRoom STT", () => {
     await waitFor(() => {
       expect(FakeMediaRecorder.instances).toHaveLength(1);
       expect(FakeMediaRecorder.instances[0].stop).toHaveBeenCalledTimes(1);
-      expect(transcribeAnswer).toHaveBeenCalledTimes(1);
+      expect(transcribeAnswer).not.toHaveBeenCalled();
     });
   });
 

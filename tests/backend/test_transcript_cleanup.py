@@ -51,3 +51,21 @@ def test_correct_transcript_text_keeps_original_when_ai_expands_too_much(monkeyp
     )
 
     assert result == "event listener click callback"
+
+
+def test_correct_transcript_text_rejects_question_copying(monkeypatch):
+    async def fake_chat_completion(**kwargs):
+        return {"content": '{"text": "What is an event listener in JavaScript?"}'}
+
+    monkeypatch.setattr(transcript_cleanup, "create_chat_completion", fake_chat_completion)
+
+    result = asyncio.run(
+        correct_transcript_text(
+            transcript="event sinner javascript",
+            question_text="What is an event listener in JavaScript?",
+            language="en",
+        )
+    )
+
+    assert result == "event sinner javascript"
+

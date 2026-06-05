@@ -49,6 +49,37 @@ def test_build_feedback_tts_script_includes_full_feedback_without_char_clamp(mon
     assert len(script) > 80
 
 
+def test_build_feedback_tts_script_shortens_long_feedback_for_audio(monkeypatch):
+    long_feedback = (
+        "Summary: Candidate answer: the user discussed caching. Missing or weak: "
+        "add invalidation, rollout risk, and metrics.\n\n"
+        "Scoring criteria:\n"
+        "- Problem Understanding & Context - mixed: Evaluation: relevant but shallow. Missing: add constraints.\n"
+        "- Domain Knowledge & Accuracy - weak: Evaluation: lacks precise terms. Missing: name cache strategy.\n"
+        "\nPriority improvements:\n"
+        "- Add baseline metrics.\n"
+        "- Explain cache invalidation.\n"
+        "- Mention rollback and stale data risk."
+    )
+    monkeypatch.setattr(
+        interview_tts,
+        "settings",
+        SimpleNamespace(
+            interview_tts_script_language="en",
+            interview_tts_max_chars=220,
+        ),
+    )
+
+    script = build_feedback_tts_script(score=5.4, feedback=long_feedback, language="en")
+
+    assert "Your rubric score is 5.4 out of 10." in script
+    assert "Priority improvements" in script
+    assert "Explain cache invalidation" in script
+    assert "Scoring criteria" not in script
+    assert "Domain Knowledge & Accuracy" not in script
+    assert len(script) <= 220
+
+
 def test_build_feedback_tts_script_can_use_english_only():
     script = build_feedback_tts_script(
         score=6.8,
