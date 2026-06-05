@@ -26,12 +26,12 @@
 
 ## Overview
 
-Invera is built for interview preparation workflows that go beyond a simple question list. The platform combines user authentication, guided interview sessions, answer scoring, Q&A support, profile file handling, subscription plans, and an admin system for question-bank operations.
+Invera is built for advanced interview preparation workflows that heavily emphasize **Video Interview Mode**. The platform combines user authentication, real-time webcam telemetry, live speech-to-text (STT) parsing via Vosk, AI-driven answer scoring (powered by DeepSeek), profile file handling, subscription plans, and an admin system for question-bank operations.
 
 The repository is organized as a full-stack application:
 
-- `FE/` contains the Vite + React SPA.
-- `BE/` contains the FastAPI backend and database migrations.
+- `FE/` contains the Vite + React SPA with real-time video interview components.
+- `BE/` contains the FastAPI backend, deep learning services, and database migrations.
 - `scripts/` contains local bootstrap and deployment helpers.
 - `deploy/` contains systemd and cloudflared templates for running the stack.
 
@@ -41,12 +41,12 @@ The repository is organized as a full-stack application:
 - Email/password auth plus OAuth callback flow.
 - Email verification and password reset flow.
 - Interview session creation, session history, and detail views.
-- Full-screen interview room for running mock interviews.
-- Structured feedback, scoring, and answer review flows.
+- **Full-screen Video Interview Room** with real-time STT, TTS, and webcam telemetry hooks.
+- **AI Scoring & Feedback** using DeepSeek models to evaluate candidate responses.
 - Q&A module and DOCX export support.
 - Profile avatar and resume upload management.
 - Plan tiers, VNPay billing flow, and upgrade pages.
-- Admin dashboard, admin access flow, and question-bank management.
+- **Admin Dashboard** for managing video sessions, user telemetry, revenue, and question-banks.
 
 ## Product Flow
 
@@ -55,7 +55,9 @@ The frontend routes show the core user journey clearly:
 - Public pages: `/`, `/about`, `/contact`, `/privacy`, `/terms`
 - Auth flow: `/login`, `/signup`, `/verify-email`, `/forgot-password`, `/reset-password`, `/oauth/callback`
 - App flow: `/app`, `/app/new`, `/app/sessions`, `/app/sessions/:id`, `/app/interview/:id`, `/app/profile`, `/app/qna`, `/app/settings`, `/app/upgrade`
-- Admin flow: `/admin`, `/admin/questions`, `/admin/access`
+- Admin flow: `/admin`, `/admin/questions`, `/admin/access`, `/admin/sessions`, `/admin/users`, `/admin/revenue`
+
+## The Backend API
 
 The backend exposes feature areas under `/api`:
 
@@ -66,6 +68,7 @@ The backend exposes feature areas under `/api`:
 - `qna`
 - `billing`
 - `admin`
+- `telemetry`
 
 ## Stack
 
@@ -79,19 +82,18 @@ The backend exposes feature areas under `/api`:
 - React Router
 - TanStack React Query
 - React Hook Form
-- Zod
-- Recharts
+- MediaPipe Tasks Vision (Webcam Telemetry)
+- Zod & Recharts
 
 ### Backend
 
 - FastAPI
 - Uvicorn
-- asyncpg
-- PostgreSQL
-- python-jose
-- argon2 / passlib
+- asyncpg (PostgreSQL)
+- Vosk (Speech-to-Text)
+- DeepSeek Client Integration
+- python-jose & passlib
 - python-dotenv
-- python-multipart
 - httpx
 - python-docx
 
@@ -115,15 +117,15 @@ Invera is structured as a single deployable product with a separate SPA frontend
 │   │   ├── core/
 │   │   ├── db/
 │   │   ├── schemas/
-│   │   └── services/
+│   │   └── services/ (DeepSeek, STT, TTS, Telemetry)
 │   ├── migrations/
 │   └── tests/
 ├── FE/
 │   ├── public/
 │   ├── src/
-│   │   ├── components/
+│   │   ├── components/ (Interview, Landing, Admin)
 │   │   ├── contexts/
-│   │   ├── hooks/
+│   │   ├── hooks/ (useCameraPreview)
 │   │   ├── lib/
 │   │   └── pages/
 │   └── package.json
@@ -147,7 +149,7 @@ Install backend dependencies:
 ./scripts/bootstrap_backend.sh
 ```
 
-Create `BE/.env` with a minimum local setup:
+Create `BE/.env` with a minimum local setup (refer to `.env.example`):
 
 ```bash
 API_PREFIX=/api
@@ -201,7 +203,7 @@ npm run lint
 ./scripts/inveractl smoke
 ```
 
-## Environment
+## Environment Variables
 
 Important backend variables:
 
@@ -223,7 +225,7 @@ Important backend variables:
 - `GITHUB_CLIENT_SECRET`
 - `SMTP_*`
 - `VNPAY_*`
-- `DEEPSEEK_*`
+- `DEEPSEEK_API_KEY`
 
 ## API Docs
 

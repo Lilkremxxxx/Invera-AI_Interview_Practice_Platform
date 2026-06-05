@@ -63,3 +63,13 @@ deploy/
 docker_config/
 scripts/
 Documentation/
+
+# Python virtualenvs & db
+.venv/
+venv/
+env/
+ENV/
+*.sqlite3
+*.db
+keys/
+certs/
