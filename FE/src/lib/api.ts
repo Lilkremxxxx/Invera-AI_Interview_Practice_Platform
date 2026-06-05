@@ -159,6 +159,35 @@ async function requestFile(path: string): Promise<{ blob: Blob; filename: string
   };
 }
 
+function buildRealtimeSttSocketUrl(
+  sessionId: string,
+  options: {
+    language: 'vi' | 'en' | 'auto';
+    questionId?: number;
+    sampleRate?: number;
+  },
+): string | null {
+  if (typeof window === 'undefined') return null;
+
+  const apiBase = BASE_URL;
+  const isAbsolute = /^https?:\/\//i.test(apiBase);
+  const baseUrl = isAbsolute ? new URL(apiBase) : new URL(apiBase, window.location.origin);
+  const protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = new URL(`${protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/$/, '')}/sessions/${sessionId}/stt-stream`);
+  const token = getToken();
+  if (!token) return null;
+
+  url.searchParams.set('token', token);
+  url.searchParams.set('language', options.language);
+  if (options.questionId != null) {
+    url.searchParams.set('question_id', String(options.questionId));
+  }
+  if (options.sampleRate != null) {
+    url.searchParams.set('sample_rate', String(options.sampleRate));
+  }
+  return url.toString();
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface LoginResponse {
   access_token: string;
@@ -227,6 +256,27 @@ export interface AdminStats {
   total_answers: number;
   avg_score: number;
   total_questions: number;
+  active_users: number;
+  total_revenue?: number;
+  role_distribution?: Record<string, number>;
+  level_distribution?: Record<string, number>;
+}
+
+
+export interface DailyRevenue {
+  day: string;
+  revenue: number;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+}
+
+export interface AdminRevenueResponse {
+  daily: DailyRevenue[];
+  monthly: MonthlyRevenue[];
+  total_revenue: number;
 }
 
 export interface AdminUser extends UserOut {
@@ -453,6 +503,13 @@ export interface AnswerSubmit {
   question_id: number;
   answer_text: string;
   output_language?: 'vi' | 'en';
+  telemetry_data?: {
+    gazeRatio: number;
+    smileRatio: number;
+    slouchRatio: number;
+    handGestures: number;
+    fidgetRatio: number;
+  };
 }
 
 // ─── Auth API ───────────────────────────────────────────────────────────────
@@ -598,6 +655,48 @@ export const sessionsApi = {
       body: formData,
     });
   },
+
+  createRealtimeSttSocket: (
+    sessionId: string,
+    options: {
+      language: 'vi' | 'en' | 'auto';
+      questionId?: number;
+      sampleRate?: number;
+    },
+  ): WebSocket | null => {
+    const url = buildRealtimeSttSocketUrl(sessionId, options);
+    if (!url || typeof WebSocket === 'undefined') {
+      return null;
+    }
+    return new WebSocket(url);
+  },
+
+  submitVideoAnswer: async (
+    sessionId: string,
+    videoFile: File,
+    telemetryData: {
+      gazeRatio: number;
+      smileRatio: number;
+      slouchRatio: number;
+      handGestures: number;
+      fidgetRatio: number;
+    },
+    language: 'vi' | 'en' | 'auto' = 'vi',
+    questionId?: number,
+  ): Promise<AnswerTranscriptOut> => {
+    const formData = new FormData();
+    formData.append('video', videoFile);
+    formData.append('language', language);
+    formData.append('telemetry_data', JSON.stringify(telemetryData));
+    if (questionId != null) {
+      formData.append('question_id', String(questionId));
+    }
+    return request<AnswerTranscriptOut>(`/sessions/${sessionId}/answer-video`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
 
   synthesizeFeedbackAudio: async (sessionId: string, answerId: string): Promise<AnswerTtsOut> => {
     return request<AnswerTtsOut>(`/sessions/${sessionId}/answers/${answerId}/tts`, {
@@ -761,14 +860,46 @@ export const adminApi = {
   downloadUserResume: async (userId: string): Promise<{ blob: Blob; filename: string | null }> =>
     requestFile(`/admin/users/${userId}/resume`),
     
-  getQuestions: async (params?: { major?: string; role?: string; level?: string }): Promise<AdminQuestionOut[]> => {
+  getQuestions: async (params?: { 
+    major?: string; 
+    role?: string; 
+    level?: string; 
+    search?: string; 
+    page?: number; 
+    size?: number; 
+  }): Promise<{ items: AdminQuestionOut[]; total: number; page: number; size: number; pages: number } | AdminQuestionOut[]> => {
     const search = new URLSearchParams();
     if (params?.major) search.set('major', params.major);
     if (params?.role) search.set('role', params.role);
     if (params?.level) search.set('level', params.level);
+    if (params?.search) search.set('search', params.search);
+    if (typeof params?.page === 'number') search.set('page', String(params.page));
+    if (typeof params?.size === 'number') search.set('size', String(params.size));
     const query = search.toString();
-    return request<AdminQuestionOut[]>(`/admin/questions${query ? `?${query}` : ''}`);
+    return request<any>(`/admin/questions${query ? `?${query}` : ''}`);
   },
+
+  getSessions: async (params?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    major?: string;
+    role?: string;
+    level?: string;
+    status?: string;
+  }): Promise<{ items: any[]; total: number }> => {
+    const search = new URLSearchParams();
+    if (typeof params?.limit === 'number') search.set('limit', String(params.limit));
+    if (typeof params?.offset === 'number') search.set('offset', String(params.offset));
+    if (params?.search) search.set('search', params.search);
+    if (params?.major) search.set('major', params.major);
+    if (params?.role) search.set('role', params.role);
+    if (params?.level) search.set('level', params.level);
+    if (params?.status) search.set('status', params.status);
+    const query = search.toString();
+    return request<{ items: any[]; total: number }>(`/admin/sessions${query ? `?${query}` : ''}`);
+  },
+
 
   createQuestion: async (payload: AdminQuestionUpsert): Promise<AdminQuestionOut> =>
     request<AdminQuestionOut>('/admin/questions', {
@@ -810,4 +941,7 @@ export const adminApi = {
     
   deleteQuestion: async (questionId: number): Promise<{ deleted: number }> => 
     request<{ deleted: number }>(`/admin/questions/${questionId}`, { method: 'DELETE' }),
+
+  getRevenue: async (): Promise<AdminRevenueResponse> =>
+    request<AdminRevenueResponse>('/admin/revenue'),
 };

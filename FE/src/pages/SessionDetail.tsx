@@ -14,7 +14,8 @@ import {
   Loader2,
   Play,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Video
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -105,6 +106,18 @@ const SessionDetail = () => {
     queryKey: ['session', id],
     queryFn: () => sessionsApi.get(id!),
     enabled: !!id,
+    refetchInterval: (query) => {
+      const sess = query.state.data;
+      if (sess) {
+        if (sess.status === 'COMPLETED' && !sess.evaluation_report) {
+          return 3000;
+        }
+        if (sess.answers.some(a => a.feedback === 'PENDING')) {
+          return 3000;
+        }
+      }
+      return false;
+    },
   });
 
   if (isLoading) {
@@ -125,6 +138,48 @@ const SessionDetail = () => {
 
   const answerMap = Object.fromEntries(session.answers.map(a => [a.question_id, a]));
   const avgScore = session.avg_score;
+
+  // Averages for Camera Telemetry
+  const cameraAnswers = session.answers.filter(a => a.telemetry_data);
+  const hasTelemetry = cameraAnswers.length > 0;
+  
+  let avgGaze = 0;
+  let avgSmile = 0;
+  let avgPosture = 0;
+  let avgFraming = 0;
+  let avgFidget = 0;
+  let totalHandGestures = 0;
+  let avgConfidence = 0;
+
+  if (hasTelemetry) {
+    let gazeSum = 0;
+    let smileSum = 0;
+    let postureSum = 0;
+    let framingSum = 0;
+    let fidgetSum = 0;
+    let confidenceSum = 0;
+    
+    cameraAnswers.forEach(a => {
+      const tel = a.telemetry_data;
+      if (tel) {
+        gazeSum += tel.gazeRatio ?? 0;
+        smileSum += tel.smileRatio ?? 0;
+        postureSum += tel.bodyPostureScore ?? (tel.slouchRatio != null ? (1 - tel.slouchRatio) : 1);
+        framingSum += tel.cameraFramingScore ?? 1;
+        fidgetSum += tel.fidgetRatio ?? 0;
+        totalHandGestures += tel.handGestures ?? 0;
+        confidenceSum += tel.presentationConfidence ?? 100;
+      }
+    });
+
+    const count = cameraAnswers.length;
+    avgGaze = Math.round((gazeSum / count) * 100);
+    avgSmile = Math.round((smileSum / count) * 100);
+    avgPosture = Math.round((postureSum / count) * 100);
+    avgFraming = Math.round((framingSum / count) * 100);
+    avgFidget = Math.round((fidgetSum / count) * 100);
+    avgConfidence = Math.round(confidenceSum / count);
+  }
 
   const handleExport = async () => {
     if (!id) return;
@@ -229,6 +284,162 @@ const SessionDetail = () => {
         </Card>
       </div>
 
+      {/* Non-Verbal Behavior & Gesture Analysis Card */}
+      {session.mode === 'camera' && hasTelemetry && (
+        <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
+          <CardHeader className="bg-muted/10 border-b pb-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <Video className="w-5 h-5 text-accent" />
+              <span>
+                {language === 'vi' ? 'Phân tích Hành vi & Cử chỉ phi ngôn ngữ' : 'Non-Verbal Behavior & Gesture Analysis'}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* Confidence Circle/Stat */}
+              <div className="md:col-span-4 flex flex-col items-center justify-center border-r md:pr-6 border-border/60">
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="54"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      className="text-muted/30"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="54"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      strokeDasharray={2 * Math.PI * 54}
+                      strokeDashoffset={2 * Math.PI * 54 * (1 - avgConfidence / 100)}
+                      className="text-accent transition-all duration-1000 ease-out"
+                      strokeLinecap="round"
+                      fill="transparent"
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <span className="text-3xl font-extrabold text-foreground">{avgConfidence}%</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {language === 'vi' ? 'Độ tự tin' : 'Confidence'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-4 max-w-[200px]">
+                  {language === 'vi'
+                    ? 'Chỉ số tự tin tổng hợp từ giao tiếp mắt, tư thế và phong thái trình bày.'
+                    : 'Composite confidence score based on eye contact, posture, and delivery.'}
+                </p>
+              </div>
+
+              {/* Individual Metrics */}
+              <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Eye Contact */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                      {language === 'vi' ? 'Giao tiếp mắt' : 'Eye Contact'}
+                    </span>
+                    <span className="text-cyan-500">{avgGaze}%</span>
+                  </div>
+                  <Progress value={avgGaze} className="h-1.5 bg-muted/40" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Tỉ lệ thời gian nhìn thẳng màn hình' : 'Time spent looking at screen'}
+                  </p>
+                </div>
+
+                {/* Friendly Expression (Smile) */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {language === 'vi' ? 'Biểu cảm thân thiện' : 'Friendly Smile'}
+                    </span>
+                    <span className="text-emerald-500">{avgSmile}%</span>
+                  </div>
+                  <Progress value={avgSmile} className="h-1.5 bg-muted/40" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Tỉ lệ thời gian mỉm cười tích cực' : 'Time spent smiling during session'}
+                  </p>
+                </div>
+
+                {/* Body Posture */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                      {language === 'vi' ? 'Tư thế ngồi' : 'Body Posture'}
+                    </span>
+                    <span className="text-indigo-500">{avgPosture}%</span>
+                  </div>
+                  <Progress value={avgPosture} className="h-1.5 bg-muted/40" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Tỉ lệ thời gian ngồi thẳng, chuyên nghiệp' : 'Time spent sitting up straight'}
+                  </p>
+                </div>
+
+                {/* Camera Framing */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                      {language === 'vi' ? 'Góc máy (Framing)' : 'Camera Framing'}
+                    </span>
+                    <span className="text-purple-500">{avgFraming}%</span>
+                  </div>
+                  <Progress value={avgFraming} className="h-1.5 bg-muted/40" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Mặt nằm ở vị trí trung tâm camera' : 'Face positioned correctly in camera frame'}
+                  </p>
+                </div>
+
+                {/* Fidgeting */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      {language === 'vi' ? 'Độ ổn định cơ thể' : 'Body Stability'}
+                    </span>
+                    <span className="text-rose-500">{100 - avgFidget}%</span>
+                  </div>
+                  <Progress value={100 - avgFidget} className="h-1.5 bg-muted/40" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Hạn chế rung lắc, chuyển động thừa' : 'Absence of excessive fidgeting/movement'}
+                  </p>
+                </div>
+
+                {/* Hand Gestures */}
+                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20 flex flex-col justify-between">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-foreground/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      {language === 'vi' ? 'Cử chỉ tay' : 'Hand Gestures'}
+                    </span>
+                    <span className="text-amber-500 font-bold">{totalHandGestures}</span>
+                  </div>
+                  <div className="text-xs text-foreground/90 font-medium py-1">
+                    {totalHandGestures > 15
+                      ? (language === 'vi' ? 'Sử dụng ngôn ngữ cơ thể phong phú' : 'Rich body language usage')
+                      : totalHandGestures > 5
+                      ? (language === 'vi' ? 'Mức độ cử chỉ tay vừa phải' : 'Moderate hand gesture usage')
+                      : (language === 'vi' ? 'Ít sử dụng cử chỉ tay' : 'Limited hand gesture usage')}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === 'vi' ? 'Tổng số lần sử dụng cử chỉ tay minh họa' : 'Total gesture movements detected'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* AI Evaluation Report (If Completed and Available) */}
       {session.status === 'COMPLETED' && session.evaluation_report && (
         <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
@@ -250,6 +461,32 @@ const SessionDetail = () => {
           </CardHeader>
           <CardContent className="p-6">
             {renderMarkdown(session.evaluation_report)}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Evaluation Report (If Completed and Not Available yet) */}
+      {session.status === 'COMPLETED' && !session.evaluation_report && (
+        <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
+          <CardContent className="p-8 text-center flex flex-col items-center justify-center space-y-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center animate-pulse">
+                <Sparkles className="w-8 h-8 text-accent animate-pulse" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center">
+                <Loader2 className="w-3 h-3 animate-spin text-accent-foreground" />
+              </div>
+            </div>
+            <div className="space-y-2 max-w-md">
+              <h3 className="font-bold text-foreground text-lg">
+                {language === 'vi' ? 'AI đang phân tích video & chuẩn bị báo cáo...' : 'AI is analyzing video & preparing report...'}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {language === 'vi' 
+                  ? 'Quá trình đánh giá toàn diện hành vi, câu trả lời và cử chỉ đang được thực hiện. Trang sẽ tự động cập nhật sau vài giây.' 
+                  : 'A comprehensive evaluation of your behavior, answers, and gestures is underway. The page will auto-refresh shortly.'}
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -293,29 +530,42 @@ const SessionDetail = () => {
                           <p className="text-xs text-muted-foreground mb-1">{copy.yourAnswer}</p>
                           <p className="text-sm text-foreground">{answer.answer_text || copy.emptyAnswer}</p>
                         </div>
-                        <div className="flex items-start gap-2">
-                          {answer.score >= 7 ? (
-                            <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          ) : answer.score >= 4 ? (
-                            <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <StructuredFeedback feedback={answer.feedback} />
+                        {answer.feedback === 'PENDING' ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-accent/5 border border-accent/10 rounded-lg p-3">
+                            <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                            <span>
+                              {language === 'vi' 
+                                ? 'AI đang phân tích câu trả lời và chấm điểm...' 
+                                : 'AI is analyzing your answer and scoring...'}
+                            </span>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            {answer.score >= 7 ? (
+                              <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                            ) : answer.score >= 4 ? (
+                              <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <StructuredFeedback feedback={answer.feedback} />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className={cn(
                         "text-xl font-bold flex-shrink-0",
-                        getScoreTextClass(answer.score)
+                        answer.feedback === 'PENDING' ? "text-muted-foreground" : getScoreTextClass(answer.score)
                       )}>
-                        {formatScore(answer.score)}
+                        {answer.feedback === 'PENDING' ? '—' : formatScore(answer.score)}
                       </div>
                     </div>
-                    <div className="ml-12">
-                      <Progress value={toScoreProgress(answer.score)} className="h-1.5" />
-                    </div>
+                    {answer.feedback !== 'PENDING' && (
+                      <div className="ml-12">
+                        <Progress value={toScoreProgress(answer.score)} className="h-1.5" />
+                      </div>
+                    )}
                   </div>
                 );
               })}

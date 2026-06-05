@@ -21,6 +21,7 @@ import {
   Mic, 
   MicOff, 
   Video,
+  VideoOff,
   Clock,
   Sparkles,
   CheckCircle2,
@@ -36,6 +37,7 @@ import { StructuredFeedback } from '@/components/feedback/StructuredFeedback';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { roleLabelMap } from '@/lib/mock-data';
 import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
+import { WebcamTelemetry, TelemetryData } from '@/components/interview/WebcamTelemetry';
 
 const RECORDING_LIMIT_SECONDS = 120;
 const DEFAULT_STT_LANGUAGE = 'vi';
@@ -96,6 +98,12 @@ type SpeechRecognitionWindow = Window & {
   SpeechRecognition?: SpeechRecognitionConstructor;
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
 };
+
+type RealtimeSttMessage =
+  | { type: 'partial'; seq: number; text: string; is_final: false }
+  | { type: 'final'; seq: number; text: string; is_final: true }
+  | { type: 'error'; seq: number; detail: string; recoverable?: boolean }
+  | { type: 'stopped'; seq: number };
 
 function resolveFeedbackAudioUrl(audioUrl: string): string {
   if (/^(https?:|blob:|data:)/i.test(audioUrl)) {
@@ -182,8 +190,17 @@ const InterviewRoom = () => {
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState('');
+  const answerRef = useRef('');
+  useEffect(() => {
+    answerRef.current = answer;
+  }, [answer]);
   const [sttLanguage, setSttLanguage] = useState<SttLanguage>(language === 'vi' ? 'vi' : 'en');
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+  const isSubmittingAfterStopRef = useRef(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -197,12 +214,23 @@ const InterviewRoom = () => {
   const [loadError, setLoadError] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
+  const [webcamTelemetry, setWebcamTelemetry] = useState<TelemetryData | null>(null);
   const autoCompletedRef = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const realtimeSocketRef = useRef<WebSocket | null>(null);
+  const realtimeSocketReadyRef = useRef(false);
+  const realtimeTranscriptReceivedRef = useRef(false);
+  const recordingAnswerPrefixRef = useRef('');
+  const realtimeFinalTranscriptRef = useRef('');
+  const realtimePartialTranscriptRef = useRef('');
   const liveFinalTranscriptRef = useRef('');
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
 
   // Load session from sessionStorage (set by NewSession after create)
   useEffect(() => {
@@ -288,6 +316,7 @@ const InterviewRoom = () => {
       mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       speechRecognitionRef.current?.stop();
+      realtimeSocketRef.current?.close();
     };
   }, []);
 
@@ -362,27 +391,29 @@ const InterviewRoom = () => {
   };
 
 
-  const handleSubmitAnswer = async () => {
-    if (!answer.trim() || !question || !id || isTimeUp) return;
-    setIsSubmitting(true);
-    try {
-      const result = await sessionsApi.submitAnswer(id, {
-        question_id: question.id,
-        answer_text: answer,
-        output_language: sttLanguage,
-      });
-      setCurrentAnswer(result);
-      setFeedbackMascotCue(createFeedbackMascotCue());
-      setShowFeedback(true);
-    } catch (err) {
-      toast({
-        title: copy.submitError,
-        description: err instanceof Error ? err.message : copy.retry,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
+  const handleSubmitAnswer = () => {
+    if (!question || !id || isTimeUp) return;
+    
+    if (isRecording) {
+      handleStopRecording();
+      return;
     }
+
+    if (!answer.trim()) return;
+    
+    const currentQuestionId = question.id;
+    const answerText = answer;
+
+    // Fire-and-forget background upload
+    sessionsApi.submitAnswer(id, {
+      question_id: currentQuestionId,
+      answer_text: answerText,
+      output_language: sttLanguage,
+    }).catch(err => {
+      console.error("Error submitting text answer in background:", err);
+    });
+
+    void handleNextQuestion();
   };
 
   const handleListenFeedback = async () => {
@@ -423,10 +454,263 @@ const InterviewRoom = () => {
     });
   };
 
+  const buildCombinedTranscript = (prefix: string, finalText: string, partialText: string) => {
+    return [prefix.trim(), finalText.trim(), partialText.trim()].filter(Boolean).join(' ').trim();
+  };
+
+  const syncAnswerWithRealtimeTranscript = () => {
+    const combined = buildCombinedTranscript(
+      recordingAnswerPrefixRef.current,
+      realtimeFinalTranscriptRef.current,
+      realtimePartialTranscriptRef.current,
+    );
+    setAnswer(combined);
+  };
+
+  const closeRealtimeSttSocket = () => {
+    const socket = realtimeSocketRef.current;
+    realtimeSocketRef.current = null;
+    realtimeSocketReadyRef.current = false;
+
+    if (audioContextRef.current) {
+      try {
+        void audioContextRef.current.close();
+      } catch (err) {
+        console.error('Error closing audio context:', err);
+      }
+      audioContextRef.current = null;
+    }
+    if (audioProcessorRef.current) {
+      try {
+        audioProcessorRef.current.disconnect();
+      } catch (err) {
+        console.error('Error disconnecting audio processor:', err);
+      }
+      audioProcessorRef.current = null;
+    }
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.disconnect();
+      } catch (err) {
+        console.error('Error disconnecting audio source:', err);
+      }
+      audioSourceRef.current = null;
+    }
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'stop' }));
+    }
+    socket?.close();
+    setLiveTranscript('');
+  };
+
+  const startRealtimeSttSocket = async () => {
+    if (!id || !session) return false;
+
+    closeRealtimeSttSocket();
+    realtimeTranscriptReceivedRef.current = false;
+    realtimeFinalTranscriptRef.current = '';
+    realtimePartialTranscriptRef.current = '';
+
+    // Create AudioContext early to detect sample rate
+    let sampleRate = 16000;
+    const stream = mediaStreamRef.current;
+    if (stream) {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        audioContextRef.current = audioContext;
+        sampleRate = audioContext.sampleRate;
+      } catch (err) {
+        console.error('Failed to pre-create AudioContext:', err);
+      }
+    }
+
+    const socket = sessionsApi.createRealtimeSttSocket?.(id, {
+      language: sttLanguage,
+      questionId: session.questions[currentQuestion]?.id,
+      sampleRate: sampleRate,
+    });
+    if (!socket) {
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      return false;
+    }
+
+    realtimeSocketRef.current = socket;
+    return await new Promise<boolean>((resolve) => {
+      let resolved = false;
+      const settle = (value: boolean) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(value);
+      };
+
+      socket.onopen = async () => {
+        realtimeSocketReadyRef.current = true;
+
+        const audioContext = audioContextRef.current;
+        if (stream && audioContext) {
+          try {
+            const source = audioContext.createMediaStreamSource(stream);
+            let useWorklet = false;
+
+            if (audioContext.audioWorklet) {
+              try {
+                const workletCode = `
+                  class PCMProcessor extends AudioWorkletProcessor {
+                    process(inputs, outputs, parameters) {
+                      const input = inputs[0];
+                      if (input && input[0]) {
+                        this.port.postMessage(input[0]);
+                      }
+                      return true;
+                    }
+                  }
+                  registerProcessor('pcm-processor', PCMProcessor);
+                `;
+                const blob = new Blob([workletCode], { type: 'application/javascript' });
+                const workletUrl = URL.createObjectURL(blob);
+                await audioContext.audioWorklet.addModule(workletUrl);
+
+                const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+                let bufferQueue: Float32Array[] = [];
+                let bufferLength = 0;
+                const TARGET_ACCUMULATED_SAMPLES = Math.floor(sampleRate * 0.25);
+
+                workletNode.port.onmessage = (event) => {
+                  const inputData = event.data as Float32Array;
+                  bufferQueue.push(new Float32Array(inputData));
+                  bufferLength += inputData.length;
+
+                  if (bufferLength >= TARGET_ACCUMULATED_SAMPLES) {
+                    const flattened = new Float32Array(bufferLength);
+                    let offset = 0;
+                    for (const chunk of bufferQueue) {
+                      flattened.set(chunk, offset);
+                      offset += chunk.length;
+                    }
+                    bufferQueue = [];
+                    bufferLength = 0;
+
+                    if (socket.readyState !== WebSocket.OPEN) return;
+                    const pcmData = new Int16Array(flattened.length);
+                    for (let i = 0; i < flattened.length; i++) {
+                      const s = Math.max(-1, Math.min(1, flattened[i]));
+                      pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    }
+                    socket.send(pcmData.buffer);
+                  }
+                };
+
+                source.connect(workletNode);
+                workletNode.connect(audioContext.destination);
+
+                audioProcessorRef.current = workletNode;
+                audioSourceRef.current = source;
+                useWorklet = true;
+                console.log('Successfully set up real-time PCM audio streaming using AudioWorklet');
+              } catch (workletErr) {
+                console.warn('Failed to initialize AudioWorklet, falling back to ScriptProcessor:', workletErr);
+              }
+            }
+
+            if (!useWorklet) {
+              const processor = audioContext.createScriptProcessor(4096, 1, 1);
+              processor.onaudioprocess = (e) => {
+                if (socket.readyState !== WebSocket.OPEN) return;
+                const inputData = e.inputBuffer.getChannelData(0);
+                const pcmData = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                  const s = Math.max(-1, Math.min(1, inputData[i]));
+                  pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+                socket.send(pcmData.buffer);
+              };
+
+              source.connect(processor);
+              processor.connect(audioContext.destination);
+
+              audioProcessorRef.current = processor;
+              audioSourceRef.current = source;
+              console.log('Successfully set up real-time PCM audio streaming using ScriptProcessorNode');
+            }
+          } catch (err) {
+            console.error('Failed to set up real-time PCM audio streaming:', err);
+          }
+        }
+
+        settle(true);
+      };
+      socket.onerror = () => {
+        realtimeSocketReadyRef.current = false;
+        settle(false);
+      };
+      socket.onclose = () => {
+        realtimeSocketReadyRef.current = false;
+        if (isRecordingRef.current && !speechRecognitionRef.current) {
+          startLiveSpeechRecognition();
+        }
+      };
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data) as RealtimeSttMessage;
+          if (payload.type === 'partial') {
+            realtimePartialTranscriptRef.current = payload.text.trim();
+            setLiveTranscript(realtimePartialTranscriptRef.current);
+            syncAnswerWithRealtimeTranscript();
+            return;
+          }
+          if (payload.type === 'final' && payload.text.trim()) {
+            realtimeTranscriptReceivedRef.current = true;
+            realtimeFinalTranscriptRef.current = `${realtimeFinalTranscriptRef.current} ${payload.text}`.trim();
+            realtimePartialTranscriptRef.current = '';
+            liveFinalTranscriptRef.current = realtimeFinalTranscriptRef.current;
+            setLiveTranscript('');
+            syncAnswerWithRealtimeTranscript();
+            return;
+          }
+          if (payload.type === 'error') {
+            setLiveTranscript('');
+          }
+        } catch {
+          // Ignore malformed WS messages and keep the recording alive.
+        }
+      };
+
+      window.setTimeout(() => settle(socket.readyState === WebSocket.OPEN), 1500);
+    });
+  };
+
+  const sendRealtimeChunk = (blob: Blob) => {
+    if (audioContextRef.current) return;
+    if (!blob.size) return;
+    const socket = realtimeSocketRef.current;
+    if (!socket || !realtimeSocketReadyRef.current || socket.readyState !== WebSocket.OPEN) return;
+
+    void blob.arrayBuffer().then((buffer) => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(buffer);
+      }
+    }).catch(() => {
+      // Ignore transient chunk serialization errors; upload fallback still exists.
+    });
+  };
+
+
   const startLiveSpeechRecognition = () => {
+    if (speechRecognitionRef.current) {
+      console.warn('Speech recognition is already running.');
+      return;
+    }
     const speechWindow = window as SpeechRecognitionWindow;
     const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-    if (!Recognition) return;
+    if (!Recognition) {
+      console.error('Web Speech API is not supported in this browser.');
+      return;
+    }
 
     try {
       const recognition = new Recognition();
@@ -435,31 +719,40 @@ const InterviewRoom = () => {
       recognition.lang = browserSttLanguageMap[sttLanguage];
       recognition.onresult = (event) => {
         let interim = '';
-        let finalText = '';
-        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        let finalAccumulated = '';
+        for (let index = 0; index < event.results.length; index += 1) {
           const result = event.results[index];
           if (result.isFinal) {
-            finalText += result[0].transcript;
+            finalAccumulated += result[0].transcript;
           } else {
             interim += result[0].transcript;
           }
         }
-        if (finalText.trim()) {
-          liveFinalTranscriptRef.current = `${liveFinalTranscriptRef.current} ${finalText}`.trim();
-        }
+        liveFinalTranscriptRef.current = finalAccumulated.trim();
         setLiveTranscript(interim.trim());
+        
+        const combined = buildCombinedTranscript(
+          recordingAnswerPrefixRef.current,
+          finalAccumulated,
+          interim
+        );
+        setAnswer(combined);
       };
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error, event.message);
         speechRecognitionRef.current = null;
         setLiveTranscript('');
       };
       recognition.onend = () => {
+        console.log('Speech recognition ended.');
         speechRecognitionRef.current = null;
         setLiveTranscript('');
       };
       recognition.start();
       speechRecognitionRef.current = recognition;
-    } catch {
+      console.log('Speech recognition started successfully.');
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
       speechRecognitionRef.current = null;
     }
   };
@@ -471,8 +764,52 @@ const InterviewRoom = () => {
     setLiveTranscript('');
   };
 
+  const handleWebcamRecordingStart = (stream: MediaStream) => {
+    mediaStreamRef.current = stream;
+  };
+
+  const handleWebcamRecordingStop = (videoBlob: Blob, telemetry: TelemetryData) => {
+    setIsRecording(false);
+    stopRecordingTracks();
+
+    if (videoBlob.size && id) {
+      const videoFile = new File([videoBlob], `session-${id}-${question.id}.webm`, { type: 'video/webm' });
+      const currentQuestionId = question.id;
+      
+      // Fire-and-forget background upload
+      sessionsApi.submitVideoAnswer(
+        id,
+        videoFile,
+        telemetry,
+        sttLanguage,
+        currentQuestionId
+      ).catch((err) => {
+        console.error("Error uploading video answer in background:", err);
+      });
+    }
+
+    // Immediately go to next question
+    void handleNextQuestion();
+  };
+
   const handleStartRecording = async () => {
     if (isTimeUp || isTranscribing) return;
+    recordingAnswerPrefixRef.current = answer;
+    liveFinalTranscriptRef.current = '';
+    setLiveTranscript('');
+    if (session?.mode === 'camera') {
+      const hasVideo = mediaStreamRef.current?.getVideoTracks().some((track) => track.readyState === 'live');
+      if (!hasVideo) {
+        toast({
+          title: language === 'vi' ? 'Vui lòng bật camera trước khi ghi hình.' : 'Please turn on your camera before recording.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setIsRecording(true);
+      return;
+    }
+
     if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       toast({
         title: copy.sttUnavailable,
@@ -493,43 +830,42 @@ const InterviewRoom = () => {
       const recorder = preferredMimeType
         ? new MediaRecorder(stream, { mimeType: preferredMimeType })
         : new MediaRecorder(stream);
+
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
-      recorder.onstop = async () => {
+
+      recorder.onstop = () => {
         setIsRecording(false);
-        stopLiveSpeechRecognition();
         stopRecordingTracks();
 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         audioChunksRef.current = [];
-        if (!audioBlob.size || !id) return;
-        setIsTranscribing(true);
-        try {
-          const audioFile = new File([audioBlob], `session-${id}.webm`, { type: 'audio/webm' });
-          const result = await sessionsApi.transcribeAnswer(
+
+        if (audioBlob.size && id) {
+          const audioFile = new File([audioBlob], `session-${id}-${question.id}.webm`, { type: 'audio/webm' });
+          const currentQuestionId = question.id;
+          
+          // Fire-and-forget background upload
+          sessionsApi.transcribeAnswer(
             id,
             audioFile,
             sttLanguage,
-            session.questions[currentQuestion]?.id,
-          );
-          appendTranscript(result.text);
-        } catch (err) {
-          toast({
-            title: copy.sttFailed,
-            description: err instanceof Error ? err.message : copy.retry,
-            variant: 'destructive',
+            currentQuestionId
+          ).catch((err) => {
+            console.error("Error uploading audio answer in background:", err);
           });
-        } finally {
-          setIsTranscribing(false);
         }
+
+        // Immediately go to next question
+        void handleNextQuestion();
       };
+
       mediaRecorderRef.current = recorder;
       setRecordingSeconds(0);
-      recorder.start();
-      startLiveSpeechRecognition();
+      recorder.start(1250);
       setIsRecording(true);
     } catch (err) {
       stopRecordingTracks();
@@ -542,6 +878,10 @@ const InterviewRoom = () => {
   };
 
   const handleStopRecording = () => {
+    if (session?.mode === 'camera') {
+      setIsRecording(false);
+      return;
+    }
     const recorder = mediaRecorderRef.current;
     if (!recorder) return;
     mediaRecorderRef.current = null;
@@ -552,15 +892,17 @@ const InterviewRoom = () => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer('');
+      setLiveTranscript('');
       setShowFeedback(false);
       setCurrentAnswer(null);
+      setWebcamTelemetry(null);
+      liveFinalTranscriptRef.current = '';
     } else {
       // Last question — complete the session
       setIsCompleting(true);
       try {
-        const completed = await sessionsApi.complete(id!, { generateReport: false });
+        const completed = await sessionsApi.complete(id!, { generateReport: true });
         setCompletedSession(completed);
-        // Clean up sessionStorage
         sessionStorage.removeItem(`session_${id}`);
         navigate(`/app/sessions/${id}`);
       } catch (err) {
@@ -611,8 +953,8 @@ const InterviewRoom = () => {
         </AlertDialogContent>
       </AlertDialog>
       {/* Top Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b px-6 lg:px-12 py-3">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-accent">
               {copy.questionLabel} {currentQuestion + 1} / {totalQuestions}
@@ -646,10 +988,10 @@ const InterviewRoom = () => {
       </div>
 
       {/* Main Content */}
-      <div className="pt-20 pb-8 px-4">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-6">
-          {/* AI Interviewer Side */}
-          <div className="space-y-6">
+      <div className="pt-20 pb-8 px-6 lg:px-12">
+        <div className="w-full grid lg:grid-cols-12 gap-8">
+          {/* AI Interviewer Side (Left, 1/3 width) */}
+          <div className="space-y-6 lg:col-span-4">
             <div className="bg-card rounded-2xl border p-6 md:p-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative">
@@ -688,18 +1030,7 @@ const InterviewRoom = () => {
               )}
             </div>
 
-            {/* STAR Hint */}
-            <div className="bg-info/10 border border-info/20 rounded-xl p-4 flex gap-3">
-              <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-foreground mb-1">{copy.hintTitle}</p>
-                <p className="text-xs text-muted-foreground">{copy.hintBody}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Answer Side */}
-          <div className="space-y-6">
+            {/* Answer Textbox placed immediately below the question */}
             {!showFeedback && !isSubmitting && (
               <div className="bg-card rounded-2xl border p-6 md:p-8">
                 <div className="flex items-center justify-between mb-4">
@@ -717,7 +1048,7 @@ const InterviewRoom = () => {
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="flex flex-wrap items-center gap-2">
-                    {session?.mode === 'voice' && (
+                    {(session?.mode === 'voice' || session?.mode === 'camera') && (
                       <>
                         <div
                           aria-label={copy.sttLanguage}
@@ -755,8 +1086,12 @@ const InterviewRoom = () => {
                           onClick={isRecording ? handleStopRecording : handleStartRecording}
                           disabled={isTimeUp || isTranscribing}
                         >
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                          {isRecording ? copy.stop : copy.voice}
+                          {isRecording ? (
+                            session?.mode === 'camera' ? <VideoOff className="w-4 h-4" /> : <MicOff className="w-4 h-4" />
+                          ) : (
+                            session?.mode === 'camera' ? <Video className="w-4 h-4" /> : <Mic className="w-4 h-4" />
+                          )}
+                          {isRecording ? copy.stop : (session?.mode === 'camera' ? (language === 'vi' ? 'Ghi hình' : 'Record') : copy.voice)}
                         </Button>
                       </>
                     )}
@@ -764,7 +1099,7 @@ const InterviewRoom = () => {
                   <Button 
                     variant="accent" 
                     onClick={handleSubmitAnswer}
-                    disabled={!answer.trim() || isTimeUp || isRecording || isTranscribing}
+                    disabled={!answer.trim() || isTimeUp || isTranscribing || isSubmitting}
                   >
                     {copy.submit}
                     <ArrowRight className="w-4 h-4" />
@@ -773,8 +1108,12 @@ const InterviewRoom = () => {
                 {(isRecording || isTranscribing) && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-sm">
                     <Badge variant="secondary" className="rounded-full border border-accent/20 bg-background/80 px-3 py-1 text-foreground">
-                      {isRecording ? <Mic className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      {isRecording ? copy.recording : copy.transcribing}
+                      {isRecording ? (
+                        session?.mode === 'camera' ? <Video className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />
+                      ) : (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      )}
+                      {isRecording ? (session?.mode === 'camera' ? (language === 'vi' ? 'Đang ghi hình...' : 'Recording...') : copy.recording) : copy.transcribing}
                     </Badge>
                     <span className="text-muted-foreground">
                       {isRecording
@@ -782,7 +1121,7 @@ const InterviewRoom = () => {
                         : copy.takeSeconds}
                     </span>
                     {liveTranscript && (
-                      <span className="basis-full text-xs text-muted-foreground">
+                      <span className="basis-full text-xs text-muted-foreground mt-1">
                         <span className="font-medium text-foreground">{copy.liveTranscript}:</span> {liveTranscript}
                       </span>
                     )}
@@ -804,6 +1143,52 @@ const InterviewRoom = () => {
                   <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
                   <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
                 </div>
+              </div>
+            )}
+
+            {/* STAR Hint */}
+            <div className="bg-info/10 border border-info/20 rounded-xl p-4 flex gap-3">
+              <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground mb-1">{copy.hintTitle}</p>
+                <p className="text-xs text-muted-foreground">{copy.hintBody}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Camera / Feedback Side (Right, 2/3 width) */}
+          <div className="space-y-6 lg:col-span-8">
+            {/* Webcam Telemetry if camera mode */}
+            {session?.mode === 'camera' && !showFeedback && !isSubmitting && (
+              <WebcamTelemetry
+                isRecording={isRecording}
+                onRecordingStart={handleWebcamRecordingStart}
+                onRecordingStop={handleWebcamRecordingStop}
+                onRecordingChunk={sendRealtimeChunk}
+                language={sttLanguage}
+                liveTranscript={liveTranscript}
+                answerText={answer}
+                onCameraReady={(stream) => {
+                  mediaStreamRef.current = stream;
+                }}
+                onCameraClose={() => {
+                  mediaStreamRef.current = null;
+                }}
+              />
+            )}
+
+            {/* Placeholder when in voice mode (and not showing feedback) */}
+            {session?.mode !== 'camera' && !showFeedback && !isSubmitting && (
+              <div className="bg-card rounded-2xl border p-8 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[340px] h-full">
+                <div className="w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center animate-pulse">
+                  <Mic className="w-8 h-8 text-accent" />
+                </div>
+                <h4 className="font-semibold text-foreground">{language === 'vi' ? 'Đang phỏng vấn bằng Giọng nói' : 'Voice Interview Active'}</h4>
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  {language === 'vi' 
+                    ? 'Hãy nhấn nút "Ghi âm" và bắt đầu trả lời câu hỏi bằng giọng nói.' 
+                    : 'Click "Voice" and speak your answer directly to the microphone.'}
+                </p>
               </div>
             )}
 

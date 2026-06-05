@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, LabelList } from 'recharts';
 import { BarChart3, CheckCircle2, Clock3, Sparkles, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MascotDecoration } from './MascotDecoration';
@@ -113,16 +113,16 @@ export const DashboardDemoSection = () => {
         ? 'Thay vì đẩy thẳng người dùng vào app thật, section này mô phỏng cách Invera theo dõi độ sẵn sàng phỏng vấn, kỹ năng mạnh/yếu và các buổi luyện gần nhất.'
         : 'Instead of dropping visitors straight into the live app, this section previews how Invera tracks interview readiness, strengths, weak spots, and recent practice.',
     hint: language === 'vi' ? 'Chạm vào role và time range để xem dữ liệu demo đổi theo ngữ cảnh.' : 'Switch role and time range to see the demo data react in context.',
-    kpiScore: language === 'vi' ? 'Interview score' : 'Interview score',
-    kpiReadiness: language === 'vi' ? 'Readiness' : 'Readiness',
-    kpiSessions: language === 'vi' ? 'Sessions this cycle' : 'Sessions this cycle',
-    kpiFocus: language === 'vi' ? 'Current focus' : 'Current focus',
+    kpiTotalSessions: language === 'vi' ? 'Tổng số phiên' : 'Total sessions',
+    kpiAvgScore: language === 'vi' ? 'Điểm trung bình' : 'Average score',
+    kpiCompletedSessions: language === 'vi' ? 'Phiên hoàn thành' : 'Completed sessions',
+    kpiQuestionsAnswered: language === 'vi' ? 'Câu hỏi đã trả lời' : 'Questions answered',
     chartTitle: language === 'vi' ? 'Progress over time' : 'Progress over time',
     chartBody: language === 'vi' ? 'Điểm trả lời và mức độ sẵn sàng tăng dần qua các phiên luyện.' : 'Answer quality and readiness trend upward as practice sessions accumulate.',
     strengthsTitle: language === 'vi' ? 'Skill breakdown' : 'Skill breakdown',
-    strengthsBody: language === 'vi' ? 'Các chỉ số giả lập này cho thấy người dùng đang mạnh ở đâu và cần bồi tiếp phần nào.' : 'These mock metrics show where the user is already strong and where more repetition is needed.',
+    strengthsBody: language === 'vi' ? 'Các chỉ số này cho thấy mức độ sẵn sàng và cần bồi tập phần nào.' : 'These metrics show where you are already strong and where more repetition is needed.',
     sessionsTitle: language === 'vi' ? 'Recent mock sessions' : 'Recent mock sessions',
-    sessionsBody: language === 'vi' ? 'Một danh sách rõ ràng hơn nhiều so với việc ném người dùng sang dashboard thật ngay từ footer.' : 'A clearer preview than sending someone directly into the real dashboard from the footer.',
+    sessionsBody: language === 'vi' ? 'Danh sách các buổi phỏng vấn giả lập gần đây của bạn.' : 'Your most recent mock interview sessions.',
     sidebarSummary: language === 'vi' ? 'Demo workspace' : 'Demo workspace',
     sidebarAnalytics: language === 'vi' ? 'Readiness analytics' : 'Readiness analytics',
     sidebarPractice: language === 'vi' ? 'Practice log' : 'Practice log',
@@ -141,8 +141,8 @@ export const DashboardDemoSection = () => {
             : 'Product sense + prioritization',
     range7d: language === 'vi' ? '7 ngày' : '7 days',
     range30d: language === 'vi' ? '30 ngày' : '30 days',
-    strong: language === 'vi' ? 'Strong' : 'Strong',
-    mixed: language === 'vi' ? 'Needs work' : 'Needs work',
+    strong: language === 'vi' ? 'Tốt' : 'Strong',
+    mixed: language === 'vi' ? 'Cần cải thiện' : 'Needs work',
   };
 
   const roleLabels = {
@@ -151,16 +151,23 @@ export const DashboardDemoSection = () => {
     product: language === 'vi' ? 'Product' : 'Product',
   } as const;
 
-  const trend = trendData[role][range];
+  const trendRaw = trendData[role][range];
+  
+  // Convert 0-100 scale to 0-10 scale for chart and KPIs
+  const trend = useMemo(() => {
+    return trendRaw.map(pt => ({
+      label: pt.label,
+      score: Number((pt.score / 10).toFixed(1)),
+      readiness: Number((pt.readiness / 10).toFixed(1))
+    }));
+  }, [trendRaw]);
+
   const strengths = strengthData[role];
   const sessions = sessionsData[role];
 
   const latestPoint = trend[trend.length - 1];
   const sessionCount = range === '7d' ? 4 : 12;
-  const strongestSkill = useMemo(
-    () => [...strengths].sort((a, b) => b.score - a.score)[0],
-    [strengths],
-  );
+  const completedCount = range === '7d' ? 3 : 10;
 
   return (
     <section id="dashboard-demo" className="relative scroll-mt-24 overflow-hidden bg-white py-24">
@@ -251,10 +258,10 @@ export const DashboardDemoSection = () => {
                 <div className="grid gap-4">
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     {[
-                      { label: copy.kpiScore, value: `${latestPoint.score}%`, icon: Target },
-                      { label: copy.kpiReadiness, value: `${latestPoint.readiness}%`, icon: CheckCircle2 },
-                      { label: copy.kpiSessions, value: `${sessionCount}`, icon: Clock3 },
-                      { label: copy.kpiFocus, value: strongestSkill.skill, icon: BarChart3 },
+                      { label: copy.kpiTotalSessions, value: `${sessionCount}`, icon: Target },
+                      { label: copy.kpiAvgScore, value: `${latestPoint.score.toFixed(1)}/10`, icon: CheckCircle2 },
+                      { label: copy.kpiCompletedSessions, value: `${completedCount}`, icon: Clock3 },
+                      { label: copy.kpiQuestionsAnswered, value: `${completedCount * 5}`, icon: BarChart3 },
                     ].map((item) => (
                       <div key={item.label} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                         <div className="flex items-center justify-between">
@@ -282,7 +289,7 @@ export const DashboardDemoSection = () => {
                           </defs>
                           <CartesianGrid stroke="#e2e8f0" vertical={false} strokeDasharray="4 4" />
                           <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                          <YAxis tickLine={false} axisLine={false} width={28} />
+                          <YAxis tickLine={false} axisLine={false} width={28} domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
                           <Tooltip />
                           <Area
                             type="monotone"
@@ -305,7 +312,7 @@ export const DashboardDemoSection = () => {
                     <div className="mt-1 text-sm leading-6 text-slate-500">{copy.strengthsBody}</div>
                     <div className="mt-5 h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={strengths} layout="vertical" barCategoryGap={16}>
+                        <BarChart data={strengths} layout="vertical" barCategoryGap={16} margin={{ left: -10, right: 30 }}>
                           <XAxis type="number" hide domain={[0, 100]} />
                           <YAxis
                             type="category"
@@ -315,8 +322,27 @@ export const DashboardDemoSection = () => {
                             width={110}
                             tick={{ fill: '#475569', fontSize: 12 }}
                           />
-                          <Tooltip />
-                          <Bar dataKey="score" fill="#14b8a6" radius={[0, 10, 10, 0]} />
+                          <Tooltip 
+                            cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                            contentStyle={{
+                              backgroundColor: '#1e293b',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '4px 8px',
+                              fontSize: '11px'
+                            }}
+                            itemStyle={{ color: '#ffffff', padding: 0 }}
+                            labelStyle={{ display: 'none' }}
+                          />
+                          <Bar dataKey="score" fill="#14b8a6" radius={[0, 10, 10, 0]}>
+                            <LabelList 
+                              dataKey="score" 
+                              position="right" 
+                              formatter={(val: number) => `${val}%`}
+                              style={{ fill: '#475569', fontSize: 10, fontWeight: 'bold' }} 
+                            />
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -331,7 +357,7 @@ export const DashboardDemoSection = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <div className="font-medium">{session.title}</div>
-                              <div className="mt-1 text-sm text-white/60">{session.score}% score</div>
+                              <div className="mt-1 text-sm text-white/60">{(session.score / 10).toFixed(1)}/10 score</div>
                             </div>
                             <div
                               className={`rounded-full px-3 py-1 text-xs font-semibold ${

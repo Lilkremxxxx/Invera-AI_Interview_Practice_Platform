@@ -10,7 +10,8 @@ import {
   LogOut,
   CreditCard,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -53,6 +54,12 @@ export const AppSidebar = () => {
       icon: CreditCard,
       label: language === 'vi' ? 'Nâng cấp gói' : 'Upgrade plan',
       path: '/app/upgrade',
+    });
+  } else {
+    menuItems.push({
+      icon: ShieldCheck,
+      label: language === 'vi' ? 'Quay lại Admin' : 'Back to Admin',
+      path: '/admin',
     });
   }
 

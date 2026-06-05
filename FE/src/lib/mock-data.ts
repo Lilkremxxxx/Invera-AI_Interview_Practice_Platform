@@ -61,8 +61,8 @@ export const roleLabelMap = Object.fromEntries(
 ) as Record<string, { vi: string; en: string }>;
 
 export const answerModes = [
-  { id: 'text', name: { vi: 'Văn bản', en: 'Text' }, icon: '✍️', description: { vi: 'Nhập câu trả lời của bạn', en: 'Type your answer' } },
   { id: 'voice', name: { vi: 'Giọng nói', en: 'Voice' }, icon: '🎤', description: { vi: 'Nói câu trả lời của bạn', en: 'Speak your answer' } },
+  { id: 'camera', name: { vi: 'Camera', en: 'Camera' }, icon: '📹', description: { vi: 'Ghi hình câu trả lời của bạn', en: 'Record your answer on camera' } },
 ];
 
 export const questionCounts = [5, 10, 15];

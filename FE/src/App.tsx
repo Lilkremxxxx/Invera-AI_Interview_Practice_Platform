@@ -40,6 +40,10 @@ const AdminLogin = lazy(() => import("./pages/admin/AdminLogin").then((module) =
 const AdminSignup = lazy(() => import("./pages/admin/AdminSignup").then((module) => ({ default: module.AdminSignup })));
 const AdminAccess = lazy(() => import("./pages/admin/AdminAccess").then((module) => ({ default: module.AdminAccess })));
 const AdminQuestionBank = lazy(() => import("./pages/admin/AdminQuestionBank").then((module) => ({ default: module.AdminQuestionBank })));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+
 
 const queryClient = new QueryClient();
 
@@ -137,8 +141,12 @@ function AppContent() {
             >
               <Route index element={<AdminDashboard />} />
               <Route path="questions" element={<AdminQuestionBank />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="sessions" element={<AdminSessions />} />
+              <Route path="revenue" element={<AdminRevenue />} />
               <Route path="access" element={<AdminAccess />} />
             </Route>
+
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

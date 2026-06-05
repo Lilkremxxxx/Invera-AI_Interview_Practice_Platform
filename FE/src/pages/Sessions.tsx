@@ -57,14 +57,16 @@ const Sessions = () => {
   const filteredSessions = sessions.filter(session => {
     const roleLabel = roleLabelMap[session.role]?.en?.toLowerCase() || session.role;
     const matchesSearch = roleLabel.includes(searchQuery.toLowerCase());
-    const matchesMode = !filterMode || session.mode === filterMode;
+    const matchesMode = !filterMode || 
+      (filterMode === 'camera' ? (session.mode === 'camera' || session.mode === 'video') : session.mode === filterMode);
     return matchesSearch && matchesMode;
   });
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case 'voice': return <Mic className="w-4 h-4" />;
-      case 'video': return <Video className="w-4 h-4" />;
+      case 'video':
+      case 'camera': return <Video className="w-4 h-4" />;
       default: return <Type className="w-4 h-4" />;
     }
   };
@@ -124,14 +126,11 @@ const Sessions = () => {
               <Button variant={filterMode === null ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode(null)}>
                 {t('sessions', 'all')}
               </Button>
-              <Button variant={filterMode === 'text' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('text')}>
-                <Type className="w-4 h-4" />{t('sessions', 'text')}
-              </Button>
               <Button variant={filterMode === 'voice' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('voice')}>
                 <Mic className="w-4 h-4" />{t('sessions', 'voice')}
               </Button>
-              <Button variant={filterMode === 'video' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('video')}>
-                <Video className="w-4 h-4" />{t('sessions', 'video')}
+              <Button variant={filterMode === 'camera' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('camera')}>
+                <Video className="w-4 h-4" />Camera
               </Button>
             </div>
           </div>
@@ -186,7 +185,7 @@ const Sessions = () => {
                         <span>•</span>
                         <span className="flex items-center gap-1 capitalize">
                           {getModeIcon(session.mode)}
-                          {t('sessions', session.mode)}
+                          {session.mode === 'camera' ? 'Camera' : t('sessions', session.mode)}
                         </span>
                         <span>•</span>
                         <span className={cn(

@@ -26,7 +26,7 @@ type SessionConfig = {
   role: string;
   level: string;
   questionCount: number | null;
-  answerMode: 'text' | 'voice';
+  answerMode: 'voice' | 'camera';
   difficulty: string;
 };
 
@@ -45,7 +45,7 @@ const NewSession = () => {
     role: '',
     level: '',
     questionCount: null,
-    answerMode: 'text',
+    answerMode: 'voice',
     difficulty: '',
   });
 
@@ -397,7 +397,7 @@ const NewSession = () => {
                         <button
                           key={mode.id}
                           type="button"
-                          onClick={() => setConfig({ ...config, answerMode: mode.id as 'text' | 'voice' })}
+                          onClick={() => setConfig({ ...config, answerMode: mode.id as 'voice' | 'camera' })}
                           className={cn(
                             "relative p-4 rounded-lg border text-center transition-all",
                             config.answerMode === mode.id
@@ -515,7 +515,7 @@ const NewSession = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'answerModeLabel')}</span>
                   <span className="font-medium text-foreground">
-                    {answerModes.find((mode) => mode.id === config.answerMode)?.name[language] ?? 'Text'}
+                    {answerModes.find((mode) => mode.id === config.answerMode)?.name[language] ?? 'Voice'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
