@@ -156,6 +156,45 @@ def test_score_answer_forced_english_short_answer_is_not_vietnamese_guard():
     assert "Câu trả lời quá ngắn" not in feedback
 
 
+def test_cv_scoring_passes_resume_text_into_ai_payload(monkeypatch):
+    captured = {}
+
+    async def fake_deepseek(request):
+        captured["resume_text"] = request.resume_text
+        return 8.0, "ok"
+
+    monkeypatch.setattr(scoring_module, "_score_with_deepseek", fake_deepseek)
+    monkeypatch.setattr(scoring_module, "_quick_guard_result", lambda request: None)
+    monkeypatch.setattr(
+        scoring_module,
+        "settings",
+        type("Settings", (), {
+            "deepseek_enabled": True,
+            "deepseek_api_key": "test-key",
+        })(),
+    )
+
+    score, feedback = asyncio.run(score_answer(
+        ScoringRequest(
+            answer_text="I built the payments service and handled retries.",
+            ideal_answer="Explain the project goal, architecture, your contribution, and trade-offs.",
+            question_text="Tell me about the payments project in your CV.",
+            role="cv",
+            level="cv",
+            category="Projects",
+            difficulty="medium",
+            major="cv",
+            preferred_language="en",
+            force_language=True,
+            resume_text="Experience: Built a payments service with retry handling and reconciliation jobs.",
+        )
+    ))
+
+    assert score == 8.0
+    assert feedback == "ok"
+    assert "payments service" in captured["resume_text"]
+
+
 def test_short_answer_guard_does_not_call_ai_or_quote_candidate(monkeypatch):
     called = False
 
@@ -277,3 +316,56 @@ def test_weak_answer_guard_english():
     assert "Scoring criteria" not in feedback
     assert "Gaps:" in feedback
 
+
+def test_feedback_formatting_by_plan_tier():
+    # Sample result payload
+    result = {
+        "language": "vi",
+        "summary": "Tóm tắt mẫu",
+        "criteria": [
+            {
+                "name": "Kiến thức và độ chính xác kỹ thuật",
+                "assessment": "strong",
+                "quote": "Bằng chứng trích dẫn",
+                "evidence": "Đánh giá chi tiết",
+                "missing": "Thiếu sót",
+            }
+        ],
+        "strengths": ["Điểm mạnh 1"],
+        "gaps": ["Khoảng cách 1"],
+        "improvements": ["Cải thiện 1"],
+        "better_outline": ["Dàn ý 1"],
+        "follow_up": ["Follow-up 1"]
+    }
+
+    # Test Free/Trial tier
+    free_feedback = _format_feedback(result, plan_tier="free_trial")
+    assert "Tóm tắt:" in free_feedback
+    assert "Kiến thức và độ chính xác kỹ thuật - strong" in free_feedback
+    assert "Trích dẫn:" not in free_feedback
+    assert "Đánh giá:" not in free_feedback
+    assert "Thiếu:" not in free_feedback
+    assert "Điểm tốt:" not in free_feedback
+    assert "Nâng cấp lên gói Basic hoặc Pro" in free_feedback
+
+    # Test Basic tier
+    basic_feedback = _format_feedback(result, plan_tier="basic")
+    assert "Tóm tắt:" in basic_feedback
+    assert "Kiến thức và độ chính xác kỹ thuật - strong" in basic_feedback
+    assert "Trích dẫn: “Bằng chứng trích dẫn”" in basic_feedback
+    assert "Đánh giá: Đánh giá chi tiết" in basic_feedback
+    assert "Thiếu: Thiếu sót" in basic_feedback
+    assert "Điểm tốt:" not in basic_feedback
+    assert "Nâng cấp lên gói Pro để mở khóa" in basic_feedback
+
+    # Test Pro/Premium tier
+    pro_feedback = _format_feedback(result, plan_tier="pro")
+    assert "Tóm tắt:" in pro_feedback
+    assert "Kiến thức và độ chính xác kỹ thuật - strong" in pro_feedback
+    assert "Trích dẫn: “Bằng chứng trích dẫn”" in pro_feedback
+    assert "Điểm tốt:" in pro_feedback
+    assert "Điểm cần cải thiện:" in pro_feedback
+    assert "Ưu tiên cải thiện:" in pro_feedback
+    assert "Khung trả lời tốt hơn:" in pro_feedback
+    assert "Câu hỏi follow-up:" in pro_feedback
+    assert "Nâng cấp" not in pro_feedback

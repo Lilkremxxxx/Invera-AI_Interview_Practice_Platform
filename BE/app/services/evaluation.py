@@ -171,6 +171,7 @@ async def generate_session_evaluation_and_plan(
                 prev_session["id"]
             )
             p_gaze = []
+            p_smile = []
             p_wpm = []
             p_framing = []
             p_posture = []
@@ -188,6 +189,8 @@ async def generate_session_evaluation_and_plan(
                     if isinstance(tel, dict):
                         if "gazeRatio" in tel:
                             p_gaze.append(tel["gazeRatio"])
+                        if "smileRatio" in tel:
+                            p_smile.append(tel["smileRatio"])
                         if "speakingPace" in tel:
                             p_wpm.append(tel["speakingPace"])
                         if "cameraFramingScore" in tel:
@@ -198,6 +201,7 @@ async def generate_session_evaluation_and_plan(
                         p_pauses += tel.get("longPausesCount", 0)
             
             avg_p_gaze = sum(p_gaze)/len(p_gaze) if p_gaze else None
+            avg_p_smile = sum(p_smile)/len(p_smile) if p_smile else None
             avg_p_wpm = sum(p_wpm)/len(p_wpm) if p_wpm else None
             avg_p_framing = sum(p_framing)/len(p_framing) if p_framing else None
             avg_p_posture = sum(p_posture)/len(p_posture) if p_posture else None
@@ -207,6 +211,7 @@ async def generate_session_evaluation_and_plan(
 ### Số liệu ở Phiên luyện tập trước (ID: {prev_session['id']}, Vai trò: {prev_session['role']}):
 - Điểm đánh giá trung bình: {prev_session['avg_score']}/10
 - Giao tiếp mắt (Eye Contact): {f"{int(avg_p_gaze * 100)}%" if avg_p_gaze is not None else "N/A"}
+- Biểu cảm thân thiện (Smile): {f"{int(avg_p_smile * 100)}%" if avg_p_smile is not None else "N/A"}
 - Tư thế ngồi thẳng (Posture): {f"{int(avg_p_posture * 100)}%" if avg_p_posture is not None else "N/A"}
 - Khung hình chuẩn (Framing): {f"{int(avg_p_framing * 100)}%" if avg_p_framing is not None else "N/A"}
 - Tốc độ nói: {f"{int(avg_p_wpm)} WPM" if avg_p_wpm is not None else "N/A"}
@@ -218,6 +223,7 @@ async def generate_session_evaluation_and_plan(
 ### Metrics from Previous Session (ID: {prev_session['id']}, Role: {prev_session['role']}):
 - Average Answer Score: {prev_session['avg_score']}/10
 - Eye Contact (Gaze Ratio): {f"{int(avg_p_gaze * 100)}%" if avg_p_gaze is not None else "N/A"}
+- Friendly Expression (Smile): {f"{int(avg_p_smile * 100)}%" if avg_p_smile is not None else "N/A"}
 - Body Posture Score: {f"{int(avg_p_posture * 100)}%" if avg_p_posture is not None else "N/A"}
 - Camera Framing Score: {f"{int(avg_p_framing * 100)}%" if avg_p_framing is not None else "N/A"}
 - Speaking Pace: {f"{int(avg_p_wpm)} WPM" if avg_p_wpm is not None else "N/A"}
@@ -227,9 +233,13 @@ async def generate_session_evaluation_and_plan(
 
     # 3. Calculate current session averages
     c_gaze = []
+    c_smile = []
     c_wpm = []
     c_framing = []
     c_posture = []
+    c_blink = []
+    c_yaw = []
+    c_tension = []
     c_fillers = 0
     c_pauses = 0
     history = []
@@ -250,12 +260,20 @@ async def generate_session_evaluation_and_plan(
         if telemetry_dict:
             if "gazeRatio" in telemetry_dict:
                 c_gaze.append(telemetry_dict["gazeRatio"])
+            if "smileRatio" in telemetry_dict:
+                c_smile.append(telemetry_dict["smileRatio"])
             if "speakingPace" in telemetry_dict:
                 c_wpm.append(telemetry_dict["speakingPace"])
             if "cameraFramingScore" in telemetry_dict:
                 c_framing.append(telemetry_dict["cameraFramingScore"])
             if "bodyPostureScore" in telemetry_dict:
                 c_posture.append(telemetry_dict["bodyPostureScore"])
+            if "blinkRatio" in telemetry_dict:
+                c_blink.append(telemetry_dict["blinkRatio"])
+            if "avgHeadYaw" in telemetry_dict:
+                c_yaw.append(telemetry_dict["avgHeadYaw"])
+            if "avgTensionScore" in telemetry_dict:
+                c_tension.append(telemetry_dict["avgTensionScore"])
             c_fillers += telemetry_dict.get("fillerWordsCount", 0)
             c_pauses += telemetry_dict.get("longPausesCount", 0)
 
@@ -269,30 +287,38 @@ async def generate_session_evaluation_and_plan(
         })
 
     avg_c_gaze = sum(c_gaze)/len(c_gaze) if c_gaze else None
+    avg_c_smile = sum(c_smile)/len(c_smile) if c_smile else None
     avg_c_wpm = sum(c_wpm)/len(c_wpm) if c_wpm else None
     avg_c_framing = sum(c_framing)/len(c_framing) if c_framing else None
     avg_c_posture = sum(c_posture)/len(c_posture) if c_posture else None
+    avg_c_blink = sum(c_blink)/len(c_blink) if c_blink else None
+    avg_c_yaw = sum(c_yaw)/len(c_yaw) if c_yaw else None
+    avg_c_tension = sum(c_tension)/len(c_tension) if c_tension else None
 
     if language == "vi":
-        curr_metrics_text = f"""
-Số liệu thống kê Non-Verbal và Speech phiên hiện tại:
+        curr_metrics_text = f"""Số liệu thống kê Non-Verbal và Speech phiên hiện tại:
 - Giao tiếp mắt: {f"{int(avg_c_gaze * 100)}% thời gian" if avg_c_gaze is not None else "N/A"}
+- Biểu cảm thân thiện (Smile): {f"{int(avg_c_smile * 100)}% thời gian" if avg_c_smile is not None else "N/A"}
 - Tư thế đúng (Posture): {f"{int(avg_c_posture * 100)}% thời gian" if avg_c_posture is not None else "N/A"}
 - Khung hình chuẩn & Ánh sáng (Framing): {f"{int(avg_c_framing * 100)}% thời gian" if avg_c_framing is not None else "N/A"}
 - Tốc độ nói: {f"{int(avg_c_wpm)} từ/phút (WPM)" if avg_c_wpm is not None else "N/A"}
 - Tổng số từ thừa (Filler words): {c_fillers} từ
 - Tổng số khoảng dừng dài (>3.5s): {c_pauses} lần
-"""
+- Tỉ lệ chớp mắt (Blink): {f"{int(avg_c_blink * 100)}%" if avg_c_blink is not None else "N/A"} (cao = căng thẳng)
+- Độ lắc đầu (Head Yaw): {f"{avg_c_yaw:.1f}" if avg_c_yaw is not None else "N/A"} (cao = thiếu tập trung)
+- Độ căng thẳng (Tension): {f"{int(avg_c_tension * 100)}%" if avg_c_tension is not None else "N/A"} (cao = stress)"""
     else:
-        curr_metrics_text = f"""
-Candidate Non-Verbal & Speech telemetry for this session:
+        curr_metrics_text = f"""Candidate Non-Verbal & Speech telemetry for this session:
 - Eye Contact (Gaze Ratio): {f"{int(avg_c_gaze * 100)}%" if avg_c_gaze is not None else "N/A"}
+- Friendly Expression (Smile): {f"{int(avg_c_smile * 100)}%" if avg_c_smile is not None else "N/A"}
 - Body Posture Score: {f"{int(avg_c_posture * 100)}%" if avg_c_posture is not None else "N/A"}
 - Camera Framing Score: {f"{int(avg_c_framing * 100)}%" if avg_c_framing is not None else "N/A"}
 - Speaking Pace: {f"{int(avg_c_wpm)} WPM" if avg_c_wpm is not None else "N/A"}
 - Total Filler Words: {c_fillers}
 - Total Long Pauses: {c_pauses}
-"""
+- Blink Ratio: {f"{int(avg_c_blink * 100)}%" if avg_c_blink is not None else "N/A"} (high = nervousness)
+- Head Movement (Yaw): {f"{avg_c_yaw:.1f}" if avg_c_yaw is not None else "N/A"} (high = distraction)
+- Tension Score: {f"{int(avg_c_tension * 100)}%" if avg_c_tension is not None else "N/A"} (high = stress)"""
 
     # 4. Call AI with structured prompt mapping criteria
     if language == "vi":
@@ -305,18 +331,24 @@ Candidate Non-Verbal & Speech telemetry for this session:
             "### 1. Visual Delivery (Giao tiếp phi ngôn từ qua Camera)\n"
             "- Đánh giá Giao tiếp bằng mắt (Eye Contact): Đánh giá phần trăm thời gian nhìn camera, đưa ra lời khuyên cụ thể.\n"
             "- Đánh giá Tư thế ngồi (Posture): Đánh giá việc ngồi thẳng, cúi đầu hay nghiêng người.\n"
-            "- Đánh giá Khung hình & Ánh sáng (Framing & Lighting): Đánh giá mặt có ở giữa khung hình không, có bị lệch, quá gần, quá xa, hoặc thiếu sáng không.\n"
             "- Đánh giá Biểu cảm khuôn mặt (Facial Expression): Ước lượng mức độ biểu cảm (thân thiện, bình thường, căng thẳng, thiếu năng lượng).\n\n"
             "### 2. Verbal Delivery (Kỹ năng diễn đạt và Giọng nói)\n"
-            "- Đánh giá Tốc độ nói (Speaking Pace) và Độ lưu loát.\n"
+            "- BẮT BUỘC phải nhắc trực tiếp chỉ số Tốc độ nói (Speaking Pace / WPM) nếu có dữ liệu, không được bỏ qua.\n"
             "- Phân tích Từ thừa (Filler Words): Nhận xét số lượng từ thừa (như à, ừ, thì, là, kiểu, like, you know...) và cách khắc phục.\n"
             "- Phân tích Khoảng dừng dài (Long Pauses): Phân tích xem các khoảng dừng có tự nhiên không.\n\n"
             "### 3. Interview Performance (Nội dung và Cấu trúc trả lời)\n"
             "- Đánh giá mức độ trả lời đúng trọng tâm câu hỏi.\n"
-            "- Đánh giá việc áp dụng cấu trúc STAR (Situation, Task, Action, Result).\n"
+            "- Đánh giá việc áp dụng cấu trúc câu trả lời (nếu áp dụng theo cấu trúc STAR hoặc logic mạch lạc thì ghi nhận điểm cộng, không bắt buộc).\n"
             "- Đánh giá độ liên quan, tính thuyết phục và độ sâu của câu trả lời.\n\n"
+            "- Với mục giao tiếp/communication, CHỈ được dùng số liệu telemetry camera/speech làm bằng chứng; KHÔNG được trích dẫn nội dung câu trả lời của ứng viên.\n\n"
             "### 4. Overall Presentation Score (Điểm trình bày tổng hợp)\n"
-            "- Chấm điểm phong cách trình bày tổng hợp cho ứng viên trên thang điểm 100 (dựa trên sự tự tin biểu hiện qua mắt nhìn, tư thế ổn định, tốc độ nói rõ, và độ trôi chảy).\n\n"
+            "- Chấm điểm phong cách trình bày tổng hợp cho ứng viên trên thang điểm 100.\n"
+            "- Dòng đầu tiên PHẢI là `**Điểm: X/100**`.\n"
+            "- Dòng thứ hai PHẢI là `**Cộng:**`.\n"
+            "- Bên dưới `Cộng:` chỉ dùng bullet points ngắn, mỗi bullet một ý.\n"
+            "- Sau đó là `**Trừ:**`.\n"
+            "- Bên dưới `Trừ:` chỉ dùng bullet points ngắn, mỗi bullet một ý.\n"
+            "- Tuyệt đối không viết thành một đoạn văn duy nhất.\n\n"
             "### 5. Strengths & Areas to Improve (Điểm mạnh & Điểm cần cải thiện)\n"
             "- Liệt kê chính xác 3 Điểm mạnh hàng đầu của ứng viên.\n"
             "- Liệt kê chính xác 3 Điểm cần cải thiện hàng đầu.\n\n"
@@ -336,18 +368,24 @@ Candidate Non-Verbal & Speech telemetry for this session:
             "### 1. Visual Delivery (Non-verbal communication via camera)\n"
             "- Gaze and Eye Contact evaluation: Camera eye contact percentage and constructive tips.\n"
             "- Body Posture: Assessment of sitting posture, bowing head, or swaying.\n"
-            "- Camera Framing & Lighting: Face position (centered, tilted, too close/far) and light level.\n"
             "- Facial Expression: Estimate of expressions (friendly, neutral, stressed, high/low energy).\n\n"
             "### 2. Verbal Delivery (Speech delivery and audio feedback)\n"
-            "- Speaking Pace (WPM) and fluency.\n"
+            "- You MUST explicitly mention Speaking Pace (WPM) when telemetry is present.\n"
             "- Filler Words: Total counts of filler words (uh, um, like, you know...) and ways to reduce them.\n"
             "- Long Pauses: Evaluation of pauses (>3s) and whether they are natural.\n\n"
             "### 3. Interview Performance (Content quality and structure)\n"
             "- Relevance and accuracy of answers.\n"
-            "- Application of STAR structure (Situation, Task, Action, Result).\n"
+            "- Evaluation of answer structure (bonus points if STAR or logical structure is applied, not mandatory).\n"
             "- Overall persuasiveness and detail quality.\n\n"
+            "- For communication analysis, only use camera/speech telemetry as evidence. Do not quote the candidate answer text in that part.\n\n"
             "### 4. Overall Presentation Score\n"
-            "- Composite presentation / delivery score out of 100 based on non-verbal and verbal delivery metrics.\n\n"
+            "- Composite presentation / delivery score out of 100 based on non-verbal and verbal delivery metrics.\n"
+            "- The first line MUST be `**Score: X/100**`.\n"
+            "- The second line MUST be `**Pros:**`.\n"
+            "- Under `Pros:` use short bullet points only, one idea per bullet.\n"
+            "- Then use `**Cons:**`.\n"
+            "- Under `Cons:` use short bullet points only, one idea per bullet.\n"
+            "- Do not write this as one paragraph.\n\n"
             "### 5. Strengths & Areas to Improve\n"
             "- List exactly 3 top strengths.\n"
             "- List exactly 3 top areas to improve.\n\n"

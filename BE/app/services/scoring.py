@@ -66,6 +66,8 @@ class ScoringRequest:
     preferred_language: str = "en"
     force_language: bool = False
     telemetry_data: dict[str, Any] | None = None
+    plan_tier: str = "pro"
+    resume_text: str | None = None
 
 
 def _tokenize(text: str) -> set[str]:
@@ -372,6 +374,11 @@ You are Invera's interview evaluator. Use the structured rubric below to score t
 The reference answer is only an anchor for expected depth, not a mandatory checklist.
 Reward correct paraphrases, clear reasoning, and useful examples even when wording differs.
 
+### STAR Framework Evaluation Policy:
+- Using the STAR (Situation, Task, Action, Result) framework is NOT strictly mandatory to receive a high score. Candidates only need to address all the criteria in the rubric completely and persuasively to get maximum points.
+- However, if the candidate structures their answer clearly following the STAR framework (or logically covers context, tasks, actions, and results), recognize this as a bonus (bonus points) to elevate their score (without exceeding the maximum score of 5 for any criterion).
+- (Chính sách về STAR: Trả lời theo khung STAR không phải là bắt buộc để đạt điểm cao. Ứng viên chỉ cần đáp ứng tốt các tiêu chí trong rubric là đạt điểm tối đa. Tuy nhiên, nếu ứng viên trình bày theo cấu trúc STAR rõ ràng, hãy coi đó là một điểm cộng để nâng điểm đánh giá nhưng không vượt quá điểm 5 tối đa cho mỗi tiêu chí).
+
 {rubric_section}
 
 ### Critical Fail Flags
@@ -427,10 +434,13 @@ Rules:
 ### Non-Verbal Video Telemetry Evaluation (If present as candidate_video_telemetry):
 If the candidate's response was recorded with a webcam, you will see a `candidate_video_telemetry` object containing ratios from client-side tracking:
 - `gazeRatio` (0.0 to 1.0): Time candidate maintained eye contact with the camera. A ratio < 0.6 indicates looking away too often or reading.
-- `smileRatio` (0.0 to 1.0): Time candidate was smiling. Higher values (>0.2) show a friendly and positive demeanor.
-- `slouchRatio` (0.0 to 1.0): Time candidate sat with a slouched/slouching posture. A ratio > 0.3 indicates poor posture/slouching.
+- `smileRatio` (0.0 to 1.0): Time candidate was smiling. Higher values (>0.15) show a friendly and positive demeanor.
+- `slouchRatio` (0.0 to 1.0): Time candidate sat with a slouched posture. A ratio > 0.3 indicates poor posture.
 - `handGestures` (integer >= 0): The count of hand gestures detected. Moderate count (5 to 15) suggests natural body language. 0 suggests stiffness. Extremely high suggests fidgeting or distraction.
 - `fidgetRatio` (0.0 to 1.0): Time candidate showed nervous repetitive fidgeting movements. A ratio > 0.3 indicates high nervousness.
+- `blinkRatio` (0.0 to 0.15): Blink frames / total frames. Values > 0.07 indicate excessive blinking (nervousness).
+- `avgHeadYaw` (0.0 to 15+): Average head rotation magnitude. Values > 5 indicate candidate was looking away from camera frequently.
+- `avgTensionScore` (0.0 to 1.0): Composite facial tension score (brow down + mouth press + nose sneer). Values > 0.25 indicate visible stress/tension.
 
 Use these metrics to influence the evaluation of the **Communication** criterion (and mention constructive non-verbal feedback in the `improvements` or `gaps` list). For example, if eye contact is poor (< 0.6), suggest looking directly at the camera. If slouching is high (> 0.3), suggest keeping a straight posture. Keep the tone professional, encouraging, and constructive.
 """.strip()
@@ -465,8 +475,9 @@ _CRITICAL_FAIL_WARNINGS = {
 }
 
 
-def _format_feedback(result: dict[str, Any]) -> str:
+def _format_feedback(result: dict[str, Any], plan_tier: str = "pro") -> str:
     language = "vi" if result.get("language") == "vi" else "en"
+    normalized_tier = str(plan_tier).lower().strip()
     labels = {
         "vi": {
             "summary": "Tóm tắt",
@@ -476,6 +487,8 @@ def _format_feedback(result: dict[str, Any]) -> str:
             "improvements": "Ưu tiên cải thiện",
             "outline": "Khung trả lời tốt hơn",
             "follow_up": "Câu hỏi follow-up",
+            "upgrade_free": "💡 Nâng cấp lên gói Basic hoặc Pro để xem chi tiết đánh giá từng tiêu chí và lộ trình cải thiện!",
+            "upgrade_basic": "💡 Nâng cấp lên gói Pro để mở khóa phân tích thế mạnh (Strengths), khoảng cách năng lực (Gaps), thứ tự ưu tiên cải thiện và khung trả lời mẫu!",
         },
         "en": {
             "summary": "Summary",
@@ -485,6 +498,8 @@ def _format_feedback(result: dict[str, Any]) -> str:
             "improvements": "Priority improvements",
             "outline": "Stronger answer outline",
             "follow_up": "Follow-up questions",
+            "upgrade_free": "💡 Upgrade to Basic or Pro to view detailed criteria evaluations and personalized improvement paths!",
+            "upgrade_basic": "💡 Upgrade to Pro to unlock strengths, gaps, priority improvements, and stronger answer outlines!",
         },
     }[language]
 
@@ -512,52 +527,69 @@ def _format_feedback(result: dict[str, Any]) -> str:
             quote = str(item.get("quote") or "").strip()
             evidence = str(item.get("evidence") or "").strip()
             missing = str(item.get("missing") or "").strip()
-            if quote and not (quote.startswith("“") and quote.endswith("”")):
-                quote = f"“{quote.strip(chr(34) + '“”')}”"
             
-            confidence_val = str(item.get("evidence_confidence") or "").strip().lower()
-            confidence_str = ""
-            if confidence_val in _CONFIDENCE_LABELS[language]:
-                conf_text = _CONFIDENCE_LABELS[language][confidence_val]
-                if language == "vi":
-                    confidence_str = f" (Mức tin cậy bằng chứng: {conf_text})"
-                else:
-                    confidence_str = f" (Evidence confidence: {conf_text})"
-
             display_name = _CRITERIA_NAME_VI.get(name, name) if language == "vi" else name
 
-            if language == "vi":
-                detail_parts = [
-                    f"Trích dẫn: {quote}" if quote else "",
-                    f"Đánh giá: {evidence}{confidence_str}" if evidence else "",
-                    f"Thiếu: {missing}" if missing else "",
-                ]
+            if normalized_tier in ("free", "free_trial"):
+                # Free/Trial gets basic rubric checklist only (criteria name + assessment level, no details)
+                title = " - ".join(part for part in (display_name, assessment) if part)
+                lines.append(f"- {title}")
             else:
-                detail_parts = [
-                    f"Quote: {quote}" if quote else "",
-                    f"Evaluation: {evidence}{confidence_str}" if evidence else "",
-                    f"Missing: {missing}" if missing else "",
-                ]
-            detail_parts = [part for part in detail_parts if part]
-            title = " - ".join(part for part in (display_name, assessment) if part)
-            lines.append(f"- {title}: {' | '.join(detail_parts)}".rstrip(": "))
+                # Basic/Pro/Premium get detailed evaluation
+                if quote and not (quote.startswith("“") and quote.endswith("”")):
+                    quote = f"“{quote.strip(chr(34) + '“”')}”"
+                
+                confidence_val = str(item.get("evidence_confidence") or "").strip().lower()
+                confidence_str = ""
+                if confidence_val in _CONFIDENCE_LABELS[language]:
+                    conf_text = _CONFIDENCE_LABELS[language][confidence_val]
+                    if language == "vi":
+                        confidence_str = f" (Mức tin cậy bằng chứng: {conf_text})"
+                    else:
+                        confidence_str = f" (Evidence confidence: {conf_text})"
 
-    for key, label in (
-        ("strengths", labels["strengths"]),
-        ("gaps", labels["gaps"]),
-        ("improvements", labels["improvements"]),
-        ("better_outline", labels["outline"]),
-        ("follow_up", labels["follow_up"]),
-    ):
-        values = result.get(key) or []
-        if not isinstance(values, list) or not values:
-            continue
+                if language == "vi":
+                    detail_parts = [
+                        f"Trích dẫn: {quote}" if quote else "",
+                        f"Đánh giá: {evidence}{confidence_str}" if evidence else "",
+                        f"Thiếu: {missing}" if missing else "",
+                    ]
+                else:
+                    detail_parts = [
+                        f"Quote: {quote}" if quote else "",
+                        f"Evaluation: {evidence}{confidence_str}" if evidence else "",
+                        f"Missing: {missing}" if missing else "",
+                    ]
+                detail_parts = [part for part in detail_parts if part]
+                title = " - ".join(part for part in (display_name, assessment) if part)
+                lines.append(f"- {title}: {' | '.join(detail_parts)}".rstrip(": "))
+
+    # Strengths, gaps, improvements, outline, follow-up are only for Pro, Premium, Admin
+    if normalized_tier in ("pro", "premium", "admin"):
+        for key, label in (
+            ("strengths", labels["strengths"]),
+            ("gaps", labels["gaps"]),
+            ("improvements", labels["improvements"]),
+            ("better_outline", labels["outline"]),
+            ("follow_up", labels["follow_up"]),
+        ):
+            values = result.get(key) or []
+            if not isinstance(values, list) or not values:
+                continue
+            lines.append("")
+            lines.append(f"{label}:")
+            for value in values[:4]:
+                text = str(value).strip()
+                if text:
+                    lines.append(f"- {text}")
+
+    # Add upgrade hints if applicable
+    if normalized_tier in ("free", "free_trial"):
         lines.append("")
-        lines.append(f"{label}:")
-        for value in values[:4]:
-            text = str(value).strip()
-            if text:
-                lines.append(f"- {text}")
+        lines.append(labels["upgrade_free"])
+    elif normalized_tier == "basic":
+        lines.append("")
+        lines.append(labels["upgrade_basic"])
 
     feedback = "\n".join(lines).strip()
     return feedback or (
@@ -1616,6 +1648,16 @@ async def _score_with_deepseek(request: ScoringRequest) -> tuple[float, str]:
     }
     if request.telemetry_data:
         user_payload_dict["candidate_video_telemetry"] = request.telemetry_data
+    if request.resume_text:
+        user_payload_dict["candidate_resume_context"] = {
+            "source": "uploaded_resume",
+            "text": request.resume_text,
+            "instruction": (
+                "For resume-based interview questions, evaluate whether the answer stays consistent with the candidate's"
+                " stated experiences, projects, and skills in the resume. Reward accurate, specific explanation grounded"
+                " in that resume context. Do not require any fixed STAR rubric."
+            ),
+        }
 
     user_payload = json.dumps(user_payload_dict, ensure_ascii=False)
     response = await create_chat_completion(
@@ -1627,7 +1669,7 @@ async def _score_with_deepseek(request: ScoringRequest) -> tuple[float, str]:
     )
     normalized = _normalize_model_response(response["content"], request)
     normalized = _fill_missing_criterion_quotes(normalized, request.answer_text)
-    return normalized["score"], _format_feedback(normalized)
+    return normalized["score"], _format_feedback(normalized, request.plan_tier)
 
 
 def _very_short_vietnamese_answer(request: ScoringRequest) -> dict[str, Any] | None:
@@ -1671,6 +1713,8 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
         preferred_language=normalize_supported_language(preferred_language, request.preferred_language),
         force_language=request.force_language,
         telemetry_data=request.telemetry_data,
+        plan_tier=request.plan_tier,
+        resume_text=sanitize_user_text(request.resume_text) if request.resume_text else None,
     )
 
     if not effective_request.answer_text.strip():
@@ -1683,11 +1727,11 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
 
     short_answer = _very_short_vietnamese_answer(effective_request)
     if short_answer is not None:
-        return short_answer["score"], _format_feedback(short_answer)
+        return short_answer["score"], _format_feedback(short_answer, effective_request.plan_tier)
 
     quick_guard = _quick_guard_result(effective_request)
     if quick_guard is not None:
-        return quick_guard["score"], _format_feedback(quick_guard)
+        return quick_guard["score"], _format_feedback(quick_guard, effective_request.plan_tier)
 
     if _deepseek_is_enabled():
         try:
@@ -1699,7 +1743,7 @@ async def score_answer(request: ScoringRequest) -> tuple[float, str]:
 
     heuristic = _heuristic_result(effective_request)
     heuristic = _fill_missing_criterion_quotes(heuristic, effective_request.answer_text)
-    return heuristic["score"], _format_feedback(heuristic)
+    return heuristic["score"], _format_feedback(heuristic, effective_request.plan_tier)
 
 
 def _deepseek_is_enabled() -> bool:

@@ -11,7 +11,8 @@ class SessionCreate(BaseModel):
     major: str = 'technology'
     role: str
     level: str
-    mode: str = 'text'
+    mode: str = 'camera'
+    language: str = 'vi'
     question_count: int = 5
 
 
@@ -22,6 +23,7 @@ class SessionOut(BaseModel):
     role: str
     level: str
     mode: str
+    language: str = 'vi'
     status: str
     created_at: datetime
     completed_at: Optional[datetime] = None
@@ -42,3 +44,39 @@ class SessionCatalogRole(BaseModel):
     role: str
     total_questions: int
     counts_by_level: dict[str, int]
+
+
+class TelemetrySummary(BaseModel):
+    gaze: int = 0
+    posture: int = 0
+    wpm: int = 0
+    fillers: int = 0
+    confidence: int = 0
+    blink: int = 0
+    tension: int = 0
+    answer_count: int = 0
+
+
+class TelemetryAnswerPoint(BaseModel):
+    label: str
+    question_id: int
+    is_follow_up: bool = False
+    score: Optional[float] = None
+    submitted_at: Optional[datetime] = None
+    telemetry_data: Optional[dict] = None
+
+
+class TelemetrySessionOverview(BaseModel):
+    session_id: uuid.UUID
+    role: str
+    level: str
+    mode: str
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    avg_score: Optional[float] = None
+    summary: TelemetrySummary
+    answers: List[TelemetryAnswerPoint] = []
+
+
+class TelemetryOverviewOut(BaseModel):
+    sessions: List[TelemetrySessionOverview] = []
