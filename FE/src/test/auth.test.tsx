@@ -13,6 +13,9 @@ vi.mock("../contexts/AuthContext", () => ({
     isAuthenticated: false,
     loading: false,
     login: vi.fn(),
+    loginWithToken: vi.fn(),
+    refreshUser: vi.fn(),
+    clearAuth: vi.fn(),
     logout: vi.fn(),
   }),
 }));
@@ -36,7 +39,7 @@ const createWrapper = () => {
   });
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{children}</BrowserRouter>
     </QueryClientProvider>
   );
 };

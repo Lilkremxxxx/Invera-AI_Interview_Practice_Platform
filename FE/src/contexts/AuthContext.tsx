@@ -16,10 +16,56 @@ interface AuthContextType {
 // ─── Context ─────────────────────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function safeGetItem(key: string): string | null {
+  try {
+    return typeof localStorage?.getItem === 'function' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    if (typeof localStorage?.setItem === 'function') {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore storage failures in constrained test environments.
+  }
+}
+
+function safeRemoveItem(key: string): void {
+  try {
+    if (typeof localStorage?.removeItem === 'function') {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // Ignore storage failures in constrained test environments.
+  }
+}
+
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserOut | null>(null);
+  const [user, setUser] = useState<UserOut | null>(() => {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const cached = safeGetItem('invera_user_cache');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
+
+  // Sync user state to localStorage cache
+  useEffect(() => {
+    if (user) {
+      safeSetItem('invera_user_cache', JSON.stringify(user));
+    } else {
+      safeRemoveItem('invera_user_cache');
+    }
+  }, [user]);
 
   const clearAuth = useCallback(() => {
     clearToken();
@@ -37,9 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await authApi.me();
       setUser(me);
       return me;
-    } catch {
-      clearToken();
-      setUser(null);
+    } catch (err) {
+      const isUnauthorized = err && typeof err === 'object' && 'status' in err && err.status === 401;
+      if (isUnauthorized) {
+        clearToken();
+        setUser(null);
+      } else {
+        console.warn("Failed to load user info due to network/server error:", err);
+      }
       return null;
     }
   }, []);

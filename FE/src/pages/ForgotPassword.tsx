@@ -22,11 +22,16 @@ export function ForgotPassword() {
     back: language === 'vi' ? 'Quay lại' : 'Back',
     title: language === 'vi' ? 'Quên mật khẩu' : 'Forgot password',
     successDescription: language === 'vi' ? 'Nếu email hợp lệ, liên kết đặt lại mật khẩu sẽ được gửi.' : 'If the email is valid, a reset link will be sent.',
-    prompt: language === 'vi' ? 'Nhập email của bạn để nhận hướng dẫn khôi phục mật khẩu.' : 'Enter your email to receive password reset instructions.',
+    prompt: language === 'vi'
+      ? 'Nhập email đã dùng khi đăng ký bằng username để nhận hướng dẫn khôi phục mật khẩu.'
+      : 'Enter the email used for your username/password account to receive password reset instructions.',
     submit: language === 'vi' ? 'Gửi yêu cầu' : 'Send request',
     successBody: language === 'vi'
-      ? 'Hãy kiểm tra email để mở liên kết đặt lại mật khẩu. Nếu hệ thống đang ở chế độ log, link cũng sẽ xuất hiện trong backend logs.'
-      : 'Check your inbox for the reset link. If the system is running in log mode, the link will also appear in backend logs.',
+      ? 'Hãy kiểm tra email để mở liên kết đặt lại mật khẩu. Tính năng này chỉ áp dụng cho tài khoản đăng ký bằng email/mật khẩu. Nếu bạn dùng Google Sign-In, hãy đăng nhập bằng Google.'
+      : 'Check your inbox for the reset link. This flow only applies to email/password accounts. If you use Google Sign-In, log in with Google instead.',
+    note: language === 'vi'
+      ? 'Tài khoản đăng ký bằng Google không cần đặt lại mật khẩu.'
+      : 'Google sign-in accounts do not use password reset.',
     backLogin: language === 'vi' ? 'Trở về trang đăng nhập' : 'Return to the login page',
   };
 
@@ -87,6 +92,9 @@ export function ForgotPassword() {
                   required
                 />
               </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {copy.note}
+              </p>
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
