@@ -8,6 +8,7 @@ from typing import List, Optional
 import asyncpg
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
+import re
 from jose import JWTError, jwt
 
 from app.db.session import create_pool, get_db
@@ -22,14 +23,32 @@ from app.core.question_bank import (
 )
 from app.core.text_processing import sanitize_user_text
 from app.schemas.user import UserOut
-from app.schemas.session import SessionCatalogRole, SessionCreate, SessionOut, SessionDetail
+from app.schemas.session import (
+    SessionCatalogRole,
+    SessionCreate,
+    SessionOut,
+    SessionDetail,
+    TelemetryAnswerPoint,
+    TelemetryOverviewOut,
+    TelemetrySessionOverview,
+    TelemetrySummary,
+)
 from app.schemas.question import QuestionOut
-from app.schemas.answer import AnswerSubmit, AnswerOut, AnswerTranscriptOut, AnswerTtsOut
+from app.schemas.answer import AnswerSubmit, AnswerOut, AnswerTranscriptOut, AnswerTtsOut, FollowUpSubmit
 from app.services.deepseek_client import DeepSeekAPIError
 from app.services.interview_stt import InterviewSttRuntimeError, transcribe_audio_bytes
+from app.services.adaptive_interview import (
+    generate_follow_up_question,
+    score_follow_up_answer,
+)
 from app.services.plans import can_export_sessions, get_user_plan_snapshot
 from app.services.session_pdf import build_session_pdf_filename, build_sessions_pdf
-from app.services.question_bank_seed import ensure_question_bank_minimum, translate_questions_to_vi_if_needed
+from app.services.session_docx import build_session_docx_filename, build_sessions_docx
+from app.services.question_bank_seed import (
+    ensure_question_bank_minimum,
+    translate_questions_to_vi_if_needed,
+    translate_questions_to_en_if_needed,
+)
 from app.services.scoring import ScoringRequest, score_answer
 from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
 from app.services.transcript_cleanup import correct_transcript_text
@@ -38,6 +57,7 @@ from app.services.interview_stt_realtime import (
     InterviewRealtimeSttRuntimeError,
     VoskRealtimeSession,
 )
+from app.services.gemini_live import GeminiLiveAgentError, stream_agent_prompt
 
 router = APIRouter()
 
@@ -61,11 +81,11 @@ LEVEL_LABELS = {
 }
 MODE_LABELS = {
     "text": {"vi": "Văn bản", "en": "Text"},
-    "voice": {"vi": "Giọng nói", "en": "Voice"},
     "video": {"vi": "Video", "en": "Video"},
     "camera": {"vi": "Camera", "en": "Camera"},
+    "live": {"vi": "Live session", "en": "Live session"},
 }
-ALLOWED_SESSION_MODES = {"voice", "camera"}
+ALLOWED_SESSION_MODES = {"camera", "live"}
 STT_SEMAPHORE = asyncio.Semaphore(max(1, settings.interview_stt_concurrency))
 TTS_SEMAPHORE = asyncio.Semaphore(max(1, settings.interview_tts_concurrency))
 SCORING_SEMAPHORE = asyncio.Semaphore(max(1, settings.deepseek_scoring_concurrency))
@@ -100,6 +120,59 @@ def _normalize_question_text(text: str | None) -> str:
     text = text.lower()
     text = re.sub(r"[^\w\s\d]", "", text)
     return " ".join(text.split())
+
+
+async def _load_user_resume_questions(db: asyncpg.Connection, user_id) -> list[dict]:
+    row = await db.fetchrow(
+        """
+        SELECT resume_questions
+        FROM users
+        WHERE id = $1
+        """,
+        user_id,
+    )
+    if not row:
+        return []
+    questions = row.get("resume_questions") if isinstance(row, dict) else row["resume_questions"]
+    return questions if isinstance(questions, list) else []
+
+
+def _build_cv_question_rows(
+    *,
+    major: str,
+    role: str,
+    level: str,
+    stored_questions: list[dict],
+    count: int,
+) -> list[dict]:
+    cv_candidates = [
+        question for question in stored_questions
+        if isinstance(question, dict) and "CV-based" in (question.get("tags") or [])
+    ]
+    if not cv_candidates:
+        return []
+
+    random.shuffle(cv_candidates)
+    selected = cv_candidates[:count]
+    rows: list[dict] = []
+    for index, question in enumerate(selected, start=90):
+        rows.append(
+            {
+                "id": index,
+                "major": major,
+                "role": role,
+                "level": level,
+                "text": question.get("text_en") or question.get("text_vi") or "",
+                "text_en": question.get("text_en") or question.get("text_vi") or "",
+                "text_vi": question.get("text_vi") or question.get("text_en") or "",
+                "category": question.get("category_en") or question.get("category_vi") or "Projects",
+                "category_en": question.get("category_en") or question.get("category_vi") or "Projects",
+                "category_vi": question.get("category_vi") or question.get("category_en") or "Dự án",
+                "difficulty": question.get("difficulty") or "medium",
+                "tags": question.get("tags") or ["CV-based"],
+            }
+        )
+    return rows
 
 
 def _are_questions_duplicate(q1, q2) -> bool:
@@ -212,6 +285,19 @@ def _serialize_answer_row(answer_row, *, tts_script: str | None = None, tts_audi
         score=float(answer_row["score"]),
         feedback=answer_row["feedback"],
         telemetry_data=telemetry_dict,
+        follow_up_id=answer_row.get("follow_up_id"),
+        follow_up_style=answer_row.get("follow_up_style"),
+        follow_up_question_text=answer_row.get("follow_up_question_text"),
+        follow_up_answer_text=answer_row.get("follow_up_answer_text"),
+        follow_up_score=(
+            float(answer_row["follow_up_score"])
+            if answer_row.get("follow_up_score") is not None
+            else None
+        ),
+        follow_up_feedback=answer_row.get("follow_up_feedback"),
+        follow_up_telemetry_data=answer_row.get("follow_up_telemetry_data"),
+        follow_up_generated_at=answer_row.get("follow_up_generated_at"),
+        follow_up_answered_at=answer_row.get("follow_up_answered_at"),
         tts_script=tts_script,
         tts_audio_url=tts_audio_url,
         submitted_at=answer_row["submitted_at"],
@@ -292,8 +378,18 @@ async def _load_session_bundle(
     answers_rows = await db.fetch(
         """
         SELECT a.id, a.session_id, a.question_id, a.answer_text,
-               a.score::float AS score, a.feedback, a.telemetry_data, a.submitted_at
+               a.score::float AS score, a.feedback, a.telemetry_data, a.submitted_at,
+               fu.id AS follow_up_id,
+               fu.follow_up_style,
+               fu.question_text AS follow_up_question_text,
+               fu.answer_text AS follow_up_answer_text,
+               fu.score::float AS follow_up_score,
+               fu.feedback AS follow_up_feedback,
+               fu.telemetry_data AS follow_up_telemetry_data,
+               fu.generated_at AS follow_up_generated_at,
+               fu.answered_at AS follow_up_answered_at
         FROM answers a
+        LEFT JOIN interview_follow_ups fu ON fu.parent_answer_id = a.id
         WHERE a.session_id = $1
         ORDER BY a.submitted_at
         """,
@@ -329,6 +425,10 @@ async def _load_session_bundle(
             """,
             session_id, session_row["role"], session_row["level"], session_row["major"],
         )
+
+    custom_questions = session_row["custom_questions"] if "custom_questions" in session_row else None
+    if isinstance(custom_questions, list) and custom_questions:
+        questions_rows = [*questions_rows, *custom_questions]
 
     avg_score = None
     if answers_rows:
@@ -382,6 +482,85 @@ def _session_pdf_payload(bundle: dict, language: str) -> dict:
         "question_count": len(questions),
         "questions": questions,
         "answers": answers,
+        "evaluation_report": session_row["evaluation_report"] if "evaluation_report" in session_row else None,
+        "practice_plan": session_row["practice_plan"] if "practice_plan" in session_row else None,
+    }
+
+
+def _coerce_telemetry_data(raw_value) -> dict | None:
+    if not raw_value:
+        return None
+    if isinstance(raw_value, dict):
+        return raw_value
+    if isinstance(raw_value, str):
+        try:
+            parsed = json.loads(raw_value)
+        except ValueError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def _telemetry_summary_from_points(points: list[dict]) -> TelemetrySummary:
+    if not points:
+        return TelemetrySummary()
+
+    accumulators = {
+        "gaze": [],
+        "posture": [],
+        "wpm": [],
+        "fillers": [],
+        "confidence": [],
+        "blink": [],
+        "tension": [],
+    }
+    for point in points:
+        telemetry = _coerce_telemetry_data(point.get("telemetry_data"))
+        if not telemetry:
+            continue
+        if isinstance(telemetry.get("gazeRatio"), (int, float)):
+            accumulators["gaze"].append(round(float(telemetry["gazeRatio"]) * 100))
+        posture_ratio = telemetry.get("bodyPostureScore")
+        if not isinstance(posture_ratio, (int, float)) and isinstance(telemetry.get("slouchRatio"), (int, float)):
+            posture_ratio = 1 - float(telemetry["slouchRatio"])
+        if isinstance(posture_ratio, (int, float)):
+            accumulators["posture"].append(round(float(posture_ratio) * 100))
+        if isinstance(telemetry.get("speakingPace"), (int, float)):
+            accumulators["wpm"].append(round(float(telemetry["speakingPace"])))
+        if isinstance(telemetry.get("fillerWordsCount"), (int, float)):
+            accumulators["fillers"].append(round(float(telemetry["fillerWordsCount"])))
+        if isinstance(telemetry.get("presentationConfidence"), (int, float)):
+            accumulators["confidence"].append(round(float(telemetry["presentationConfidence"])))
+        if isinstance(telemetry.get("blinkRatio"), (int, float)):
+            accumulators["blink"].append(round(float(telemetry["blinkRatio"]) * 100))
+        if isinstance(telemetry.get("avgTensionScore"), (int, float)):
+            accumulators["tension"].append(round(float(telemetry["avgTensionScore"]) * 100))
+
+    def _avg(values: list[int]) -> int:
+        if not values:
+            return 0
+        return round(sum(values) / len(values))
+
+    return TelemetrySummary(
+        gaze=_avg(accumulators["gaze"]),
+        posture=_avg(accumulators["posture"]),
+        wpm=_avg(accumulators["wpm"]),
+        fillers=_avg(accumulators["fillers"]),
+        confidence=_avg(accumulators["confidence"]),
+        blink=_avg(accumulators["blink"]),
+        tension=_avg(accumulators["tension"]),
+        answer_count=sum(1 for point in points if _coerce_telemetry_data(point.get("telemetry_data")) is not None),
+    )
+
+
+def _telemetry_point_from_row(*, row, label: str, question_id: int, is_follow_up: bool, score, submitted_at, telemetry_data) -> dict:
+    return {
+        "label": label,
+        "question_id": question_id,
+        "is_follow_up": is_follow_up,
+        "score": float(score) if score is not None else None,
+        "submitted_at": submitted_at,
+        "telemetry_data": _coerce_telemetry_data(telemetry_data),
     }
 
 
@@ -390,7 +569,66 @@ def _validate_stt_upload(upload: UploadFile):
         raise HTTPException(status_code=400, detail="Định dạng audio chưa được hỗ trợ cho STT.")
 
 
+def _question_time_limit_expired(question_started_at: datetime | None, *, limit_minutes: int = 5) -> bool:
+    if question_started_at is None:
+        return False
+    started_at = question_started_at.astimezone(timezone.utc) if question_started_at.tzinfo else question_started_at.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) >= started_at + timedelta(minutes=limit_minutes)
+
+
+async def _upsert_follow_up_question(
+    *,
+    db: asyncpg.Connection,
+    session_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    answer_text: str,
+    score: float,
+    question_row,
+    language: str,
+    telemetry_data: dict | None = None,
+) -> dict | None:
+    generated = await generate_follow_up_question(
+        question_text=localized_question_field(question_row, "text", language),
+        answer_text=answer_text,
+        score=score,
+        language=language,
+        category=localized_question_field(question_row, "category", language),
+        role=question_row["role"],
+        level=question_row["level"],
+        telemetry_data=telemetry_data,
+    )
+    follow_up_question_text = generated["follow_up_question_text"].strip()
+    if not follow_up_question_text:
+        return None
+
+    row = await db.fetchrow(
+        """
+        INSERT INTO interview_follow_ups (
+            session_id, parent_answer_id, follow_up_style, question_text
+        )
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (parent_answer_id) DO UPDATE
+        SET follow_up_style = EXCLUDED.follow_up_style,
+            question_text = EXCLUDED.question_text,
+            generated_at = NOW()
+        RETURNING id, session_id, parent_answer_id, follow_up_style, question_text,
+                  answer_text, score::float AS score, feedback, telemetry_data,
+                  generated_at, answered_at
+        """,
+        session_id,
+        answer_id,
+        generated["follow_up_style"],
+        follow_up_question_text,
+    )
+    return dict(row) if row else None
+
+
+_generating_reports: set[uuid.UUID] = set()
+
 async def _generate_session_report_background(*, session_id: uuid.UUID, language: str) -> None:
+    if session_id in _generating_reports:
+        return
+    _generating_reports.add(session_id)
     from app.services.evaluation import generate_session_evaluation_and_plan
 
     try:
@@ -443,6 +681,8 @@ async def _generate_session_report_background(*, session_id: uuid.UUID, language
             )
     except Exception as e:
         print(f"Error generating background session report for {session_id}: {e}")
+    finally:
+        _generating_reports.discard(session_id)
 
 
 def _schedule_session_report_generation(*, session_id: uuid.UUID, language: str) -> None:
@@ -474,6 +714,7 @@ async def create_session(
     major = body.major.strip().lower()
     role = body.role.strip().lower()
     level = body.level.strip().lower()
+    session_language = str(body.language or ui_language).strip().lower()
 
     if major not in QUESTION_BANK_ROLES:
         raise HTTPException(status_code=400, detail=f"Major không hợp lệ. Chọn: {sorted(QUESTION_BANK_ROLES.keys())}")
@@ -486,18 +727,26 @@ async def create_session(
     mode = body.mode.strip().lower()
     if mode not in ALLOWED_SESSION_MODES:
         detail = (
-            "Mode trả lời không hợp lệ. Chỉ hỗ trợ Văn bản hoặc Giọng nói."
+            "Mode trả lời không hợp lệ. Chỉ hỗ trợ Camera hoặc Live session."
             if ui_language == "vi"
-            else "Invalid answer mode. Only Text or Voice are supported."
+            else "Invalid answer mode. Only Camera or Live session are supported."
         )
         raise HTTPException(status_code=400, detail=detail)
+    if session_language not in {"vi", "en"}:
+        raise HTTPException(status_code=400, detail="Language không hợp lệ. Chọn: vi hoặc en.")
 
     plan_tier = entitlement.get("plan_tier", "free")
     plan_status = entitlement.get("plan_status", "inactive")
     is_pro_or_above = (plan_tier in ("pro", "premium", "admin") and plan_status == "active") or current_user.is_admin
+    if mode == "live" and not is_pro_or_above:
+        detail = (
+            "Live session chỉ khả dụng với gói Pro hoặc Premium."
+            if ui_language == "vi"
+            else "Live session is only available on the Pro or Premium plan."
+        )
+        raise HTTPException(status_code=403, detail=detail)
 
-    mins_per_question = 10 if is_pro_or_above else 5
-    requested_time_limit = count * mins_per_question
+    requested_time_limit = None
 
     # Lấy ngẫu nhiên câu hỏi cho major+role+level
     questions = await _fetch_session_questions(
@@ -557,32 +806,23 @@ async def create_session(
         current_user.id, major, role, level,
     )
     questions = _avoid_repeated_first_question(questions, previous_first_question_id)
+    bank_questions = list(questions)
 
-    # Fetch and append 1-2 random CV questions if they exist for the user
-    questions = list(questions)
-    cv_questions = []
-    if hasattr(db, "fetch"):
-        cv_questions = await db.fetch(
-            """
-            SELECT id, major, role, level, text, text_en, text_vi,
-                   category, category_en, category_vi,
-                   difficulty, tags
-            FROM questions
-            WHERE user_id = $1
-            ORDER BY RANDOM()
-            LIMIT $2
-            """,
-            current_user.id,
-            random.randint(1, 2),
-        )
+    stored_resume_questions = await _load_user_resume_questions(db, current_user.id)
+    cv_questions = _build_cv_question_rows(
+        major=major,
+        role=role,
+        level=level,
+        stored_questions=stored_resume_questions,
+        count=random.randint(1, 2),
+    )
     if cv_questions:
         questions.extend(cv_questions)
 
-    # Recalculate time limit based on original count and final CV questions added
-    requested_time_limit = count * mins_per_question + len(cv_questions) * mins_per_question
-
-    if ui_language == "vi":
+    if session_language == "vi":
         questions = await translate_questions_to_vi_if_needed(db, questions)
+    else:
+        questions = await translate_questions_to_en_if_needed(db, questions)
 
     # Determine if this session consumes a purchased extra session
     base_limit = 1
@@ -612,11 +852,11 @@ async def create_session(
             )
         session_row = await db.fetchrow(
             """
-            INSERT INTO sessions (user_id, major, role, level, mode, status, time_limit_minutes)
-            VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', $6)
-            RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes
+            INSERT INTO sessions (user_id, major, role, level, mode, language, status, time_limit_minutes, custom_questions)
+            VALUES ($1, $2, $3, $4, $5, $6, 'IN_PROGRESS', $7, $8::jsonb)
+            RETURNING id, user_id, major, role, level, mode, language, status, created_at, completed_at, time_limit_minutes
             """,
-            current_user.id, major, role, level, mode, requested_time_limit,
+            current_user.id, major, role, level, mode, session_language, requested_time_limit, json.dumps(cv_questions) if cv_questions else None,
         )
         await db.executemany(
             """
@@ -624,7 +864,7 @@ async def create_session(
             VALUES ($1, $2, $3)
             ON CONFLICT (session_id, question_id) DO NOTHING
             """,
-            [(session_row["id"], question["id"], index) for index, question in enumerate(questions, start=1)],
+            [(session_row["id"], question["id"], index) for index, question in enumerate(bank_questions, start=1)],
         )
 
     return SessionDetail(
@@ -634,6 +874,7 @@ async def create_session(
         role=session_row["role"],
         level=session_row["level"],
         mode=session_row["mode"],
+        language=session_row["language"],
         status=session_row["status"],
         created_at=session_row["created_at"],
         completed_at=session_row["completed_at"],
@@ -691,7 +932,7 @@ async def list_sessions(
     rows = await db.fetch(
         """
         SELECT
-            s.id, s.user_id, s.major, s.role, s.level, s.mode, s.status,
+            s.id, s.user_id, s.major, s.role, s.level, s.mode, s.language, s.status,
             s.created_at, s.completed_at, s.time_limit_minutes,
             s.evaluation_report, s.practice_plan,
             COUNT(DISTINCT sq.question_id)::int AS question_count,
@@ -714,6 +955,7 @@ async def list_sessions(
             role=r["role"],
             level=r["level"],
             mode=r["mode"],
+            language=r["language"],
             status=r["status"],
             created_at=r["created_at"],
             completed_at=r["completed_at"],
@@ -725,6 +967,107 @@ async def list_sessions(
         )
         for r in rows
     ]
+
+
+@router.get("/telemetry/overview", response_model=TelemetryOverviewOut)
+async def get_telemetry_overview(
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    session_rows = await db.fetch(
+        """
+        SELECT
+            s.id AS session_id,
+            s.role,
+            s.level,
+            s.mode,
+            s.created_at,
+            s.completed_at,
+            AVG(a.score)::float AS avg_score
+        FROM sessions s
+        LEFT JOIN answers a ON a.session_id = s.id
+        WHERE s.user_id = $1
+        GROUP BY s.id
+        ORDER BY s.created_at DESC
+        """,
+        current_user.id,
+    )
+
+    answer_rows = await db.fetch(
+        """
+        SELECT
+            s.id AS session_id,
+            sq.position,
+            a.question_id,
+            a.score::float AS answer_score,
+            a.submitted_at AS answer_submitted_at,
+            a.telemetry_data AS answer_telemetry_data,
+            fu.id AS follow_up_id,
+            fu.score::float AS follow_up_score,
+            fu.answered_at AS follow_up_submitted_at,
+            fu.telemetry_data AS follow_up_telemetry_data
+        FROM sessions s
+        JOIN answers a ON a.session_id = s.id
+        LEFT JOIN session_question_sets sq
+          ON sq.session_id = s.id
+         AND sq.question_id = a.question_id
+        LEFT JOIN interview_follow_ups fu ON fu.parent_answer_id = a.id
+        WHERE s.user_id = $1
+        ORDER BY s.created_at DESC, sq.position ASC NULLS LAST, a.submitted_at ASC
+        """,
+        current_user.id,
+    )
+
+    points_by_session: dict[uuid.UUID, list[dict]] = {}
+    for row in answer_rows:
+        session_id = row["session_id"]
+        position = row["position"] or 0
+        session_points = points_by_session.setdefault(session_id, [])
+
+        answer_point = _telemetry_point_from_row(
+            row=row,
+            label=f"Q{position}",
+            question_id=row["question_id"],
+            is_follow_up=False,
+            score=row["answer_score"],
+            submitted_at=row["answer_submitted_at"],
+            telemetry_data=row["answer_telemetry_data"],
+        )
+        session_points.append(answer_point)
+
+        if row.get("follow_up_id") is not None:
+            follow_up_point = _telemetry_point_from_row(
+                row=row,
+                label=f"Q{position}b",
+                question_id=row["question_id"],
+                is_follow_up=True,
+                score=row["follow_up_score"],
+                submitted_at=row["follow_up_submitted_at"],
+                telemetry_data=row["follow_up_telemetry_data"],
+            )
+            session_points.append(follow_up_point)
+
+    sessions = []
+    for row in session_rows:
+        session_id = row["session_id"]
+        points = points_by_session.get(session_id, [])
+        if not points:
+            continue
+        sessions.append(
+            TelemetrySessionOverview(
+                session_id=session_id,
+                role=row["role"],
+                level=row["level"],
+                mode=row["mode"],
+                created_at=row["created_at"],
+                completed_at=row["completed_at"],
+                avg_score=round(row["avg_score"], 1) if row["avg_score"] is not None else None,
+                summary=_telemetry_summary_from_points(points),
+                answers=[TelemetryAnswerPoint(**point) for point in points],
+            )
+        )
+
+    return TelemetryOverviewOut(sessions=sessions)
 
 
 @router.get("/exports/all-pdf")
@@ -781,6 +1124,33 @@ async def export_session_pdf(
     )
 
 
+@router.get("/{session_id}/export-docx")
+async def export_session_docx(
+    session_id: uuid.UUID,
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    language = resolve_ui_language(request)
+    await _require_export_access(db=db, user_id=current_user.id, language=language)
+    bundle = await _load_session_bundle(db, session_id=session_id, user_id=current_user.id)
+    if bundle is None:
+        raise HTTPException(status_code=404, detail="Session không tồn tại")
+
+    session_payload = _session_pdf_payload(bundle, language)
+    docx_bytes = build_sessions_docx(sessions=[session_payload], language=language, export_all=False)
+    filename = build_session_docx_filename(
+        bundle["session_row"]["role"],
+        str(bundle["session_row"]["id"]),
+        False,
+    )
+    return StreamingResponse(
+        iter([docx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ─── GET /sessions/{id} ───────────────────────────────────────────────────────
 @router.get("/{session_id}", response_model=SessionDetail)
 async def get_session(
@@ -797,9 +1167,11 @@ async def get_session(
     questions_rows = bundle["questions_rows"]
     avg_score = bundle["avg_score"]
 
-    ui_language = resolve_ui_language(request)
-    if ui_language == "vi":
+    session_language = str(session_row["language"] or resolve_ui_language(request)).strip().lower()
+    if session_language == "vi":
         questions_rows = await translate_questions_to_vi_if_needed(db, questions_rows)
+    else:
+        questions_rows = await translate_questions_to_en_if_needed(db, questions_rows)
 
     # Lazy generation if completed but report/plan is missing
     evaluation_report = session_row["evaluation_report"]
@@ -809,25 +1181,7 @@ async def get_session(
         session_id,
     )
     if session_row["status"] == "COMPLETED" and pending_count == 0 and (not evaluation_report or not practice_plan):
-        from app.services.evaluation import generate_session_evaluation_and_plan
-        evaluation_report, practice_plan = await generate_session_evaluation_and_plan(
-            db,
-            session_id=session_id,
-            role=session_row["role"],
-            level=session_row["level"],
-            major=session_row["major"],
-            language=ui_language,
-        )
-        await db.execute(
-            """
-            UPDATE sessions
-            SET evaluation_report = $1, practice_plan = $2
-            WHERE id = $3
-            """,
-            evaluation_report,
-            practice_plan,
-            session_id,
-        )
+        _schedule_session_report_generation(session_id=session_id, language=session_language)
 
     return SessionDetail(
         id=session_row["id"],
@@ -836,13 +1190,14 @@ async def get_session(
         role=session_row["role"],
         level=session_row["level"],
         mode=session_row["mode"],
+        language=session_row["language"],
         status=session_row["status"],
         created_at=session_row["created_at"],
         completed_at=session_row["completed_at"],
         avg_score=avg_score,
         question_count=len(questions_rows),
         time_limit_minutes=session_row["time_limit_minutes"],
-        questions=[QuestionOut(**localized_question_dict(q, language=ui_language)) for q in questions_rows],
+        questions=[QuestionOut(**localized_question_dict(q, language=session_language)) for q in questions_rows],
         answers=[_serialize_answer_row(a) for a in answers_rows],
         evaluation_report=evaluation_report,
         practice_plan=practice_plan,
@@ -871,6 +1226,8 @@ async def process_voice_answer_background(
                 timeout=settings.interview_stt_timeout_seconds,
             )
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         transcript = f"[Lỗi STT: {str(exc)}]"
         print(f"Error in STT transcription for answer_id={answer_id}: {exc}")
 
@@ -891,15 +1248,23 @@ async def process_voice_answer_background(
                    q.category, q.category_en, q.category_vi,
                    q.difficulty,
                    q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major
+                   s.role, s.level, s.major,
+                   u.plan_tier, u.plan_status, u.resume_text
             FROM questions q
             JOIN sessions s ON s.id = $2
+            JOIN users u ON u.id = s.user_id
             WHERE q.id = $1
             """,
             question_id, session_id,
         )
         if not question_row:
             return
+
+        plan_tier = "free_trial"
+        if question_row:
+            plan_tier = question_row["plan_tier"] or "free_trial"
+            if question_row["plan_status"] != "active":
+                plan_tier = "free_trial"
 
         try:
             async with SCORING_SEMAPHORE:
@@ -916,6 +1281,8 @@ async def process_voice_answer_background(
                         preferred_language=feedback_language,
                         force_language=force_feedback_language,
                         telemetry_data=None,
+                        plan_tier=plan_tier,
+                        resume_text=question_row["resume_text"],
                     )
                 )
         except Exception as exc:
@@ -929,6 +1296,17 @@ async def process_voice_answer_background(
             WHERE id = $4
             """,
             cleaned_answer_text, score, feedback, answer_id,
+        )
+
+        await _upsert_follow_up_question(
+            db=db,
+            session_id=session_id,
+            answer_id=answer_id,
+            answer_text=cleaned_answer_text,
+            score=float(score),
+            question_row=question_row,
+            language=feedback_language,
+            telemetry_data=telemetry_dict,
         )
 
 
@@ -955,6 +1333,8 @@ async def process_video_answer_background(
                 timeout=settings.interview_stt_timeout_seconds,
             )
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         transcript = f"[Lỗi STT: {str(exc)}]"
         print(f"Error in video STT transcription for answer_id={answer_id}: {exc}")
 
@@ -975,15 +1355,23 @@ async def process_video_answer_background(
                    q.category, q.category_en, q.category_vi,
                    q.difficulty,
                    q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major
+                   s.role, s.level, s.major,
+                   u.plan_tier, u.plan_status, u.resume_text
             FROM questions q
             JOIN sessions s ON s.id = $2
+            JOIN users u ON u.id = s.user_id
             WHERE q.id = $1
             """,
             question_id, session_id,
         )
         if not question_row:
             return
+
+        plan_tier = "free_trial"
+        if question_row:
+            plan_tier = question_row["plan_tier"] or "free_trial"
+            if question_row["plan_status"] != "active":
+                plan_tier = "free_trial"
 
         import json
         telemetry_dict = None
@@ -992,6 +1380,22 @@ async def process_video_answer_background(
                 telemetry_dict = json.loads(telemetry_data_str)
             except Exception:
                 pass
+
+        # Recalculate WPM and fillers from the actual Whisper transcript
+        if telemetry_dict is not None and cleaned_answer_text:
+            word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
+            duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
+            if duration_sec > 0 and word_count > 0:
+                telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
+            # Recalculate filler words from actual transcript
+            vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
+            en_fillers = {"uh", "um", "like", "actually", "basically"}
+            words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
+            filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
+            text_lower = cleaned_answer_text.lower()
+            filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
+            telemetry_dict["fillerWordsCount"] = filler_count
+            telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
 
         try:
             async with SCORING_SEMAPHORE:
@@ -1008,6 +1412,8 @@ async def process_video_answer_background(
                         preferred_language=feedback_language,
                         force_language=force_feedback_language,
                         telemetry_data=telemetry_dict,
+                        plan_tier=plan_tier,
+                        resume_text=question_row["resume_text"],
                     )
                 )
         except Exception as exc:
@@ -1023,10 +1429,22 @@ async def process_video_answer_background(
             cleaned_answer_text, score, feedback, telemetry_data_str, answer_id,
         )
 
+        await _upsert_follow_up_question(
+            db=db,
+            session_id=session_id,
+            answer_id=answer_id,
+            answer_text=cleaned_answer_text,
+            score=float(score),
+            question_row=question_row,
+            language=feedback_language,
+            telemetry_data=telemetry_dict,
+        )
+
 
 @router.post("/{session_id}/stt", response_model=AnswerTranscriptOut)
 async def transcribe_session_audio(
     session_id: uuid.UUID,
+    request: Request,
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     language: str | None = Form(None),
@@ -1036,7 +1454,7 @@ async def transcribe_session_audio(
 ):
     session_row = await db.fetchrow(
         """
-        SELECT id, status
+        SELECT id, language, status
         FROM sessions
         WHERE id = $1 AND user_id = $2
         """,
@@ -1104,6 +1522,7 @@ async def transcribe_session_audio(
 @router.post("/{session_id}/answer-video", response_model=AnswerTranscriptOut)
 async def transcribe_session_video(
     session_id: uuid.UUID,
+    request: Request,
     background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
     language: str | None = Form(None),
@@ -1189,6 +1608,89 @@ async def transcribe_session_video(
     return AnswerTranscriptOut(text="Đang xử lý...")
 
 
+@router.websocket("/{session_id}/live-agent")
+async def session_live_agent_stream(
+    websocket: WebSocket,
+    session_id: uuid.UUID,
+    db: asyncpg.Connection = Depends(get_db),
+):
+    try:
+        current_user = await _authenticate_ws_user(websocket, db)
+    except HTTPException:
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
+    session_row = await db.fetchrow(
+        """
+        SELECT id, role, level, mode, language, status
+        FROM sessions
+        WHERE id = $1 AND user_id = $2
+        """,
+        session_id,
+        current_user.id,
+    )
+    if not session_row:
+        await websocket.close(code=4404, reason="Session not found")
+        return
+    if session_row["mode"] != "live":
+        await websocket.close(code=4400, reason="Session is not live-enabled")
+        return
+    if session_row["status"] != "IN_PROGRESS":
+        await websocket.close(code=4400, reason="Session is not in progress")
+        return
+
+    await websocket.accept()
+    await websocket.send_json({"type": "ready"})
+
+    try:
+        while True:
+            payload = await websocket.receive_json()
+            if payload.get("type") != "ask":
+                await websocket.send_json({"type": "error", "message": "Unsupported live agent message."})
+                continue
+
+            question_id = payload.get("questionId")
+            language = str(payload.get("language") or session_row["language"] or "vi").strip().lower()
+            if not isinstance(question_id, int):
+                await websocket.send_json({"type": "error", "message": "questionId is required."})
+                continue
+
+            question_row = await db.fetchrow(
+                """
+                SELECT q.id, q.text, q.text_en, q.text_vi
+                FROM session_question_sets sq
+                JOIN questions q ON q.id = sq.question_id
+                WHERE sq.session_id = $1 AND q.id = $2
+                """,
+                session_id,
+                question_id,
+            )
+            if not question_row:
+                await websocket.send_json({"type": "error", "message": "Question not found for this session."})
+                continue
+
+            question_text = (
+                question_row["text_vi"]
+                if language == "vi" and question_row["text_vi"]
+                else question_row["text_en"]
+                if language == "en" and question_row["text_en"]
+                else question_row["text"]
+            )
+
+            try:
+                async for event in stream_agent_prompt(
+                    role=session_row["role"],
+                    level=session_row["level"],
+                    question_text=question_text,
+                    language=language if language in {"vi", "en"} else "vi",
+                ):
+                    await websocket.send_json(event)
+            except GeminiLiveAgentError as exc:
+                await websocket.send_json({"type": "error", "message": str(exc)})
+    except (WebSocketDisconnect, RuntimeError):
+        return
+
+
 @router.websocket("/{session_id}/stt-stream")
 async def stream_session_stt(
     websocket: WebSocket,
@@ -1220,7 +1722,7 @@ async def stream_session_stt(
         await websocket.close(code=4400, reason="Session is not in progress")
         return
 
-    language = websocket.query_params.get("language")
+    language = websocket.query_params.get("language") or session_row["language"]
     question_id_raw = websocket.query_params.get("question_id")
     question_id = int(question_id_raw) if question_id_raw and question_id_raw.isdigit() else None
     sample_rate_raw = websocket.query_params.get("sample_rate")
@@ -1283,15 +1785,14 @@ async def stream_session_stt(
             sequence += 1
             try:
                 print(f"[WS-STT] Processing chunk {sequence} through Vosk...", flush=True)
-                async with STT_SEMAPHORE:
-                    result = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            realtime_session.accept_chunk,
-                            chunk_bytes,
-                            ".webm",
-                        ),
-                        timeout=settings.interview_stt_timeout_seconds,
-                    )
+                result = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        realtime_session.accept_chunk,
+                        chunk_bytes,
+                        ".webm",
+                    ),
+                    timeout=settings.interview_stt_timeout_seconds,
+                )
                 print(f"[WS-STT] Vosk result for chunk {sequence}: {result}", flush=True)
             except TimeoutError:
                 print(f"[WS-STT] Timeout processing chunk {sequence}", flush=True)
@@ -1347,15 +1848,24 @@ async def process_text_answer_background(
                    q.category, q.category_en, q.category_vi,
                    q.difficulty,
                    q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major
+                   s.role, s.level, s.major,
+                   u.plan_tier, u.plan_status, u.resume_text
             FROM questions q
             JOIN sessions s ON s.id = $2
+            JOIN users u ON u.id = s.user_id
             WHERE q.id = $1
             """,
             question_id, session_id,
         )
         if not question_row:
             return
+
+        cleaned_answer_text = sanitize_user_text(answer_text)
+        plan_tier = "free_trial"
+        if question_row:
+            plan_tier = question_row["plan_tier"] or "free_trial"
+            if question_row["plan_status"] != "active":
+                plan_tier = "free_trial"
 
         import json
         telemetry_dict = None
@@ -1364,6 +1874,22 @@ async def process_text_answer_background(
                 telemetry_dict = json.loads(telemetry_data_str)
             except Exception:
                 pass
+
+        # Recalculate WPM and fillers from the actual Whisper transcript
+        if telemetry_dict is not None and cleaned_answer_text:
+            word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
+            duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
+            if duration_sec > 0 and word_count > 0:
+                telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
+            # Recalculate filler words from actual transcript
+            vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
+            en_fillers = {"uh", "um", "like", "actually", "basically"}
+            words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
+            filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
+            text_lower = cleaned_answer_text.lower()
+            filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
+            telemetry_dict["fillerWordsCount"] = filler_count
+            telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
 
         try:
             async with SCORING_SEMAPHORE:
@@ -1380,6 +1906,8 @@ async def process_text_answer_background(
                         preferred_language=feedback_language,
                         force_language=force_feedback_language,
                         telemetry_data=telemetry_dict,
+                        plan_tier=plan_tier,
+                        resume_text=question_row["resume_text"],
                     )
                 )
         except Exception as exc:
@@ -1420,36 +1948,20 @@ async def submit_answer(
     if session_row["status"] != "IN_PROGRESS":
         raise HTTPException(status_code=400, detail="Session đã hoàn thành, không thể nộp thêm câu trả lời")
 
-    if session_row["time_limit_minutes"] is not None:
-        deadline = session_row["created_at"] + timedelta(minutes=int(session_row["time_limit_minutes"]))
-        if datetime.now(timezone.utc) >= deadline:
-            await db.execute(
-                """
-                UPDATE sessions
-                SET status = 'COMPLETED', completed_at = COALESCE(completed_at, NOW())
-                WHERE id = $1 AND status = 'IN_PROGRESS'
-                """,
-                session_id,
-            )
-            ui_language = resolve_ui_language(request)
-            detail = (
-                "Đã hết thời gian của session này."
-                if ui_language == "vi"
-                else "This session has reached its time limit."
-            )
-            raise HTTPException(status_code=400, detail=detail)
-
     # Get ideal_answer for scoring
     question_row = await db.fetchrow(
         """
-        SELECT q.text, q.text_en, q.text_vi,
-               q.category, q.category_en, q.category_vi,
-               q.difficulty,
-               q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi
+            SELECT q.text, q.text_en, q.text_vi,
+                   q.category, q.category_en, q.category_vi,
+                   q.difficulty,
+                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                   u.resume_text
         FROM questions q
         LEFT JOIN session_question_sets sq
             ON sq.question_id = q.id
            AND sq.session_id = $2
+        JOIN sessions s ON s.id = $2
+        JOIN users u ON u.id = s.user_id
         WHERE q.id = $1
           AND (
             sq.session_id IS NOT NULL
@@ -1469,6 +1981,9 @@ async def submit_answer(
     feedback_language = "vi" if str(body.output_language or ui_language).strip().lower() == "vi" else "en"
     force_feedback_language = body.output_language is not None
     cleaned_answer_text = sanitize_user_text(body.answer_text)
+
+    if _question_time_limit_expired(body.question_started_at):
+        raise HTTPException(status_code=400, detail="Hết thời gian cho câu hỏi này.")
 
     import json
     telemetry_json = json.dumps(body.telemetry_data) if body.telemetry_data else None
@@ -1511,6 +2026,196 @@ async def submit_answer(
     )
 
     return _serialize_answer_row(answer_row)
+
+
+async def _load_answer_with_follow_up(
+    *,
+    db: asyncpg.Connection,
+    session_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    user_id: uuid.UUID,
+):
+    return await db.fetchrow(
+        """
+        SELECT a.id, a.session_id, a.question_id, a.answer_text,
+               a.score::float AS score, a.feedback, a.telemetry_data, a.submitted_at,
+               fu.id AS follow_up_id,
+               fu.follow_up_style,
+               fu.question_text AS follow_up_question_text,
+               fu.answer_text AS follow_up_answer_text,
+               fu.score::float AS follow_up_score,
+               fu.feedback AS follow_up_feedback,
+               fu.telemetry_data AS follow_up_telemetry_data,
+               fu.generated_at AS follow_up_generated_at,
+               fu.answered_at AS follow_up_answered_at
+        FROM answers a
+        JOIN sessions s ON s.id = a.session_id
+        LEFT JOIN interview_follow_ups fu ON fu.parent_answer_id = a.id
+        WHERE a.id = $1 AND a.session_id = $2 AND s.user_id = $3
+        """,
+        answer_id, session_id, user_id,
+    )
+
+
+@router.post("/{session_id}/answers/{answer_id}/follow-up", response_model=AnswerOut)
+async def generate_answer_follow_up(
+    session_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    answer_row = await _load_answer_with_follow_up(
+        db=db,
+        session_id=session_id,
+        answer_id=answer_id,
+        user_id=current_user.id,
+    )
+    if not answer_row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy câu trả lời")
+
+    if answer_row["feedback"] == "PENDING":
+        raise HTTPException(status_code=400, detail="Cần chấm điểm câu trả lời chính trước khi tạo follow-up.")
+
+    question_row = await db.fetchrow(
+        """
+        SELECT q.text, q.text_en, q.text_vi,
+               q.category, q.category_en, q.category_vi,
+               q.difficulty,
+               q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+               s.role, s.level, s.major
+        FROM answers a
+        JOIN sessions s ON s.id = a.session_id
+        JOIN questions q ON q.id = a.question_id
+        WHERE a.id = $1 AND a.session_id = $2 AND s.user_id = $3
+        """,
+        answer_id, session_id, current_user.id,
+    )
+    if not question_row:
+        raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại")
+
+    language = "vi" if resolve_ui_language(request) == "vi" else "en"
+    await _upsert_follow_up_question(
+        db=db,
+        session_id=session_id,
+        answer_id=answer_id,
+        answer_text=sanitize_user_text(answer_row["answer_text"]),
+        score=float(answer_row["score"]),
+        question_row=question_row,
+        language=language,
+        telemetry_data=_coerce_telemetry_data(answer_row.get("telemetry_data")),
+    )
+    refreshed = await _load_answer_with_follow_up(
+        db=db,
+        session_id=session_id,
+        answer_id=answer_id,
+        user_id=current_user.id,
+    )
+    if not refreshed:
+        raise HTTPException(status_code=500, detail="Không thể tạo follow-up.")
+    return _serialize_answer_row(refreshed)
+
+
+@router.post("/{session_id}/answers/{answer_id}/submit-follow-up", response_model=AnswerOut)
+async def submit_follow_up_answer(
+    session_id: uuid.UUID,
+    answer_id: uuid.UUID,
+    body: FollowUpSubmit,
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    answer_row = await _load_answer_with_follow_up(
+        db=db,
+        session_id=session_id,
+        answer_id=answer_id,
+        user_id=current_user.id,
+    )
+    if not answer_row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy câu trả lời")
+
+    question_row = await db.fetchrow(
+        """
+        SELECT q.text, q.text_en, q.text_vi,
+               q.category, q.category_en, q.category_vi,
+               q.difficulty,
+               q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+               s.role, s.level, s.major
+        FROM answers a
+        JOIN sessions s ON s.id = a.session_id
+        JOIN questions q ON q.id = a.question_id
+        WHERE a.id = $1 AND a.session_id = $2 AND s.user_id = $3
+        """,
+        answer_id, session_id, current_user.id,
+    )
+    if not question_row:
+        raise HTTPException(status_code=404, detail="Câu hỏi không tồn tại")
+
+    follow_up_row = await db.fetchrow(
+        """
+        SELECT id, question_text, answer_text, score::float AS score, feedback, telemetry_data
+        FROM interview_follow_ups
+        WHERE parent_answer_id = $1
+        """,
+        answer_id,
+    )
+    if not follow_up_row:
+        raise HTTPException(status_code=404, detail="Follow-up chưa được tạo")
+
+    ui_language = resolve_ui_language(request)
+    feedback_language = "vi" if str(body.output_language or ui_language).strip().lower() == "vi" else "en"
+    force_feedback_language = body.output_language is not None
+    cleaned_answer_text = sanitize_user_text(body.answer_text)
+    if _question_time_limit_expired(body.question_started_at):
+        raise HTTPException(status_code=400, detail="Hết thời gian cho câu hỏi follow-up này.")
+    telemetry_json = json.dumps(body.telemetry_data) if body.telemetry_data else None
+
+    try:
+        score, feedback = await score_follow_up_answer(
+            original_question_text=localized_question_field(question_row, "text", feedback_language),
+            original_answer_text=sanitize_user_text(answer_row["answer_text"]),
+            follow_up_question_text=sanitize_user_text(follow_up_row["question_text"]),
+            follow_up_answer_text=cleaned_answer_text,
+            role=question_row["role"],
+            level=question_row["level"],
+            category=localized_question_field(question_row, "category", feedback_language),
+            difficulty=question_row["difficulty"],
+            major=question_row["major"],
+            preferred_language=feedback_language,
+            force_language=force_feedback_language,
+            telemetry_data=body.telemetry_data,
+            plan_tier="pro",
+        )
+    except Exception as exc:
+        score = 0
+        feedback = f"Lỗi chấm follow-up: {str(exc)}"
+
+    await db.execute(
+        """
+        UPDATE interview_follow_ups
+        SET answer_text = $1,
+            score = $2,
+            feedback = $3,
+            telemetry_data = $4,
+            answered_at = NOW()
+        WHERE parent_answer_id = $5
+        """,
+        cleaned_answer_text,
+        score,
+        feedback,
+        telemetry_json,
+        answer_id,
+    )
+
+    refreshed = await _load_answer_with_follow_up(
+        db=db,
+        session_id=session_id,
+        answer_id=answer_id,
+        user_id=current_user.id,
+    )
+    if not refreshed:
+        raise HTTPException(status_code=500, detail="Không thể lưu follow-up.")
+    return _serialize_answer_row(refreshed)
 
 
 @router.post("/{session_id}/answers/{answer_id}/tts", response_model=AnswerTtsOut)
@@ -1556,7 +2261,7 @@ async def complete_session(
     current_user: UserOut = Depends(get_current_user),
 ):
     session_row = await db.fetchrow(
-        "SELECT id, role, level, major, status, mode, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan FROM sessions WHERE id = $1 AND user_id = $2",
+        "SELECT id, role, level, major, status, mode, language, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan FROM sessions WHERE id = $1 AND user_id = $2",
         session_id, current_user.id,
     )
     if not session_row:
@@ -1575,6 +2280,7 @@ async def complete_session(
             role=session_row["role"],
             level=session_row["level"],
             mode=session_row["mode"],
+            language=session_row["language"],
             status=session_row["status"],
             created_at=session_row["created_at"],
             completed_at=session_row["completed_at"],
@@ -1593,7 +2299,7 @@ async def complete_session(
         SET status = 'COMPLETED',
             completed_at = COALESCE(completed_at, NOW())
         WHERE id = $1
-        RETURNING id, user_id, major, role, level, mode, status, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan
+        RETURNING id, user_id, major, role, level, mode, language, status, created_at, completed_at, time_limit_minutes, evaluation_report, practice_plan
         """,
         session_id,
     )
@@ -1614,6 +2320,7 @@ async def complete_session(
         role=updated["role"],
         level=updated["level"],
         mode=updated["mode"],
+        language=updated["language"],
         status=updated["status"],
         created_at=updated["created_at"],
         completed_at=updated["completed_at"],
