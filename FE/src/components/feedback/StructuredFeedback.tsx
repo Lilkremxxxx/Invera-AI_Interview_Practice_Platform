@@ -21,6 +21,7 @@ const sectionCopy = {
   vi: {
     strengths: 'Điểm tốt',
     gaps: 'Thiếu / còn yếu',
+    summary: 'Tóm tắt',
     improvements: 'Ưu tiên cải thiện',
     outline: 'Khung trả lời tốt hơn',
     followUp: 'Câu hỏi follow-up',
@@ -34,6 +35,7 @@ const sectionCopy = {
   en: {
     strengths: 'Strengths',
     gaps: 'Gaps',
+    summary: 'Summary',
     improvements: 'Priority improvements',
     outline: 'Stronger answer outline',
     followUp: 'Follow-up questions',
@@ -125,9 +127,18 @@ export function StructuredFeedback({ feedback, className }: StructuredFeedbackPr
             <Sparkles className="h-4 w-4" />
             <span>{parsed.language === 'vi' ? 'Tóm tắt nhanh' : 'Quick summary'}</span>
           </div>
-          <p className="text-sm leading-7 text-foreground">
-            {parsed.summary}
-          </p>
+          <ul className="space-y-2 text-sm leading-7 text-foreground">
+            <li className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-current opacity-70" />
+              <span><strong>{copy.summary}:</strong> {parsed.summary}</span>
+            </li>
+            {parsed.summaryGaps && (
+              <li className="flex gap-2">
+                <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-current opacity-70" />
+                <span><strong>{copy.gaps}:</strong> {parsed.summaryGaps}</span>
+              </li>
+            )}
+          </ul>
         </div>
       )}
 

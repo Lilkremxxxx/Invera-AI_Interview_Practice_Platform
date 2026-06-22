@@ -11,6 +11,7 @@ export interface FeedbackCriterion {
 export interface ParsedFeedback {
   language: 'vi' | 'en';
   summary?: string;
+  summaryGaps?: string;
   criteria: FeedbackCriterion[];
   strengths: string[];
   gaps: string[];
@@ -39,6 +40,14 @@ const SECTION_HEADERS: Record<SectionKey, string[]> = {
 };
 
 const SUMMARY_HEADERS = ['Tóm tắt', 'Summary'];
+const SUMMARY_GAPS_HEADERS = ['Thiếu / còn yếu', 'Gaps'];
+
+function stripEvidenceConfidence(text: string | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/\s*\((?:Mức tin cậy bằng chứng|Evidence confidence):\s*[^)]+\)\s*$/i, '')
+    .trim();
+}
 
 function detectLanguage(feedback: string): 'vi' | 'en' {
   if (feedback.includes('Tóm tắt:') || feedback.includes('Tiêu chí chấm:')) {
@@ -105,7 +114,7 @@ function parseCriterion(line: string): FeedbackCriterion {
     title: match[1].trim(),
     assessment,
     quote,
-    evidence: evaluation || match[3].trim(),
+    evidence: stripEvidenceConfidence(evaluation || match[3].trim()),
     missing: missing || undefined,
   };
 }
@@ -135,6 +144,14 @@ export function parseStructuredFeedback(feedback: string): ParsedFeedback {
     const summaryMatch = line.match(/^(Tóm tắt|Summary):\s*(.+)$/);
     if (summaryMatch && SUMMARY_HEADERS.includes(summaryMatch[1])) {
       parsed.summary = summaryMatch[2].trim();
+      parsed.isStructured = true;
+      currentSection = null;
+      continue;
+    }
+
+    const summaryGapsMatch = line.match(/^(Thiếu \/ còn yếu|Gaps):\s*(.+)$/);
+    if (summaryGapsMatch && SUMMARY_GAPS_HEADERS.includes(summaryGapsMatch[1])) {
+      parsed.summaryGaps = summaryGapsMatch[2].trim();
       parsed.isStructured = true;
       currentSection = null;
       continue;
