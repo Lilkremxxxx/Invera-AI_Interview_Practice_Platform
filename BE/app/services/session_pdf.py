@@ -15,6 +15,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.core.text_processing import sanitize_user_text
+from app.services.session_export import build_video_metric_blocks, sanitize_metric_note
 
 
 FONT_REGULAR = "InveraPdfRegular"
@@ -177,6 +178,8 @@ def _text_labels(language: str) -> dict[str, str]:
             "unknown": "Chưa có",
             "export_all_title": "Invera Sessions Export",
             "export_all_subtitle": "Toàn bộ lịch sử session của user",
+            "ai_evaluation": "Báo cáo đánh giá chi tiết từ AI (Giao tiếp & Telemetry)",
+            "practice_plan": "Kế hoạch luyện tập đề xuất từ AI",
         }
     return {
         "report_title": "Invera Session Export",
@@ -203,6 +206,8 @@ def _text_labels(language: str) -> dict[str, str]:
         "unknown": "Not available",
         "export_all_title": "Invera Sessions Export",
         "export_all_subtitle": "Full session history for this user",
+        "ai_evaluation": "Detailed AI Evaluation Report (Communication & Telemetry)",
+        "practice_plan": "AI Recommended Practice Plan",
     }
 
 
@@ -264,9 +269,112 @@ def _session_meta_table(session: dict[str, Any], labels: dict[str, str], styles:
     return table
 
 
+def _metric_table(title: str, rows: list[tuple[str, str]], styles: dict[str, ParagraphStyle]) -> Table:
+    table_rows = [[_paragraph(title, styles["section_label"]), _paragraph("", styles["body"])]]
+    table_rows.extend([[_paragraph(label, styles["meta_label"]), _paragraph(value, styles["meta_cell"])] for label, value in rows])
+    table = Table(table_rows, colWidths=[48 * mm, 114 * mm], repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("SPAN", (0, 0), (-1, 0)),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dbeafe")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#bfdbfe")),
+                ("INNERGRID", (0, 1), (-1, -1), 0.5, colors.HexColor("#dbeafe")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    return table
+
+
+def _parse_inline_markdown(text: str) -> str:
+    escaped = (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    escaped = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", escaped)
+    escaped = re.sub(r"\*(.*?)\*", r"<i>\1</i>", escaped)
+    escaped = re.sub(r"_(.*?)_", r"<i>\1</i>", escaped)
+    return escaped
+
+
+def _add_markdown_paragraphs(story: list[Any], md_text: str, styles: dict[str, ParagraphStyle], font_bold: str, font_regular: str) -> None:
+    if not md_text:
+        return
+
+    h3_style = ParagraphStyle(
+        "MdH3",
+        parent=styles["body"],
+        fontName=font_bold,
+        fontSize=11,
+        leading=15,
+        textColor=colors.HexColor("#0f172a"),
+        spaceBefore=6,
+        spaceAfter=3,
+    )
+    bullet_style = ParagraphStyle(
+        "MdBullet",
+        parent=styles["body"],
+        fontName=font_regular,
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.HexColor("#1f2937"),
+        leftIndent=12,
+        spaceAfter=3,
+    )
+    quote_style = ParagraphStyle(
+        "MdQuote",
+        parent=styles["body"],
+        fontName=font_regular,
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.HexColor("#475569"),
+        leftIndent=18,
+        spaceAfter=3,
+    )
+
+    lines = md_text.split("\n")
+    for line in lines:
+        line_str = line.strip()
+        if not line_str:
+            story.append(Spacer(1, 3))
+            continue
+
+        if line_str.startswith("###"):
+            text = line_str[3:].strip()
+            text = _parse_inline_markdown(text)
+            story.append(Paragraph(text, h3_style))
+        elif line_str.startswith("##"):
+            text = line_str[2:].strip()
+            text = _parse_inline_markdown(text)
+            story.append(Paragraph(text, h3_style))
+        elif line_str.startswith("#"):
+            text = line_str[1:].strip()
+            text = _parse_inline_markdown(text)
+            story.append(Paragraph(text, h3_style))
+        elif line_str.startswith("- ") or line_str.startswith("* "):
+            text = line_str[2:].strip()
+            text = _parse_inline_markdown(text)
+            story.append(Paragraph(f"&bull; {text}", bullet_style))
+        elif line_str.startswith(">"):
+            text = line_str[1:].strip()
+            text = _parse_inline_markdown(text)
+            story.append(Paragraph(text, quote_style))
+        else:
+            text = _parse_inline_markdown(line_str)
+            story.append(Paragraph(text, styles["body"]))
+
+
 def build_sessions_pdf(*, sessions: list[dict[str, Any]], language: str, export_all: bool) -> bytes:
     labels = _text_labels(language)
     styles = _styles(language)
+    font_regular, font_bold = _ensure_fonts()
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -294,6 +402,22 @@ def build_sessions_pdf(*, sessions: list[dict[str, Any]], language: str, export_
         story.append(_paragraph(session_heading, styles["session_heading"]))
         story.append(_session_meta_table(session, labels, styles))
         story.append(Spacer(1, 10))
+
+        # Append AI evaluation report if present
+        eval_report = session.get("evaluation_report")
+        if eval_report:
+            story.append(Spacer(1, 6))
+            story.append(_paragraph(labels["ai_evaluation"], styles["section_label"]))
+            _add_markdown_paragraphs(story, eval_report, styles, font_bold, font_regular)
+            story.append(Spacer(1, 10))
+
+        # Append proposed practice plan if present
+        practice_plan = session.get("practice_plan")
+        if practice_plan:
+            story.append(Spacer(1, 6))
+            story.append(_paragraph(labels["practice_plan"], styles["section_label"]))
+            _add_markdown_paragraphs(story, practice_plan, styles, font_bold, font_regular)
+            story.append(Spacer(1, 10))
 
         questions = session.get("questions") or []
         answer_map = {answer["question_id"]: answer for answer in session.get("answers", [])}
@@ -323,6 +447,12 @@ def build_sessions_pdf(*, sessions: list[dict[str, Any]], language: str, export_
                 story.append(_paragraph(score_text, styles["body"]))
             feedback_text = sanitize_user_text(answer["feedback"]) if answer and answer.get("feedback") else labels["empty_feedback"]
             story.append(_paragraph(feedback_text, styles["body"]))
+            metric_blocks = build_video_metric_blocks(answer or {}, language) if answer else []
+            for metric_block in metric_blocks:
+                story.append(Spacer(1, 6))
+                story.append(_metric_table(metric_block["title"], metric_block["rows"], styles))
+            if not metric_blocks:
+                story.append(_paragraph(sanitize_metric_note(None, language), styles["body"]))
             story.append(Spacer(1, 10))
 
     doc.build(story, onFirstPage=_page_number, onLaterPages=_page_number)
