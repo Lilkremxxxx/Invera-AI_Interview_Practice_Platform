@@ -40,6 +40,7 @@ import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass,
 import { WebcamTelemetry, TelemetryData } from '@/components/interview/WebcamTelemetry';
 
 const RECORDING_LIMIT_SECONDS = 120;
+const QUESTION_TIME_LIMIT_SECONDS = 300;
 const DEFAULT_STT_LANGUAGE = 'vi';
 const FEEDBACK_MASCOT_ANIMATIONS = [
   'animate-mascot-bounce',
@@ -149,7 +150,7 @@ const InterviewRoom = () => {
       ? 'Nhập câu trả lời của bạn... Hãy cụ thể và dùng ví dụ từ kinh nghiệm thực tế.'
       : 'Type your answer... Be specific and use examples from your real experience.',
     stop: language === 'vi' ? 'Dừng' : 'Stop',
-    voice: language === 'vi' ? 'Ghi âm' : 'Voice',
+    record: language === 'vi' ? 'Ghi hình' : 'Record',
     recording: language === 'vi' ? 'Đang ghi âm...' : 'Recording...',
     recordingLimit: language === 'vi' ? 'Tự dừng sau' : 'Auto-stop in',
     recordingLimitReached: language === 'vi' ? 'Đã chạm giới hạn ghi âm, đang chuyển sang văn bản.' : 'Recording limit reached, transcribing now.',
@@ -158,9 +159,9 @@ const InterviewRoom = () => {
     sttUnavailable: language === 'vi' ? 'Trình duyệt này không hỗ trợ ghi âm.' : 'This browser does not support audio recording.',
     sttPermissionDenied: language === 'vi' ? 'Không thể truy cập microphone.' : 'Unable to access the microphone.',
     sttFailed: language === 'vi' ? 'Không thể chuyển giọng nói thành văn bản.' : 'Unable to transcribe the recording.',
-    sttLanguage: language === 'vi' ? 'Ngôn ngữ voice' : 'Voice language',
-    vietnameseVoice: language === 'vi' ? 'Tiếng Việt' : 'Vietnamese voice input',
-    englishVoice: language === 'vi' ? 'Tiếng Anh' : 'English voice input',
+    sttLanguage: language === 'vi' ? 'Ngôn ngữ ghi âm' : 'Recording language',
+    vietnameseLang: language === 'vi' ? 'Tiếng Việt' : 'Vietnamese',
+    englishLang: language === 'vi' ? 'Tiếng Anh' : 'English',
     submit: language === 'vi' ? 'Nộp câu trả lời' : 'Submit answer',
     grading: language === 'vi' ? 'Đang chấm bài...' : 'Scoring your answer...',
     takeSeconds: language === 'vi' ? 'Thường mất khoảng 15-30 giây' : 'Usually takes about 15-30 seconds',
@@ -174,7 +175,11 @@ const InterviewRoom = () => {
     feedback: language === 'vi' ? 'Nhận xét' : 'Feedback',
     listenFeedback: language === 'vi' ? 'Nghe phản hồi' : 'Listen to feedback',
     feedbackAudioPlayer: language === 'vi' ? 'Trình phát audio nhận xét' : 'Feedback audio player',
-    preparingFeedbackAudio: language === 'vi' ? 'Đang tạo giọng đọc...' : 'Preparing voice...',
+    preparingFeedbackAudio: language === 'vi' ? 'Đang tạo giọng đọc...' : 'Preparing audio...',
+    followUpLabel: language === 'vi' ? 'Câu hỏi đào sâu' : 'Follow-up question',
+    followUpThinking: language === 'vi' ? 'AI đang suy nghĩ follow-up...' : 'AI is preparing the follow-up...',
+    submitFollowUp: language === 'vi' ? 'Nộp follow-up' : 'Submit follow-up',
+    submitFollowUpLoading: language === 'vi' ? 'Đang nộp...' : 'Submitting...',
     nextQuestion: language === 'vi' ? 'Câu tiếp theo' : 'Next question',
     finish: language === 'vi' ? 'Hoàn thành' : 'Finish',
     outOfTen: language === 'vi' ? '/10' : '/10',
@@ -194,13 +199,44 @@ const InterviewRoom = () => {
   useEffect(() => {
     answerRef.current = answer;
   }, [answer]);
-  const [sttLanguage, setSttLanguage] = useState<SttLanguage>(language === 'vi' ? 'vi' : 'en');
   const [isRecording, setIsRecording] = useState(false);
   const isRecordingRef = useRef(false);
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
+
+  // Force user to end the session, block browser back button & page unload
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      window.history.pushState(null, '', window.location.href);
+      toast({
+        title: language === 'vi' ? 'Bắt buộc kết thúc phiên' : 'Session must be ended',
+        description: language === 'vi'
+          ? 'Bạn không thể quay lại. Vui lòng hoàn thành phỏng vấn hoặc bấm nút Kết thúc.'
+          : 'You cannot go back. Please complete the interview or click End.',
+        variant: 'destructive',
+      });
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [language, toast]);
   const isSubmittingAfterStopRef = useRef(false);
+  const sessionLanguage: SttLanguage = session?.language === 'en' ? 'en' : 'vi';
+  const roomLanguage: SttLanguage = session?.language === 'en' ? 'en' : language;
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -208,14 +244,19 @@ const InterviewRoom = () => {
   const [isSynthesizingFeedback, setIsSynthesizingFeedback] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
+  const [followUpAnswer, setFollowUpAnswer] = useState('');
+  const [pendingQuestionId, setPendingQuestionId] = useState<number | null>(null);
+  const [isSubmittingFollowUp, setIsSubmittingFollowUp] = useState(false);
   const [feedbackMascotCue, setFeedbackMascotCue] = useState<FeedbackMascotCue | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const [questionTurnStartedAt, setQuestionTurnStartedAt] = useState<number | null>(null);
+  const [questionTurnType, setQuestionTurnType] = useState<'answer' | 'followup' | null>(null);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [webcamTelemetry, setWebcamTelemetry] = useState<TelemetryData | null>(null);
-  const autoCompletedRef = useRef(false);
+  const timeoutHandledRef = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -230,6 +271,17 @@ const InterviewRoom = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
+  function handleForceSubmitAnswer() {
+    if (isRecording) {
+      handleStopRecording();
+    }
+    void submitAnswerInternal(true);
+  }
+
+  function handleForceSubmitFollowUp() {
+    void submitFollowUpInternal(true);
+  }
 
 
   // Load session from sessionStorage (set by NewSession after create)
@@ -251,13 +303,41 @@ const InterviewRoom = () => {
   }, [id]);
 
   useEffect(() => {
-    autoCompletedRef.current = false;
-    if (!session?.time_limit_minutes) {
+    if (!session || session.status !== 'IN_PROGRESS') return;
+    setQuestionTurnType('answer');
+    setQuestionTurnStartedAt(Date.now());
+    setRemainingSeconds(QUESTION_TIME_LIMIT_SECONDS);
+    timeoutHandledRef.current = false;
+  }, [currentQuestion, session?.id, session?.status]);
+
+  useEffect(() => {
+    if (!currentAnswer?.follow_up_question_text || currentAnswer.follow_up_answer_text || !showFeedback) return;
+    if (questionTurnType === 'followup') return;
+
+    setQuestionTurnType('followup');
+    setQuestionTurnStartedAt(Date.now());
+    setRemainingSeconds(QUESTION_TIME_LIMIT_SECONDS);
+    timeoutHandledRef.current = false;
+  }, [
+    currentAnswer?.follow_up_answer_text,
+    currentAnswer?.follow_up_question_text,
+    questionTurnType,
+    showFeedback,
+  ]);
+
+  useEffect(() => {
+    if (session?.status !== 'IN_PROGRESS') {
       setRemainingSeconds(null);
       return;
     }
 
-    const deadlineMs = new Date(session.created_at).getTime() + session.time_limit_minutes * 60 * 1000;
+    if (questionTurnStartedAt == null || !questionTurnType) {
+      setRemainingSeconds(null);
+      return;
+    }
+
+    timeoutHandledRef.current = false;
+    const deadlineMs = questionTurnStartedAt + QUESTION_TIME_LIMIT_SECONDS * 1000;
     const updateRemaining = () => {
       const seconds = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
       setRemainingSeconds(seconds);
@@ -266,49 +346,28 @@ const InterviewRoom = () => {
     updateRemaining();
     const intervalId = window.setInterval(updateRemaining, 1000);
     return () => window.clearInterval(intervalId);
-  }, [session?.created_at, session?.id, session?.time_limit_minutes]);
+  }, [questionTurnStartedAt, questionTurnType, session?.status]);
 
   useEffect(() => {
-    if (!id || !session || session.status !== 'IN_PROGRESS' || session.time_limit_minutes == null) return;
-    if (remainingSeconds === null || remainingSeconds > 0 || isSubmitting || isCompleting || autoCompletedRef.current) return;
+    if (!id || !session || session.status !== 'IN_PROGRESS') return;
+    if (remainingSeconds === null || remainingSeconds > 0 || timeoutHandledRef.current) return;
+    if (questionTurnType === null) return;
 
-    autoCompletedRef.current = true;
+    timeoutHandledRef.current = true;
 
-    const autoComplete = async () => {
-      setIsCompleting(true);
-      try {
-        await sessionsApi.complete(id, { generateReport: false });
-        sessionStorage.removeItem(`session_${id}`);
-        toast({
-          title: copy.timeExpiredTitle,
-          description: copy.timeExpiredBody,
-        });
-        navigate(`/app/sessions/${id}`);
-      } catch {
-        toast({
-          title: copy.submitError,
-          description: copy.completeError,
-          variant: 'destructive',
-        });
-        navigate('/app/sessions');
-      } finally {
-        setIsCompleting(false);
-      }
-    };
+    if (questionTurnType === 'answer') {
+      void handleForceSubmitAnswer();
+      return;
+    }
 
-    void autoComplete();
+    void handleForceSubmitFollowUp();
   }, [
-    copy.completeError,
-    copy.submitError,
-    copy.timeExpiredBody,
-    copy.timeExpiredTitle,
+    handleForceSubmitAnswer,
+    handleForceSubmitFollowUp,
     id,
-    isCompleting,
-    isSubmitting,
-    navigate,
     remainingSeconds,
     session,
-    toast,
+    questionTurnType,
   ]);
 
   useEffect(() => {
@@ -342,6 +401,42 @@ const InterviewRoom = () => {
       description: copy.transcribing,
     });
   }, [copy.recordingLimitReached, copy.transcribing, isRecording, recordingSeconds, toast]);
+
+  useEffect(() => {
+    if (!id || !showFeedback || pendingQuestionId == null || !session || session.status !== 'IN_PROGRESS') {
+      return;
+    }
+
+    let active = true;
+
+    const refreshCurrentAnswer = async () => {
+      try {
+        const refreshed = await sessionsApi.get(id);
+        if (!active) return;
+        setSession(refreshed);
+
+        const latestAnswer = refreshed.answers.find((item) => item.question_id === pendingQuestionId);
+        if (!latestAnswer) return;
+
+        setCurrentAnswer(latestAnswer);
+        if (latestAnswer.feedback !== 'PENDING' && latestAnswer.follow_up_question_text) {
+          setIsSubmitting(false);
+        }
+      } catch {
+        // Keep polling until the backend catches up.
+      }
+    };
+
+    void refreshCurrentAnswer();
+    const intervalId = window.setInterval(() => {
+      void refreshCurrentAnswer();
+    }, 2000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [id, pendingQuestionId, session, showFeedback]);
 
   if (loadError) {
     return (
@@ -381,7 +476,7 @@ const InterviewRoom = () => {
   const totalQuestions = questions.length;
   const question = questions[currentQuestion];
   const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
-  const isTimeUp = session.time_limit_minutes != null && remainingSeconds === 0;
+  const isTimeUp = questionTurnType !== null && remainingSeconds === 0;
   const recordingSecondsLeft = Math.max(0, RECORDING_LIMIT_SECONDS - recordingSeconds);
 
   const formatCountdown = (seconds: number) => {
@@ -391,29 +486,47 @@ const InterviewRoom = () => {
   };
 
 
-  const handleSubmitAnswer = () => {
+  const submitAnswerInternal = async (allowEmpty: boolean) => {
+    if (!question || !id) return;
+
+    const submittedAnswer = answer.trim();
+    if (!allowEmpty && !submittedAnswer) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await sessionsApi.submitAnswer(id, {
+        question_id: question.id,
+        answer_text: allowEmpty ? answer : submittedAnswer,
+        output_language: sessionLanguage,
+        question_started_at: questionTurnStartedAt ? new Date(questionTurnStartedAt).toISOString() : undefined,
+      });
+      setCurrentAnswer(result);
+      setPendingQuestionId(result.question_id);
+      setFollowUpAnswer('');
+      setShowFeedback(true);
+      setQuestionTurnType(null);
+      setQuestionTurnStartedAt(null);
+      setRemainingSeconds(null);
+      setIsSubmitting(false);
+    } catch (err) {
+      setIsSubmitting(false);
+      toast({
+        title: copy.submitError,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
     if (!question || !id || isTimeUp) return;
-    
+
     if (isRecording) {
       handleStopRecording();
       return;
     }
 
-    if (!answer.trim()) return;
-    
-    const currentQuestionId = question.id;
-    const answerText = answer;
-
-    // Fire-and-forget background upload
-    sessionsApi.submitAnswer(id, {
-      question_id: currentQuestionId,
-      answer_text: answerText,
-      output_language: sttLanguage,
-    }).catch(err => {
-      console.error("Error submitting text answer in background:", err);
-    });
-
-    void handleNextQuestion();
+    await submitAnswerInternal(false);
   };
 
   const handleListenFeedback = async () => {
@@ -439,6 +552,52 @@ const InterviewRoom = () => {
     } finally {
       setIsSynthesizingFeedback(false);
     }
+  };
+
+  const submitFollowUpInternal = async (allowEmpty: boolean) => {
+    if (!id || !currentAnswer?.follow_up_question_text || isSubmittingFollowUp) return;
+
+    const submittedFollowUp = followUpAnswer.trim();
+    if (!allowEmpty && !submittedFollowUp) return;
+
+    setIsSubmittingFollowUp(true);
+    try {
+      const result = await sessionsApi.submitFollowUp(id, currentAnswer.id, {
+        answer_text: allowEmpty ? followUpAnswer : submittedFollowUp,
+        output_language: sessionLanguage,
+        question_started_at: questionTurnStartedAt ? new Date(questionTurnStartedAt).toISOString() : undefined,
+      });
+      setCurrentAnswer(result);
+      setFollowUpAnswer('');
+      setPendingQuestionId(null);
+      setShowFeedback(true);
+      setQuestionTurnType(null);
+      setQuestionTurnStartedAt(null);
+      setRemainingSeconds(null);
+    } catch (err) {
+      toast({
+        title: copy.submitError,
+        description: err instanceof Error ? err.message : copy.retry,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingFollowUp(false);
+    }
+  };
+
+  const handleSubmitFollowUp = async () => {
+    await submitFollowUpInternal(false);
+  };
+
+  const beginAnswerReview = (questionId: number) => {
+    setPendingQuestionId(questionId);
+    setFollowUpAnswer('');
+    setCurrentAnswer(null);
+    setShowFeedback(true);
+    setIsSubmitting(true);
+    setQuestionTurnType(null);
+    setQuestionTurnStartedAt(null);
+    setRemainingSeconds(null);
   };
 
   const stopRecordingTracks = () => {
@@ -517,7 +676,7 @@ const InterviewRoom = () => {
     const stream = mediaStreamRef.current;
     if (stream) {
       try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         const audioContext = new AudioContextClass();
         audioContextRef.current = audioContext;
         sampleRate = audioContext.sampleRate;
@@ -527,7 +686,7 @@ const InterviewRoom = () => {
     }
 
     const socket = sessionsApi.createRealtimeSttSocket?.(id, {
-      language: sttLanguage,
+      language: sessionLanguage,
       questionId: session.questions[currentQuestion]?.id,
       sampleRate: sampleRate,
     });
@@ -716,7 +875,7 @@ const InterviewRoom = () => {
       const recognition = new Recognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = browserSttLanguageMap[sttLanguage];
+      recognition.lang = browserSttLanguageMap[sessionLanguage];
       recognition.onresult = (event) => {
         let interim = '';
         let finalAccumulated = '';
@@ -738,7 +897,7 @@ const InterviewRoom = () => {
         );
         setAnswer(combined);
       };
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error, event.message);
         speechRecognitionRef.current = null;
         setLiveTranscript('');
@@ -772,23 +931,27 @@ const InterviewRoom = () => {
     setIsRecording(false);
     stopRecordingTracks();
 
+    const currentQuestionId = question.id;
+    let uploadPromise: Promise<unknown> = Promise.resolve();
     if (videoBlob.size && id) {
       const videoFile = new File([videoBlob], `session-${id}-${question.id}.webm`, { type: 'video/webm' });
-      const currentQuestionId = question.id;
-      
-      // Fire-and-forget background upload
-      sessionsApi.submitVideoAnswer(
+
+      // Background upload (we preserve the promise)
+      uploadPromise = sessionsApi.submitVideoAnswer(
         id,
         videoFile,
         telemetry,
-        sttLanguage,
+        sessionLanguage,
         currentQuestionId
       ).catch((err) => {
         console.error("Error uploading video answer in background:", err);
       });
     }
 
-    // Immediately go to next question
+    void uploadPromise.catch((err) => {
+      console.error("Error uploading video answer in background:", err);
+    });
+
     void handleNextQuestion();
   };
 
@@ -801,12 +964,25 @@ const InterviewRoom = () => {
       const hasVideo = mediaStreamRef.current?.getVideoTracks().some((track) => track.readyState === 'live');
       if (!hasVideo) {
         toast({
-          title: language === 'vi' ? 'Vui lòng bật camera trước khi ghi hình.' : 'Please turn on your camera before recording.',
+          title: roomLanguage === 'vi' ? 'Vui lòng bật camera trước khi ghi hình.' : 'Please turn on your camera before recording.',
           variant: 'destructive',
         });
         return;
       }
       setIsRecording(true);
+      // Start speech recognition to capture transcript for WPM calculation
+      // Try WebSocket realtime STT first, fall back to browser SpeechRecognition
+      if (!navigator.mediaDevices?.getUserMedia) {
+        // No audio support — start browser speech recognition directly
+        startLiveSpeechRecognition();
+      } else {
+        // Start realtime STT WebSocket; if fails, browser fallback will activate
+        void startRealtimeSttSocket().then((connected) => {
+          if (!connected) {
+            startLiveSpeechRecognition();
+          }
+        });
+      }
       return;
     }
 
@@ -844,22 +1020,26 @@ const InterviewRoom = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         audioChunksRef.current = [];
 
+        const currentQuestionId = question.id;
+        let uploadPromise: Promise<unknown> = Promise.resolve();
         if (audioBlob.size && id) {
           const audioFile = new File([audioBlob], `session-${id}-${question.id}.webm`, { type: 'audio/webm' });
-          const currentQuestionId = question.id;
-          
-          // Fire-and-forget background upload
-          sessionsApi.transcribeAnswer(
+
+          // Background upload (we preserve the promise)
+          uploadPromise = sessionsApi.transcribeAnswer(
             id,
             audioFile,
-            sttLanguage,
+            sessionLanguage,
             currentQuestionId
           ).catch((err) => {
             console.error("Error uploading audio answer in background:", err);
           });
         }
 
-        // Immediately go to next question
+        void uploadPromise.catch((err) => {
+          console.error("Error uploading audio answer in background:", err);
+        });
+
         void handleNextQuestion();
       };
 
@@ -880,6 +1060,8 @@ const InterviewRoom = () => {
   const handleStopRecording = () => {
     if (session?.mode === 'camera') {
       setIsRecording(false);
+      stopLiveSpeechRecognition();
+      closeRealtimeSttSocket();
       return;
     }
     const recorder = mediaRecorderRef.current;
@@ -892,11 +1074,19 @@ const InterviewRoom = () => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer('');
+      setFollowUpAnswer('');
       setLiveTranscript('');
       setShowFeedback(false);
       setCurrentAnswer(null);
+      setPendingQuestionId(null);
+      setIsSubmitting(false);
+      setIsSubmittingFollowUp(false);
       setWebcamTelemetry(null);
       liveFinalTranscriptRef.current = '';
+      setQuestionTurnType('answer');
+      setQuestionTurnStartedAt(Date.now());
+      setRemainingSeconds(QUESTION_TIME_LIMIT_SECONDS);
+      timeoutHandledRef.current = false;
     } else {
       // Last question — complete the session
       setIsCompleting(true);
@@ -904,7 +1094,7 @@ const InterviewRoom = () => {
         const completed = await sessionsApi.complete(id!, { generateReport: true });
         setCompletedSession(completed);
         sessionStorage.removeItem(`session_${id}`);
-        navigate(`/app/sessions/${id}`);
+        navigate('/app/sessions');
       } catch (err) {
         toast({
           title: copy.submitError,
@@ -988,31 +1178,30 @@ const InterviewRoom = () => {
       </div>
 
       {/* Main Content */}
-      <div className="pt-20 pb-8 px-6 lg:px-12">
-        <div className="w-full grid lg:grid-cols-12 gap-8">
-          {/* AI Interviewer Side (Left, 1/3 width) */}
+      <div className="pt-20 pb-8 px-4 sm:px-6 lg:px-12">
+        <div className="w-full grid gap-6 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-4">
-            <div className="bg-card rounded-2xl border p-6 md:p-8">
+            <div className="bg-card rounded-2xl border p-5 sm:p-6 md:p-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center">
-                    <span className="text-3xl">🤖</span>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl gradient-accent flex items-center justify-center">
+                    <span className="text-2xl sm:text-3xl">🤖</span>
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-success-foreground animate-pulse" />
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground text-lg">AI Interviewer</h3>
-                  <p className="text-sm text-muted-foreground capitalize">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground text-base sm:text-lg">AI Interviewer</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground capitalize">
                     {roleLabelMap[session.role]?.en || session.role} • {levelLabels[session.level]?.en || session.level}
                   </p>
                 </div>
               </div>
 
               {question && (
-                <div className="bg-muted/50 rounded-xl p-5">
-                  <div className="flex items-center gap-2 mb-3">
+                <div className="bg-muted/50 rounded-xl p-4 sm:p-5">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-xs font-medium",
                       question.difficulty === 'easy' ? "bg-success/20 text-success" :
@@ -1021,151 +1210,97 @@ const InterviewRoom = () => {
                     )}>
                       {question.difficulty}
                     </span>
-                    <span className="text-xs text-muted-foreground">{getLocalizedQuestionCategory(question, language)}</span>
+                    <span className="text-xs text-muted-foreground">{getLocalizedQuestionCategory(question, sessionLanguage)}</span>
                   </div>
-                  <p className="text-foreground text-lg leading-relaxed">
-                    "{getLocalizedQuestionText(question, language)}"
+                  <p className="text-foreground text-base sm:text-lg leading-relaxed">
+                    "{getLocalizedQuestionText(question, sessionLanguage)}"
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Answer Textbox placed immediately below the question */}
-            {!showFeedback && !isSubmitting && (
-              <div className="bg-card rounded-2xl border p-6 md:p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-foreground">{copy.yourAnswer}</h4>
-                  <span className="text-sm text-muted-foreground">{answer.length} {copy.characters}</span>
+            <div className="bg-card rounded-2xl border p-5 sm:p-6 md:p-8 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h4 className="font-semibold text-foreground">
+                  {session?.mode === 'camera'
+                    ? (roomLanguage === 'vi' ? 'Điều khiển camera' : 'Camera controls')
+                    : (roomLanguage === 'vi' ? 'Điều khiển ghi hình' : 'Camera controls')}
+                </h4>
+                <Badge variant="secondary" className="rounded-full px-3 py-1">
+                  {session?.mode === 'camera'
+                    ? (roomLanguage === 'vi' ? 'Camera' : 'Camera')
+                    : (roomLanguage === 'vi' ? 'Camera' : 'Camera')}
+                </Badge>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{roomLanguage === 'vi' ? 'Ngôn ngữ ghi âm' : 'Recording language'}</span>
+                  <span>{sessionLanguage === 'vi' ? copy.vietnameseLang : copy.englishLang}</span>
                 </div>
 
-                <Textarea
-                  placeholder={copy.answerPlaceholder}
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
+                <Button
+                  variant={isRecording ? 'destructive' : 'outline'}
+                  size="sm"
+                  onClick={isRecording ? handleStopRecording : handleStartRecording}
                   disabled={isTimeUp || isTranscribing}
-                  className="min-h-[200px] resize-none text-base"
-                />
-
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {(session?.mode === 'voice' || session?.mode === 'camera') && (
-                      <>
-                        <div
-                          aria-label={copy.sttLanguage}
-                          className="inline-flex rounded-md border border-input bg-background p-0.5"
-                          role="group"
-                        >
-                          <Button
-                            aria-label={copy.vietnameseVoice}
-                            aria-pressed={sttLanguage === 'vi'}
-                            className="h-8 px-3 text-xs"
-                            disabled={isRecording || isTranscribing}
-                            onClick={() => setSttLanguage('vi')}
-                            size="sm"
-                            type="button"
-                            variant={sttLanguage === 'vi' ? 'secondary' : 'ghost'}
-                          >
-                            VI
-                          </Button>
-                          <Button
-                            aria-label={copy.englishVoice}
-                            aria-pressed={sttLanguage === 'en'}
-                            className="h-8 px-3 text-xs"
-                            disabled={isRecording || isTranscribing}
-                            onClick={() => setSttLanguage('en')}
-                            size="sm"
-                            type="button"
-                            variant={sttLanguage === 'en' ? 'secondary' : 'ghost'}
-                          >
-                            EN
-                          </Button>
-                        </div>
-                        <Button
-                          variant={isRecording ? "destructive" : "outline"}
-                          size="sm"
-                          onClick={isRecording ? handleStopRecording : handleStartRecording}
-                          disabled={isTimeUp || isTranscribing}
-                        >
-                          {isRecording ? (
-                            session?.mode === 'camera' ? <VideoOff className="w-4 h-4" /> : <MicOff className="w-4 h-4" />
-                          ) : (
-                            session?.mode === 'camera' ? <Video className="w-4 h-4" /> : <Mic className="w-4 h-4" />
-                          )}
-                          {isRecording ? copy.stop : (session?.mode === 'camera' ? (language === 'vi' ? 'Ghi hình' : 'Record') : copy.voice)}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                  <Button 
-                    variant="accent" 
-                    onClick={handleSubmitAnswer}
-                    disabled={!answer.trim() || isTimeUp || isTranscribing || isSubmitting}
-                  >
-                    {copy.submit}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-                {(isRecording || isTranscribing) && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-sm">
-                    <Badge variant="secondary" className="rounded-full border border-accent/20 bg-background/80 px-3 py-1 text-foreground">
-                      {isRecording ? (
-                        session?.mode === 'camera' ? <Video className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />
-                      ) : (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      )}
-                      {isRecording ? (session?.mode === 'camera' ? (language === 'vi' ? 'Đang ghi hình...' : 'Recording...') : copy.recording) : copy.transcribing}
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      {isRecording
-                        ? `${copy.recordingLimit} ${formatCountdown(recordingSecondsLeft)}`
-                        : copy.takeSeconds}
-                    </span>
-                    {liveTranscript && (
-                      <span className="basis-full text-xs text-muted-foreground mt-1">
-                        <span className="font-medium text-foreground">{copy.liveTranscript}:</span> {liveTranscript}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  className="flex-1 sm:flex-none"
+                >
+                  {isRecording ? (
+                    session?.mode === 'camera' ? <VideoOff className="w-4 h-4" /> : <MicOff className="w-4 h-4" />
+                  ) : (
+                    session?.mode === 'camera' ? <Video className="w-4 h-4" /> : <Mic className="w-4 h-4" />
+                  )}
+                  {isRecording
+                    ? copy.stop
+                    : session?.mode === 'camera'
+                      ? (roomLanguage === 'vi' ? 'Ghi hình' : 'Record')
+                      : copy.record}
+                </Button>
               </div>
-            )}
 
-            {/* Analyzing State */}
-            {isSubmitting && (
-              <div className="bg-card rounded-2xl border p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Sparkles className="w-8 h-8 text-accent-foreground" />
-                </div>
-                <h4 className="font-semibold text-foreground mb-2">{copy.grading}</h4>
-                <p className="text-sm text-muted-foreground">{copy.takeSeconds}</p>
-                <div className="mt-6 space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
-                </div>
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-sm">
+                <Badge variant="secondary" className="rounded-full border border-accent/20 bg-background/80 px-3 py-1 text-foreground">
+                  {isRecording ? (
+                    session?.mode === 'camera' ? <Video className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />
+                  ) : (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  {isRecording
+                    ? (session?.mode === 'camera' ? (roomLanguage === 'vi' ? 'Đang ghi hình...' : 'Recording...') : copy.recording)
+                    : copy.transcribing}
+                </Badge>
+                <span className="text-muted-foreground">
+                  {isRecording
+                    ? `${copy.recordingLimit} ${formatCountdown(recordingSecondsLeft)}`
+                    : copy.takeSeconds}
+                </span>
               </div>
-            )}
+            </div>
 
-            {/* STAR Hint */}
             <div className="bg-info/10 border border-info/20 rounded-xl p-4 flex gap-3">
               <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">{copy.hintTitle}</p>
-                <p className="text-xs text-muted-foreground">{copy.hintBody}</p>
+                <p className="text-sm font-medium text-foreground mb-1">
+                  {roomLanguage === 'vi' ? 'Phản hồi nền' : 'Background processing'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {roomLanguage === 'vi'
+                    ? 'Khi bạn dừng trả lời, hệ thống sẽ tự chuyển sang câu tiếp theo và tiếp tục chấm điểm ở nền.'
+                    : 'When you stop speaking, the app automatically advances and continues scoring in the background.'}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Camera / Feedback Side (Right, 2/3 width) */}
           <div className="space-y-6 lg:col-span-8">
-            {/* Webcam Telemetry if camera mode */}
-            {session?.mode === 'camera' && !showFeedback && !isSubmitting && (
+            {session?.mode === 'camera' ? (
               <WebcamTelemetry
                 isRecording={isRecording}
                 onRecordingStart={handleWebcamRecordingStart}
                 onRecordingStop={handleWebcamRecordingStop}
                 onRecordingChunk={sendRealtimeChunk}
-                language={sttLanguage}
+                language={sessionLanguage}
                 liveTranscript={liveTranscript}
                 answerText={answer}
                 onCameraReady={(stream) => {
@@ -1175,125 +1310,35 @@ const InterviewRoom = () => {
                   mediaStreamRef.current = null;
                 }}
               />
-            )}
-
-            {/* Placeholder when in voice mode (and not showing feedback) */}
-            {session?.mode !== 'camera' && !showFeedback && !isSubmitting && (
-              <div className="bg-card rounded-2xl border p-8 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[340px] h-full">
+            ) : (
+              <div className="bg-card rounded-2xl border p-6 sm:p-8 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[320px] sm:min-h-[380px] h-full text-center">
                 <div className="w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center animate-pulse">
                   <Mic className="w-8 h-8 text-accent" />
                 </div>
-                <h4 className="font-semibold text-foreground">{language === 'vi' ? 'Đang phỏng vấn bằng Giọng nói' : 'Voice Interview Active'}</h4>
-                <p className="text-sm text-muted-foreground text-center max-w-sm">
-                  {language === 'vi' 
-                    ? 'Hãy nhấn nút "Ghi âm" và bắt đầu trả lời câu hỏi bằng giọng nói.' 
-                    : 'Click "Voice" and speak your answer directly to the microphone.'}
+                <h4 className="font-semibold text-foreground">
+                  {roomLanguage === 'vi' ? 'Chế độ camera' : 'Camera mode'}
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  {roomLanguage === 'vi'
+                    ? 'Nhấn nút ghi âm, trả lời xong thì dừng. Câu tiếp theo sẽ mở tự động ngay lập tức.'
+                    : 'Press record, answer the question, then stop. The next question opens immediately.'}
                 </p>
               </div>
             )}
 
-            {/* Feedback Panel */}
-            {showFeedback && currentAnswer && (
-              <div className="relative overflow-hidden bg-card rounded-2xl border p-6 md:p-8 space-y-6">
-                {feedbackMascotCue && (
-                  <img
-                    src={`/mascot/animation-${feedbackMascotCue.index}.png`}
-                    alt="Invera feedback mascot"
-                    width={112}
-                    height={128}
-                    loading="lazy"
-                    decoding="async"
-                    className={cn(
-                      'pointer-events-none absolute right-4 top-4 z-10 w-16 select-none object-contain opacity-90 drop-shadow-[0_14px_18px_rgba(15,23,42,0.12)] sm:w-20 md:w-24',
-                      feedbackMascotCue.animation
-                    )}
-                  />
-                )}
-                {/* Score */}
-                <div className="text-center pb-6 border-b">
-                  <div className={cn(
-                    "inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-3",
-                    getScoreBgClass(currentAnswer.score)
-                  )}>
-                    <span className={cn("text-3xl font-bold", getScoreTextClass(currentAnswer.score))}>
-                      {formatScoreValue(currentAnswer.score)}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground">{copy.score} {copy.outOfTen}</p>
-                  <div className="w-full bg-muted rounded-full h-2 mt-3">
-                    <div
-                      className={cn("h-2 rounded-full transition-all", getScoreBarClass(currentAnswer.score))}
-                      style={{ width: `${toScoreProgress(currentAnswer.score)}%` }}
-                    />
-                  </div>
+            {isCompleting && (
+              <div className="bg-card rounded-2xl border p-8 text-center">
+                <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Sparkles className="w-8 h-8 text-accent-foreground" />
                 </div>
-
-                <div className="rounded-2xl border border-border/70 bg-muted/30 p-4">
-                  <p className="mb-2 text-sm font-semibold text-foreground">{copy.submittedAnswer}</p>
-                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
-                    {currentAnswer.answer_text}
-                  </p>
-                </div>
-
-                {/* Feedback */}
-                <div>
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <h5 className="font-semibold text-foreground flex items-center gap-2">
-                      {currentAnswer.score >= 7 ? (
-                        <CheckCircle2 className="w-5 h-5 text-success" />
-                      ) : currentAnswer.score >= 4 ? (
-                        <AlertCircle className="w-5 h-5 text-warning" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-destructive" />
-                      )}
-                      {copy.feedback}
-                    </h5>
-                    {currentAnswer.tts_audio_url ? (
-                      <audio
-                        aria-label={copy.feedbackAudioPlayer}
-                        className="h-10 w-full max-w-sm"
-                        controls
-                        preload="metadata"
-                        src={resolveFeedbackAudioUrl(currentAnswer.tts_audio_url)}
-                      />
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isSynthesizingFeedback}
-                        onClick={() => void handleListenFeedback()}
-                      >
-                        {isSynthesizingFeedback ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Volume2 className="w-4 h-4" />
-                        )}
-                        {isSynthesizingFeedback ? copy.preparingFeedbackAudio : copy.listenFeedback}
-                      </Button>
-                    )}
-                  </div>
-                  <StructuredFeedback feedback={currentAnswer.feedback} />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button 
-                    variant="accent" 
-                    className="flex-1" 
-                    onClick={handleNextQuestion}
-                    disabled={isCompleting}
-                  >
-                    {isCompleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        {currentQuestion < totalQuestions - 1 ? copy.nextQuestion : copy.finish}
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <h4 className="font-semibold text-foreground mb-2">
+                  {roomLanguage === 'vi' ? 'Đang hoàn thành session...' : 'Completing the session...'}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {roomLanguage === 'vi'
+                    ? 'Các câu trả lời vẫn đang được xử lý ở nền.'
+                    : 'Your answers are still being processed in the background.'}
+                </p>
               </div>
             )}
           </div>
