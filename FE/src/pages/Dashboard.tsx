@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, LabelList } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, LabelList, LineChart, Line, Label } from 'recharts';
 import { 
   PlusCircle, 
   Loader2, 
@@ -11,15 +11,78 @@ import {
   Clock3, 
   BarChart3, 
   Sparkles,
-  Info
+  Info,
+  Camera,
+  Eye,
+  Activity,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { sessionsApi, SessionOut } from '@/lib/api';
+import { sessionsApi, SessionOut, TelemetrySessionOverviewOut } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatPlanLabel, formatPlanStatus } from '@/lib/plans';
 import { roleLabelMap } from '@/lib/mock-data';
+import { buildTelemetryAnswerReplay, buildTelemetrySessionSeries } from '@/lib/interview-progress';
+
+type TelemetryMetricAxis = 'percent' | 'detail';
+type TelemetryDeltaDirection = 'higher' | 'lower' | 'neutral';
+
+type TelemetryMetricDefinition = {
+  key: 'gaze' | 'posture' | 'confidence' | 'blink' | 'tension' | 'wpm' | 'fillers';
+  label: string;
+  color: string;
+  axis: TelemetryMetricAxis;
+  betterDirection: TelemetryDeltaDirection;
+};
+
+type TelemetryTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number | string }>;
+  label?: string;
+  metricMap: Map<string, TelemetryMetricDefinition>;
+};
+
+const formatTelemetryDelta = (value: number): string => {
+  if (value === 0) return '0';
+  return `${value > 0 ? '+' : ''}${value}`;
+};
+
+const getTelemetryDeltaTone = (delta: number, direction: TelemetryDeltaDirection): string => {
+  if (delta === 0 || direction === 'neutral') return 'text-slate-500';
+  const improved = direction === 'higher' ? delta > 0 : delta < 0;
+  return improved ? 'text-emerald-600' : 'text-rose-600';
+};
+
+function TelemetryTooltipContent({ active, payload, label, metricMap }: TelemetryTooltipProps) {
+  if (!active || !payload?.length) return null;
+
+  const rows = payload
+    .filter((entry) => typeof entry.dataKey === 'string' && metricMap.has(entry.dataKey))
+    .map((entry) => ({
+      metric: metricMap.get(entry.dataKey as string)!,
+      value: typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0),
+    }));
+
+  if (!rows.length) return null;
+
+  return (
+    <div className="min-w-[180px] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur">
+      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</div>
+      <div className="mt-2 space-y-2">
+        {rows.map((row) => (
+          <div key={row.metric.key} className="flex items-center justify-between gap-4 text-sm">
+            <div className="inline-flex items-center gap-2 text-slate-700">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: row.metric.color }} />
+              <span>{row.metric.label}</span>
+            </div>
+            <span className="font-semibold text-slate-900">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Intern', en: 'Intern' },
@@ -144,6 +207,10 @@ const Dashboard = () => {
     queryKey: ['sessions'],
     queryFn: sessionsApi.list,
   });
+  const { data: telemetryOverview } = useQuery({
+    queryKey: ['telemetry-overview'],
+    queryFn: sessionsApi.telemetryOverview,
+  });
 
   // Extract unique roles practiced by the user from real sessions. Fallback to default set if none.
   const userRoles = useMemo(() => {
@@ -156,6 +223,7 @@ const Dashboard = () => {
 
   const [roleFilter, setRoleFilter] = useState<string>('frontend');
   const [rangeFilter, setRangeFilter] = useState<DemoRange>('30d');
+  const [selectedTelemetrySessionId, setSelectedTelemetrySessionId] = useState<string | null>(null);
 
   // Sync roleFilter to first user role once userRoles are loaded
   useEffect(() => {
@@ -184,7 +252,7 @@ const Dashboard = () => {
     chartTitle: language === 'vi' ? 'Tiến độ theo thời gian' : 'Progress over time',
     chartBody: language === 'vi' ? 'Điểm trả lời và mức độ sẵn sàng tăng dần qua các phiên luyện.' : 'Answer quality and readiness trend upward as practice sessions accumulate.',
     strengthsTitle: language === 'vi' ? 'Phân tích kỹ năng' : 'Skill breakdown',
-    strengthsBody: language === 'vi' ? 'Các chỉ số này cho thấy mức độ sẵn sàng và cần bồi tập phần nào.' : 'These metrics show where you are already strong and where more repetition is needed.',
+    strengthsBody: language === 'vi' ? 'Eye contact và confidence hiện được đồng bộ trực tiếp từ telemetry camera của các phiên đã hoàn thành.' : 'Eye contact and confidence now reflect your actual camera telemetry across completed sessions.',
     sessionsTitle: language === 'vi' ? 'Các phiên phỏng vấn gần đây' : 'Recent mock sessions',
     sessionsBody: language === 'vi' ? 'Danh sách các buổi phỏng vấn giả lập gần đây của bạn.' : 'Your most recent mock interview sessions.',
     strong: language === 'vi' ? 'Tốt' : 'Strong',
@@ -193,7 +261,46 @@ const Dashboard = () => {
     range30d: language === 'vi' ? '30 ngày' : '30 days',
     inProgress: language === 'vi' ? 'Đang thực hiện' : 'In progress',
     demoNotice: language === 'vi' ? 'Đang hiển thị dữ liệu mẫu. Hãy thực hiện phỏng vấn để cập nhật tiến độ thực tế.' : 'Showing demo data. Complete actual interviews to view your live stats.',
+    telemetryTitle: language === 'vi' ? 'Tiến bộ camera theo thời gian' : 'Camera progress over time',
+    telemetryBody: language === 'vi' ? 'Theo dõi eye contact, posture, confidence và các dấu hiệu căng thẳng qua nhiều buổi luyện tập.' : 'Track eye contact, posture, confidence, and stress signals across practice sessions.',
+    telemetryEmpty: language === 'vi' ? 'Chưa có đủ dữ liệu camera để dựng dashboard này.' : 'Not enough camera telemetry yet to build this dashboard.',
+    telemetryDrilldown: language === 'vi' ? 'Drill-down theo câu trả lời' : 'Answer-level drill-down',
+    telemetryTrendLabel: language === 'vi' ? 'Eye contact' : 'Eye contact',
+    telemetryConfidenceLabel: language === 'vi' ? 'Confidence' : 'Confidence',
+    postureLabel: language === 'vi' ? 'Posture' : 'Posture',
+    wpmLabel: 'WPM',
+    fillersLabel: language === 'vi' ? 'Fillers' : 'Fillers',
+    blinkLabel: language === 'vi' ? 'Blink' : 'Blink',
+    tensionLabel: language === 'vi' ? 'Tension' : 'Tension',
+    answerCountLabel: language === 'vi' ? 'mốc telemetry' : 'telemetry points',
+    progressYAxis: language === 'vi' ? 'Điểm' : 'Score',
+    progressXAxis: language === 'vi' ? 'Ngày' : 'Date',
   };
+
+  const telemetryMetricConfig = useMemo<TelemetryMetricDefinition[]>(() => ([
+    { key: 'gaze', label: copy.telemetryTrendLabel, color: '#0f766e', axis: 'percent', betterDirection: 'higher' },
+    { key: 'posture', label: copy.postureLabel, color: '#2563eb', axis: 'percent', betterDirection: 'higher' },
+    { key: 'confidence', label: copy.telemetryConfidenceLabel, color: '#7c3aed', axis: 'percent', betterDirection: 'higher' },
+    { key: 'blink', label: copy.blinkLabel, color: '#f59e0b', axis: 'percent', betterDirection: 'lower' },
+    { key: 'tension', label: copy.tensionLabel, color: '#ef4444', axis: 'percent', betterDirection: 'lower' },
+    { key: 'wpm', label: copy.wpmLabel, color: '#1d4ed8', axis: 'detail', betterDirection: 'neutral' },
+    { key: 'fillers', label: copy.fillersLabel, color: '#475569', axis: 'detail', betterDirection: 'lower' },
+  ]), [copy.blinkLabel, copy.fillersLabel, copy.postureLabel, copy.telemetryConfidenceLabel, copy.telemetryTrendLabel, copy.tensionLabel, copy.wpmLabel]);
+
+  const [visibleTelemetryMetrics, setVisibleTelemetryMetrics] = useState<Array<TelemetryMetricDefinition['key']>>([
+    'gaze',
+    'posture',
+    'confidence',
+    'blink',
+    'tension',
+    'wpm',
+    'fillers',
+  ]);
+
+  const telemetryMetricMap = useMemo(
+    () => new Map(telemetryMetricConfig.map((metric) => [metric.key, metric])),
+    [telemetryMetricConfig],
+  );
 
   // Filter sessions based on active role tab and range
   const filteredSessions = useMemo(() => {
@@ -238,35 +345,54 @@ const Dashboard = () => {
         questionsAnswered: questionsAnsweredCount,
       };
     } else {
-      const cat = getCategoryForRole(roleFilter);
-      const is30d = rangeFilter === '30d';
-      const fallbackSessions = is30d ? 12 : 4;
-      const fallbackCompleted = is30d ? 10 : 3;
-      const scoreMap = { frontend: 8.4, backend: 7.9, product: 8.6 };
-      const fallbackScore = scoreMap[cat];
-      
       return {
-        totalSessions: fallbackSessions,
-        avgScore: `${fallbackScore.toFixed(1)}/10`,
-        completedSessions: fallbackCompleted,
-        questionsAnswered: fallbackCompleted * 5,
+        totalSessions: 0,
+        avgScore: '0/10',
+        completedSessions: 0,
+        questionsAnswered: 0,
       };
     }
-  }, [hasRealData, roleFilter, rangeFilter, totalSessionsCount, avgScore, completedCount, questionsAnsweredCount]);
+  }, [hasRealData, totalSessionsCount, avgScore, completedCount, questionsAnsweredCount]);
+
+  const telemetrySessions = useMemo(() => {
+    const days = rangeFilter === '7d' ? 7 : 30;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return (telemetryOverview?.sessions ?? [])
+      .filter((session) => {
+        if (session.role !== roleFilter) return false;
+        const createdAt = new Date(session.created_at);
+        return createdAt >= cutoff;
+      })
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  }, [telemetryOverview?.sessions, roleFilter, rangeFilter]);
 
   // Skill breakdown vertical bars
   const strengths = useMemo(() => {
+    if (telemetrySessions.length > 0) {
+      const latestSummary = telemetrySessions[0]?.summary;
+      return [
+        { skill: copy.telemetryTrendLabel, score: latestSummary?.gaze ?? 0 },
+        { skill: copy.telemetryConfidenceLabel, score: latestSummary?.confidence ?? 0 },
+        { skill: copy.postureLabel, score: latestSummary?.posture ?? 0 },
+        { skill: copy.fillersLabel, score: Math.max(0, 100 - Math.min((latestSummary?.fillers ?? 0) * 10, 100)) },
+      ];
+    }
+
     const cat = getCategoryForRole(roleFilter);
     const baseSkills = strengthDataFallback[cat];
-    if (!hasRealData || avgScore === null) return baseSkills;
+    if (!hasRealData || avgScore === null) {
+      return baseSkills.map(skill => ({
+        skill: skill.skill,
+        score: 0,
+      }));
+    }
 
-    // Scale competencies based on user's real average score
     const scale = avgScore / 10;
     return baseSkills.map(skill => ({
       skill: skill.skill,
       score: Math.max(10, Math.min(100, Math.round(skill.score * (scale / 0.8)))),
     }));
-  }, [roleFilter, avgScore, hasRealData]);
+  }, [avgScore, copy.fillersLabel, copy.postureLabel, copy.telemetryConfidenceLabel, copy.telemetryTrendLabel, hasRealData, roleFilter, telemetrySessions]);
 
   const strongestSkill = useMemo(() => {
     return [...strengths].sort((a, b) => b.score - a.score)[0];
@@ -275,13 +401,7 @@ const Dashboard = () => {
   // Progress chart data on scale [0, 10]
   const trend = useMemo(() => {
     if (!hasRealData) {
-      const cat = getCategoryForRole(roleFilter);
-      const baseTrend = trendDataFallback[cat][rangeFilter];
-      return baseTrend.map(pt => ({
-        label: pt.label,
-        score: Number((pt.score / 10).toFixed(1)),
-        readiness: Number((pt.readiness / 10).toFixed(1)),
-      }));
+      return [];
     }
 
     const sorted = [...completedSessions].sort(
@@ -302,7 +422,62 @@ const Dashboard = () => {
         readiness: readinessVal,
       };
     });
-  }, [completedSessions, roleFilter, rangeFilter, hasRealData]);
+  }, [completedSessions, hasRealData]);
+
+  const telemetrySeries = useMemo(
+    () => buildTelemetrySessionSeries(telemetrySessions),
+    [telemetrySessions],
+  );
+
+  useEffect(() => {
+    if (!telemetrySessions.length) {
+      setSelectedTelemetrySessionId(null);
+      return;
+    }
+    if (!selectedTelemetrySessionId || !telemetrySessions.some((session) => session.session_id === selectedTelemetrySessionId)) {
+      setSelectedTelemetrySessionId(telemetrySessions[0].session_id);
+    }
+  }, [telemetrySessions, selectedTelemetrySessionId]);
+
+  const selectedTelemetrySession = useMemo<TelemetrySessionOverviewOut | null>(
+    () => telemetrySessions.find((session) => session.session_id === selectedTelemetrySessionId) ?? null,
+    [telemetrySessions, selectedTelemetrySessionId],
+  );
+
+  const telemetryReplay = useMemo(
+    () => buildTelemetryAnswerReplay(selectedTelemetrySession),
+    [selectedTelemetrySession],
+  );
+
+  const previousTelemetrySession = useMemo(() => {
+    if (!selectedTelemetrySessionId) return null;
+    const selectedIndex = telemetrySessions.findIndex((session) => session.session_id === selectedTelemetrySessionId);
+    if (selectedIndex === -1 || selectedIndex === telemetrySessions.length - 1) return null;
+    return telemetrySessions[selectedIndex + 1];
+  }, [selectedTelemetrySessionId, telemetrySessions]);
+
+  const telemetryLegendData = useMemo(
+    () => telemetryMetricConfig.map((metric) => {
+      const currentValue = selectedTelemetrySession?.summary?.[metric.key] ?? 0;
+      const previousValue = previousTelemetrySession?.summary?.[metric.key] ?? null;
+      const delta = typeof previousValue === 'number' ? currentValue - previousValue : 0;
+      return {
+        ...metric,
+        currentValue,
+        delta,
+        isVisible: visibleTelemetryMetrics.includes(metric.key),
+      };
+    }),
+    [previousTelemetrySession, selectedTelemetrySession, telemetryMetricConfig, visibleTelemetryMetrics],
+  );
+
+  const toggleTelemetryMetric = (metricKey: TelemetryMetricDefinition['key']) => {
+    setVisibleTelemetryMetrics((current) => (
+      current.includes(metricKey)
+        ? current.filter((key) => key !== metricKey)
+        : [...current, metricKey]
+    ));
+  };
 
   return (
     <div className="space-y-8 bg-slate-50/50 p-1 rounded-2xl">
@@ -332,13 +507,7 @@ const Dashboard = () => {
         </Alert>
       )}
 
-      {/* Demo Notice */}
-      {!hasRealData && (
-        <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-800 text-sm">
-          <Info className="h-5 w-5 text-teal-600 flex-shrink-0" />
-          <span className="font-medium">{copy.demoNotice}</span>
-        </div>
-      )}
+
 
       {/* Role Filter Tabs (Dynamic) */}
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center md:justify-between">
@@ -404,54 +573,175 @@ const Dashboard = () => {
             ))}
           </div>
 
+          <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <div className="text-xl font-bold text-slate-900">{copy.telemetryTitle}</div>
+                <div className="mt-1 text-sm text-slate-500 leading-relaxed">{copy.telemetryBody}</div>
+              </div>
+              {selectedTelemetrySession && (
+                <div className="text-sm text-slate-500">
+                  {roleLabelMap[selectedTelemetrySession.role]?.[language === 'vi' ? 'vi' : 'en'] || selectedTelemetrySession.role}
+                  {' • '}
+                  {selectedTelemetrySession.summary.answer_count} {copy.answerCountLabel}
+                </div>
+              )}
+            </div>
+
+            {telemetrySeries.length === 0 ? (
+              <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                {copy.telemetryEmpty}
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_300px]">
+                <div className="space-y-4">
+                  <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={telemetrySeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid stroke="#e2e8f0" vertical={false} strokeDasharray="4 4" />
+                        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                        <YAxis yAxisId="percent" tickLine={false} axisLine={false} width={36} domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 12 }} />
+                        <YAxis yAxisId="detail" orientation="right" tickLine={false} axisLine={false} width={44} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <Tooltip content={<TelemetryTooltipContent metricMap={telemetryMetricMap} />} />
+                        {telemetryMetricConfig.filter((metric) => visibleTelemetryMetrics.includes(metric.key)).map((metric) => (
+                          <Line
+                            key={metric.key}
+                            type="monotone"
+                            yAxisId={metric.axis}
+                            dataKey={metric.key}
+                            name={metric.label}
+                            stroke={metric.color}
+                            strokeWidth={metric.key === 'gaze' ? 3 : 2}
+                            dot={false}
+                            activeDot={{ r: metric.key === 'gaze' ? 5 : 4 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {telemetryLegendData.map((metric) => (
+                      <button
+                        key={metric.key}
+                        type="button"
+                        aria-pressed={metric.isVisible}
+                        onClick={() => toggleTelemetryMetric(metric.key)}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          metric.isVisible
+                            ? 'border-slate-300 bg-slate-100 text-slate-900'
+                            : 'border-slate-200 bg-white text-slate-400'
+                        }`}
+                      >
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: metric.color }} />
+                        <span>{metric.label}</span>
+                        <span className={`font-semibold ${getTelemetryDeltaTone(metric.delta, metric.betterDirection)}`}>
+                          {formatTelemetryDelta(metric.delta)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedTelemetrySession && [
+                    { label: copy.telemetryTrendLabel, value: `${selectedTelemetrySession.summary.gaze}%`, icon: Eye },
+                    { label: copy.postureLabel, value: `${selectedTelemetrySession.summary.posture}%`, icon: Activity },
+                    { label: copy.blinkLabel, value: `${selectedTelemetrySession.summary.blink}%`, icon: Camera },
+                    { label: copy.tensionLabel, value: `${selectedTelemetrySession.summary.tension}%`, icon: Sparkles },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                      <div className="flex items-center justify-between text-slate-500 text-sm">
+                        <span>{item.label}</span>
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <div className="mt-2 text-xl font-bold text-slate-900">{item.value}</div>
+                    </div>
+                  ))}
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-base font-bold text-slate-900">{copy.telemetryDrilldown}</div>
+                    <div className="mt-3 max-h-[260px] space-y-2 overflow-y-auto pr-1">
+                      {telemetryReplay.map((point) => (
+                        <div key={`${point.label}-${point.submittedAt ?? ''}`} className="rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">{point.label}</div>
+                              <div className="text-xs text-slate-500">
+                                {point.isFollowUp ? 'Follow-up' : 'Main answer'} · {point.score.toFixed(1)}/10
+                              </div>
+                            </div>
+                            <div className="text-right text-xs text-slate-500">
+                              <div>{copy.telemetryTrendLabel}: {point.gaze}%</div>
+                              <div>{copy.telemetryConfidenceLabel}: {point.confidence}%</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Main Visual Panels Grid */}
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_350px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_320px]">
             {/* Chart Area */}
             <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
               <div className="mb-6">
                 <div className="text-xl font-bold text-slate-900">{copy.chartTitle}</div>
                 <div className="mt-1 text-sm text-slate-500 leading-relaxed">{copy.chartBody}</div>
               </div>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trend} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="demoScoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#14b8a6" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#e2e8f0" vertical={false} strokeDasharray="4 4" />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <YAxis tickLine={false} axisLine={false} width={36} domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <Tooltip 
-                      animationDuration={150}
-                      contentStyle={{
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '16px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="score"
-                      name={copy.kpiAvgScore}
-                      stroke="#0f172a"
-                      strokeWidth={3}
-                      fill="url(#demoScoreGradient)"
-                      activeDot={{ r: 6, fill: '#14b8a6' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="readiness" 
-                      name={language === 'vi' ? 'Độ sẵn sàng' : 'Readiness'}
-                      stroke="#14b8a6" 
-                      strokeWidth={2} 
-                      fill="transparent" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="h-[250px] w-full">
+                {trend.length === 0 ? (
+                  <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                    {language === 'vi' ? 'Chưa có dữ liệu tiến độ. Hãy thực hiện phỏng vấn để cập nhật.' : 'No progress data yet. Complete actual interviews to view.'}
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trend} margin={{ top: 10, right: 10, left: 0, bottom: 16 }}>
+                      <defs>
+                        <linearGradient id="demoScoreGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#14b8a6" stopOpacity={0.3} />
+                          <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#e2e8f0" vertical={false} strokeDasharray="4 4" />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }}>
+                        <Label value={copy.progressXAxis} position="insideBottom" offset={-8} />
+                      </XAxis>
+                      <YAxis tickLine={false} axisLine={false} width={48} domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fill: '#64748b', fontSize: 12 }}>
+                        <Label value={copy.progressYAxis} angle={-90} position="insideLeft" style={{ textAnchor: 'middle' }} />
+                      </YAxis>
+                      <Tooltip 
+                        animationDuration={150}
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '16px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="score"
+                        name={copy.kpiAvgScore}
+                        stroke="#0f172a"
+                        strokeWidth={3}
+                        fill="url(#demoScoreGradient)"
+                        activeDot={{ r: 6, fill: '#14b8a6' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="readiness" 
+                        name={language === 'vi' ? 'Độ sẵn sàng' : 'Readiness'}
+                        stroke="#14b8a6" 
+                        strokeWidth={2} 
+                        fill="transparent" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -463,7 +753,7 @@ const Dashboard = () => {
                 <div className="mt-1 text-sm text-slate-500 leading-relaxed">{copy.strengthsBody}</div>
                 <div className="mt-6 h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={strengths} layout="vertical" barCategoryGap={12} margin={{ left: -10, right: 30 }}>
+                      <BarChart data={strengths} layout="vertical" barCategoryGap={12} margin={{ left: -10, right: 30 }}>
                       <XAxis type="number" hide domain={[0, 100]} />
                       <YAxis
                         type="category"
@@ -533,48 +823,39 @@ const Dashboard = () => {
                             <div className="mt-1.5 text-sm text-teal-300 font-medium">
                               {session.avg_score != null 
                                 ? `${session.avg_score.toFixed(1)}/10 score` 
-                                : copy.inProgress}
+                                : (session.status === 'COMPLETED' ? (language === 'vi' ? 'Đợi chấm điểm' : 'Waiting for grading') : copy.inProgress)}
                             </div>
                           </div>
                           <div
                             className={`rounded-full px-2.5 py-0.5 text-2xs md:text-xs font-semibold ${
                               session.status === 'COMPLETED'
-                                ? (session.avg_score ?? 0) >= 7
-                                  ? 'bg-teal-400/20 text-teal-200'
-                                  : 'bg-amber-300/15 text-amber-100'
+                                ? session.evaluation_report
+                                  ? (session.avg_score ?? 0) >= 7
+                                    ? 'bg-teal-400/20 text-teal-200'
+                                    : 'bg-amber-300/15 text-amber-100'
+                                  : 'bg-blue-400/20 text-blue-200'
                                 : 'bg-blue-400/20 text-blue-200'
                             }`}
                           >
                             {session.status === 'COMPLETED'
-                              ? ((session.avg_score ?? 0) >= 7 ? copy.strong : copy.mixed)
+                              ? session.evaluation_report
+                                ? ((session.avg_score ?? 0) >= 7 ? copy.strong : copy.mixed)
+                                : (language === 'vi' ? 'Đợi AI chấm điểm' : 'Waiting for AI grading')
                               : copy.inProgress}
                           </div>
                         </div>
                       </Link>
                     ))
                   ) : (
-                    sessionsDataFallback[getCategoryForRole(roleFilter)].map((session) => (
-                      <div key={session.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="font-medium text-white">{session.title}</div>
-                            <div className="mt-1 text-sm text-white/60">{(session.score / 10).toFixed(1)}/10 score</div>
-                          </div>
-                          <div
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                              session.status === 'strong' ? 'bg-teal-400/20 text-teal-200' : 'bg-amber-300/15 text-amber-100'
-                            }`}
-                          >
-                            {session.status === 'strong' ? copy.strong : copy.mixed}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-sm text-slate-400">
+                      {t('dashboard', 'noSessions')}
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       )}
     </div>
