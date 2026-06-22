@@ -27,6 +27,7 @@ import { sessionsApi, SessionOut } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { roleLabelMap } from '@/lib/mock-data';
 import { formatScoreValue, getScoreBgClass, getScoreTextClass } from '@/lib/score';
+import EvaluationReport from '@/components/feedback/EvaluationReport';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Intern', en: 'Intern' },
@@ -118,9 +119,9 @@ const DEFAULT_TASKS: TaskItem[] = [
     textEn: 'Rewrite answers for weak topics applying the STAR method.',
   },
   {
-    id: 'voice_mode',
-    textVi: 'Luyện tập lại phiên phỏng vấn này ở chế độ Voice (Nói) để rèn phản xạ và phát âm.',
-    textEn: 'Practice this interview session again in Voice mode to improve verbal reflexes.',
+    id: 'camera_mode',
+    textVi: 'Luyện tập lại phiên phỏng vấn này ở chế độ camera để rèn phản xạ và phần trình bày.',
+    textEn: 'Practice this interview session again in camera mode to improve reflexes and presentation.',
   },
   {
     id: 'read_theory',
@@ -328,7 +329,7 @@ export default function Plan() {
                     <div className="p-6">
                       <TabsContent value="evaluation" className="mt-0 focus-visible:ring-0">
                         {sessionDetail.evaluation_report ? (
-                          renderMarkdown(sessionDetail.evaluation_report)
+                          <EvaluationReport report={sessionDetail.evaluation_report} />
                         ) : (
                           <div className="text-center py-8 text-muted-foreground text-sm flex flex-col items-center gap-2">
                             <BookMarked className="w-8 h-8 text-muted-foreground/50" />

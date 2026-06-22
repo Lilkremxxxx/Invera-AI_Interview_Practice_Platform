@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle2, CreditCard, Gift, Loader2, ShieldCheck, ShoppingBag, Plus, Minus } from 'lucide-react';
+import { ArrowRight, CreditCard, Gift, Loader2, ShieldCheck, ShoppingBag, Plus, Minus } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { billingApi, PaymentOrderOut } from '@/lib/api';
-import { pricingPlans } from '@/lib/mock-data';
 import { formatBillingPeriod, formatPlanLabel, formatPlanStatus } from '@/lib/plans';
-import { pricingPlanContent } from '@/lib/pricing-content';
+import { PricingComparisonSheet } from '@/components/pricing/PricingComparisonSheet';
 import { useToast } from '@/hooks/use-toast';
 
 function formatCurrency(amount: number) {
@@ -33,6 +32,21 @@ function formatPaymentStatus(status: string, language: 'vi' | 'en') {
       return language === 'vi' ? 'Đã hủy' : 'Cancelled';
     default:
       return status;
+  }
+}
+
+function getPaymentStatusBadgeClass(status: string) {
+  switch (status) {
+    case 'pending':
+      return 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50';
+    case 'succeeded':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50';
+    case 'failed':
+      return 'border-red-200 bg-red-50 text-red-700 hover:bg-red-50';
+    case 'cancelled':
+      return 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50';
+    default:
+      return 'border-border bg-muted text-foreground';
   }
 }
 
@@ -71,6 +85,7 @@ const copy = {
     paymentHistory: 'Lịch sử thanh toán',
     noOrders: 'Chưa có giao dịch nào được tạo.',
     orderCode: 'Mã đơn',
+    continuePayment: 'Tiếp tục ->',
     paymentUpdatedTitle: 'Thanh toán thành công',
     paymentUpdatedDescription: 'Gói của bạn đã được cập nhật sau khi PayOS xác nhận giao dịch.',
     paymentSuccessToastTitle: 'Thanh toán thành công',
@@ -124,6 +139,7 @@ const copy = {
     paymentHistory: 'Payment history',
     noOrders: 'No transactions have been created yet.',
     orderCode: 'Order code',
+    continuePayment: 'Continue ->',
     paymentUpdatedTitle: 'Payment successful',
     paymentUpdatedDescription: 'Your plan was updated after PayOS confirmed the transaction.',
     paymentSuccessToastTitle: 'Payment successful',
@@ -183,11 +199,6 @@ export default function Upgrade() {
       setLoadingSessions(false);
     }
   };
-
-  const purchasablePlans = useMemo(
-    () => pricingPlans.filter((plan) => plan.id === 'basic' || plan.id === 'pro' || plan.id === 'premium'),
-    [],
-  );
 
   const paymentState = searchParams.get('payment');
   const paymentPlan = searchParams.get('plan');
@@ -416,55 +427,21 @@ export default function Upgrade() {
                 </TabsList>
               </Tabs>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4">
-              {purchasablePlans.map((plan) => {
-                const price = billingPeriod === 'month' ? plan.priceMonth : plan.priceYear;
-                const isCurrent = user?.plan_tier === plan.id && user?.plan_status === 'active';
-                const localizedPlan = pricingPlanContent[plan.id as 'basic' | 'pro' | 'premium'];
-                return (
-                  <div key={plan.id} className="rounded-2xl border border-border p-5 bg-card space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="text-xl font-semibold text-foreground">{plan.name}</h2>
-                        <p className="text-sm text-muted-foreground">{localizedPlan.description[language]}</p>
-                      </div>
-                      {isCurrent && <Badge>{text.currentPlan}</Badge>}
-                    </div>
-                    <div>
-                      <div className="text-3xl font-bold text-foreground">{formatCurrency(price)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {billingPeriod === 'month' ? text.perMonth : text.perYear}
-                      </div>
-                    </div>
-                    <ul className="space-y-2">
-                      {localizedPlan.features[language].slice(0, 5).map((feature) => (
-                        <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className="w-full"
-                      variant={plan.id === 'pro' ? 'accent' : 'outline'}
-                      onClick={() => handleCheckout(plan.id as 'basic' | 'pro' | 'premium')}
-                      disabled={loadingPlanId !== null}
-                    >
-                      {loadingPlanId === plan.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {text.redirecting}
-                        </>
-                      ) : (
-                        <>
-                          {isCurrent ? text.renewPlan : `${text.upgradeTo} ${plan.name}`}
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
+            <CardContent>
+              <PricingComparisonSheet
+                billingPeriod={billingPeriod}
+                currentPlanTier={(user?.plan_tier as 'basic' | 'pro' | 'premium' | 'free' | undefined) ?? null}
+                language={language}
+                loadingPlanId={loadingPlanId as 'basic' | 'pro' | 'premium' | null}
+                mode="upgrade"
+                getActionLabel={(planId, isCurrent) =>
+                  isCurrent ? text.renewPlan : `${text.upgradeTo} ${planId === 'free' ? 'Free' : planId.charAt(0).toUpperCase() + planId.slice(1)}`
+                }
+                onSelectPlan={(planId) => {
+                  if (planId === 'free') return;
+                  void handleCheckout(planId as 'basic' | 'pro' | 'premium');
+                }}
+              />
             </CardContent>
           </Card>
 
@@ -595,9 +572,19 @@ export default function Upgrade() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={order.status === 'succeeded' ? 'default' : 'outline'}>
+                      <Badge variant="outline" className={getPaymentStatusBadgeClass(order.status)}>
                         {formatPaymentStatus(order.status, language)}
                       </Badge>
+                      {order.provider === 'payos' && order.status === 'pending' && order.payment_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="border-sky-200 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                        >
+                          <a href={order.payment_url}>{text.continuePayment}</a>
+                        </Button>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {new Date(order.created_at).toLocaleString(locale)}
                       </span>
