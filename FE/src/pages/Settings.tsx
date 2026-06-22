@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/components/theme-provider';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Globe,
@@ -15,17 +16,38 @@ import {
   Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { profileApi } from '@/lib/api';
+
+function safeGetItem(key: string, fallback: string | null = null): string | null {
+  try {
+    return typeof globalThis.localStorage?.getItem === 'function' ? globalThis.localStorage.getItem(key) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    if (typeof globalThis.localStorage?.setItem === 'function') {
+      globalThis.localStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore storage failures in constrained environments.
+  }
+}
 
 const Settings = () => {
   const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
+  const { logout } = useAuthContext();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(() => {
-    const saved = localStorage.getItem('invera_tts');
+    const saved = safeGetItem('invera_tts');
     return saved !== null ? saved === 'true' : true;
   });
   const [dataSharing, setDataSharing] = useState(() => {
-    const saved = localStorage.getItem('invera_data_sharing');
+    const saved = safeGetItem('invera_data_sharing');
     return saved === 'true';
   });
   const { theme, setTheme, isAuthenticated } = useTheme();
@@ -40,14 +62,42 @@ const Settings = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    localStorage.setItem('invera_tts', String(ttsEnabled));
-    localStorage.setItem('invera_data_sharing', String(dataSharing));
+    safeSetItem('invera_tts', String(ttsEnabled));
+    safeSetItem('invera_data_sharing', String(dataSharing));
     await new Promise(r => setTimeout(r, 400));
     setIsSaving(false);
     toast({
       title: language === 'vi' ? 'Đã lưu cài đặt' : 'Settings saved',
       description: language === 'vi' ? 'Tùy chọn của bạn đã được cập nhật.' : 'Your preferences have been updated.',
     });
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      language === 'vi'
+        ? 'Bạn có chắc muốn xóa toàn bộ tài khoản và dữ liệu liên quan? Hành động này không thể hoàn tác.'
+        : 'Are you sure you want to delete your account and all related data? This cannot be undone.',
+    );
+    if (!confirmed || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await profileApi.deleteAccount();
+      toast({
+        title: language === 'vi' ? 'Đã xóa tài khoản' : 'Account deleted',
+        description: language === 'vi'
+          ? 'Toàn bộ dữ liệu của bạn đã được xóa khỏi hệ thống.'
+          : 'All of your data has been removed from the system.',
+      });
+      logout();
+    } catch (error) {
+      setIsDeleting(false);
+      toast({
+        title: language === 'vi' ? 'Không thể xóa tài khoản' : 'Unable to delete account',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -156,7 +206,13 @@ const Settings = () => {
           </div>
 
           <div className="pt-4 border-t">
-            <Button variant="outline" className="text-destructive hover:text-destructive">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {t('settings', 'deleteData')}
             </Button>
           </div>
