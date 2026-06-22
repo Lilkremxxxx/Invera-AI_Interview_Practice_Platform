@@ -22,6 +22,11 @@ export interface TelemetryData {
   cameraFramingScore?: number; // Percentage of time correctly framed (0.0 to 1.0)
   bodyPostureScore?: number;   // Percentage of time posture was OK (0.0 to 1.0)
   presentationConfidence?: number; // Confidence score (0 to 100)
+  // New non-verbal metrics for backend evaluation
+  blinkRatio?: number;         // Blink frames / total frames (excessive = nervousness)
+  avgHeadYaw?: number;         // Average absolute head yaw (> 3 = looking away often)
+  avgTensionScore?: number;    // Average tension composite (0.0-1.0, high = stressed)
+  recordingDurationSec?: number; // Total recording duration in seconds (for WPM recalculation on backend)
 }
 
 interface WebcamTelemetryProps {
@@ -89,6 +94,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
   const lastSpeechTimeRef = useRef<number>(Date.now());
   const lastWordCountRef = useRef<number>(0);
   const recordingSecondsRef = useRef<number>(0);
+  const answerTextRef = useRef('');
 
   useEffect(() => {
     cameraStateRef.current = cameraState;
@@ -97,6 +103,11 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
   useEffect(() => {
     handGesturesCountRef.current = handGesturesCount;
   }, [handGesturesCount]);
+
+  // Sync answerText to ref so intervals/effects read latest value (fix stale closure → WPM always 0)
+  useEffect(() => {
+    answerTextRef.current = answerText || '';
+  }, [answerText]);
 
   // Tracking buffers
   const telemetryHistory = useRef<Array<{
@@ -107,6 +118,10 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
     shoulderPos: { x: number; y: number };
     emotion: 'neutral' | 'happy' | 'surprised' | 'stressed';
     framingOk: boolean;
+    // New metrics
+    isBlinking: boolean;     // blink detected this frame
+    headYaw: number;         // head rotation (> 8 = looking away)
+    tensionScore: number;    // 0.0-1.0 composite tension
   }>>([]);
 
   const lastHandState = useRef<boolean>(false);
@@ -131,6 +146,9 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
     expressionNeutral: language === 'vi' ? 'Biểu cảm: Bình thường' : 'Expression: Neutral',
     expressionSurprised: language === 'vi' ? 'Biểu cảm: Ngạc nhiên' : 'Expression: Surprised',
     expressionStressed: language === 'vi' ? 'Biểu cảm: Căng thẳng' : 'Expression: Stressed',
+    gesturesLabel: language === 'vi' ? 'Cử chỉ:' : 'Gestures:',
+    paceLabel: language === 'vi' ? 'Tốc độ:' : 'Pace:',
+    confidenceLabel: language === 'vi' ? 'Tự tin:' : 'Confidence:',
   };
 
   // 1. Load MediaPipe Models
@@ -253,6 +271,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
   }, []);
 
   // Speech processing (Interval for WPM, pause tracking and filler word counters)
+  // Uses answerTextRef to avoid stale closure bug — interval keeps running during recording
   useEffect(() => {
     if (!isRecording) {
       recordingSecondsRef.current = 0;
@@ -268,7 +287,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
       recordingSecondsRef.current += 1;
       const seconds = recordingSecondsRef.current;
 
-      const text = answerText || '';
+      const text = answerTextRef.current || '';
       const words = text.trim().split(/\s+/).filter(Boolean);
       const wordCount = words.length;
 
@@ -290,7 +309,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRecording, answerText]);
+  }, [isRecording]);
 
   // Filler words counting
   useEffect(() => {
@@ -359,24 +378,26 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
   useEffect(() => {
     if (!isRecording) return;
     
-    // Simple presentation confidence score: Eye Contact (30%), Posture (20%), Speech Speed (25%), Fillers (25%)
+    // Eye Contact (20%), Posture (15%), Smile (10%), Speech Speed (20%), Fillers (20%),
+    // Blink rate (-8 max), Head Movement (-7 max), Tension (-5 max)
     let score = 0;
-    score += (eyeContactOk ? 30 : 5);
-    score += (postureOk ? 20 : 5);
-    
+    score += (eyeContactOk ? 20 : 4);
+    score += (postureOk ? 15 : 4);
+    score += (smileDetected ? 10 : 2);
+
     if (speechWpm >= 90 && speechWpm <= 140) {
-      score += 25;
+      score += 20;
     } else if ((speechWpm >= 70 && speechWpm < 90) || (speechWpm > 140 && speechWpm <= 165)) {
-      score += 15;
-    } else {
-      score += 5;
+      score += 12;
+    } else if (speechWpm > 0) {
+      score += 4;
     }
 
-    const fillerScore = Math.max(0, 25 - fillerCount * 4);
-    score += fillerScore;
+    const fillerScoreLocal = Math.max(0, 20 - fillerCount * 3);
+    score += fillerScoreLocal;
 
-    setConfidenceScore(score);
-  }, [eyeContactOk, postureOk, speechWpm, fillerCount, isRecording]);
+    setConfidenceScore(Math.min(100, score));
+  }, [eyeContactOk, postureOk, smileDetected, speechWpm, fillerCount, isRecording]);
 
   // 3. MediaPipe tracking loop (runs at ~8 FPS to save CPU)
   const startTrackingLoop = useCallback(() => {
@@ -418,6 +439,10 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
           let shoulderCenter = { x: 0.5, y: 0.5 };
           let detectedEmotion: 'neutral' | 'happy' | 'surprised' | 'stressed' = 'neutral';
           let faceFraming: 'ok' | 'too-close' | 'too-far' | 'off-center' | 'too-dark' | 'missing' = 'missing';
+          // New metrics — declared here so they're in scope for telemetryHistory.push
+          let isBlinking = false;
+          let headYaw = 0;
+          let tensionScore = 0;
 
           // --- FACE PROCESSING ---
           if (faceLandmarkerRef.current) {
@@ -426,11 +451,11 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
               const blendshapes = results.faceBlendshapes[0].categories;
               const landmarks = results.faceLandmarks[0];
 
-              // Smile detection
+              // Smile detection (threshold lowered from 0.25→0.08 for MediaPipe blendshape scores)
               const smileL = blendshapes.find((c: any) => c.categoryName === 'mouthSmileLeft')?.score || 0;
               const smileR = blendshapes.find((c: any) => c.categoryName === 'mouthSmileRight')?.score || 0;
               const avgSmile = (smileL + smileR) / 2;
-              smile = avgSmile > 0.25;
+              smile = avgSmile > 0.08;
               setSmileDetected(smile);
 
               // Gaze / Eye-Contact estimation
@@ -456,6 +481,27 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
               const mouthFrownR = blendshapes.find((c: any) => c.categoryName === 'mouthFrownRight')?.score || 0;
               const avgMouthFrown = (mouthFrownL + mouthFrownR) / 2;
               const stressed = avgBrowDown > 0.25 || avgMouthFrown > 0.2;
+
+              // NEW: Blink rate — eyeBlinkLeft / eyeBlinkRight blendshapes
+              const blinkL = blendshapes.find((c: any) => c.categoryName === 'eyeBlinkLeft')?.score || 0;
+              const blinkR = blendshapes.find((c: any) => c.categoryName === 'eyeBlinkRight')?.score || 0;
+              isBlinking = (blinkL > 0.5 || blinkR > 0.5);
+
+              // NEW: Tension indicators
+              const mouthPressL = blendshapes.find((c: any) => c.categoryName === 'mouthPressLeft')?.score || 0;
+              const mouthPressR = blendshapes.find((c: any) => c.categoryName === 'mouthPressRight')?.score || 0;
+              const browInnerUp = blendshapes.find((c: any) => c.categoryName === 'browInnerUp')?.score || 0;
+              const noseSneerL = blendshapes.find((c: any) => c.categoryName === 'noseSneerLeft')?.score || 0;
+              const noseSneerR = blendshapes.find((c: any) => c.categoryName === 'noseSneerRight')?.score || 0;
+              tensionScore = (avgBrowDown + (mouthPressL + mouthPressR) / 2 + browInnerUp + (noseSneerL + noseSneerR) / 2) / 4;
+
+              // NEW: Head pose from face landmarks (rough yaw/pitch)
+              // Landmarks: 1 = nose tip, 168 = nose bridge
+              const noseTip = landmarks[1];
+              const noseBridge = landmarks[168];
+              if (noseTip && noseBridge) {
+                headYaw = (noseTip.x - noseBridge.x) * 100; // positive = looking right
+              }
 
               if (smile) {
                 detectedEmotion = 'happy';
@@ -509,11 +555,11 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
 
                 if (isDark) {
                   faceFraming = 'too-dark';
-                } else if (faceWidth > 0.35) {
+                } else if (faceWidth > 0.42) {
                   faceFraming = 'too-close';
-                } else if (faceWidth < 0.12) {
+                } else if (faceWidth < 0.08) {
                   faceFraming = 'too-far';
-                } else if (faceCenterX < 0.38 || faceCenterX > 0.62) {
+                } else if (faceCenterX < 0.28 || faceCenterX > 0.72) {
                   faceFraming = 'off-center';
                 } else {
                   faceFraming = 'ok';
@@ -580,6 +626,9 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
               shoulderPos: shoulderCenter,
               emotion: detectedEmotion,
               framingOk: faceFraming === 'ok',
+              isBlinking,    // from face block
+              headYaw,
+              tensionScore,
             });
           }
         } catch (error) {
@@ -720,6 +769,10 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
       let surprisedCount = 0;
       let neutralCount = 0;
       let framingOkCount = 0;
+      // New metrics accumulators
+      let blinkCount = 0;
+      let headYawSum = 0;
+      let tensionSum = 0;
 
       history.forEach((frame) => {
         if (frame.gaze) gazeCount++;
@@ -730,6 +783,10 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
         else if (frame.emotion === 'surprised') surprisedCount++;
         else if (frame.emotion === 'neutral') neutralCount++;
         if (frame.framingOk) framingOkCount++;
+        // New metrics
+        if (frame.isBlinking) blinkCount++;
+        if (typeof frame.headYaw === 'number') headYawSum += Math.abs(frame.headYaw);
+        if (typeof frame.tensionScore === 'number') tensionSum += frame.tensionScore;
       });
 
       let totalPositionDiff = 0;
@@ -743,22 +800,39 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
       const finalPostureScore = totalFrames ? Math.round(((totalFrames - slouchCount) / totalFrames) * 100) / 100 : 1.0;
       const finalFramingScore = totalFrames ? Math.round((framingOkCount / totalFrames) * 100) / 100 : 1.0;
 
-      // Calculate final confidence score
-      let finalConfScore = 0;
-      finalConfScore += finalGazeRatio * 30;
-      finalConfScore += finalPostureScore * 20;
+      const finalSmileRatio = totalFrames ? Math.round((smileCount / totalFrames) * 100) / 100 : 0.0;
+
+      // Compute derived metrics for confidence
+      const blinkRatio = totalFrames ? Math.min(blinkCount / totalFrames, 0.15) : 0; // (0-0.15)
+      const avgHeadYaw = totalFrames ? headYawSum / totalFrames : 0;   // (0 ~ 15+)
+      const avgTension = totalFrames ? tensionSum / totalFrames : 0;    // (0.0-1.0)
+
+      // Confidence sub-scores (each contributing to weighted total)
+      const gazeScore = finalGazeRatio * 20;           // 20% — eye contact
+      const postureScore = finalPostureScore * 15;      // 15% — posture
+      const smileScore = finalSmileRatio * 10;          // 10% — friendliness
+      const blinkPenalty = Math.min(blinkRatio * 200, 8); // up to -8 penalty for excessive blinking
+      const headMovePenalty = Math.min(Math.max(avgHeadYaw - 3, 0) * 1.5, 7); // up to -7
+      const tensionPenalty = Math.min(avgTension * 12, 5); // up to -5 tension
+      const nonVerbalScore = Math.max(0, gazeScore + postureScore + smileScore - blinkPenalty - headMovePenalty - tensionPenalty);
+
+      // Speech scores
+      let speechScore = 0;
       if (speechWpm >= 90 && speechWpm <= 140) {
-        finalConfScore += 25;
+        speechScore = 20;
       } else if ((speechWpm >= 70 && speechWpm < 90) || (speechWpm > 140 && speechWpm <= 165)) {
-        finalConfScore += 15;
-      } else {
-        finalConfScore += 5;
+        speechScore = 12;
+      } else if (speechWpm > 0) {
+        speechScore = 5;
       }
-      finalConfScore += Math.max(0, 25 - fillerCount * 4);
+      const fillerScore = Math.max(0, 20 - fillerCount * 3);
+      const verbalScore = speechScore + fillerScore;
+
+      let finalConfScore = Math.min(100, Math.round(nonVerbalScore + verbalScore));
 
       const finalTelemetry: TelemetryData = {
         gazeRatio: finalGazeRatio,
-        smileRatio: totalFrames ? Math.round((smileCount / totalFrames) * 100) / 100 : 0.0,
+        smileRatio: finalSmileRatio,
         slouchRatio: totalFrames ? Math.round((slouchCount / totalFrames) * 100) / 100 : 0.0,
         handGestures: handGesturesCountRef.current,
         fidgetRatio: totalFrames ? Math.round(Math.min(totalPositionDiff * 15, 100)) / 100 : 0.0,
@@ -773,6 +847,11 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
         cameraFramingScore: finalFramingScore,
         bodyPostureScore: finalPostureScore,
         presentationConfidence: Math.round(finalConfScore),
+        // New non-verbal metrics for backend scoring
+        blinkRatio: Math.round(blinkRatio * 100) / 100,
+        avgHeadYaw: Math.round(avgHeadYaw * 10) / 10,
+        avgTensionScore: Math.round(avgTension * 100) / 100,
+        recordingDurationSec: recordingSecondsRef.current,
       };
 
       onRecordingStop(videoBlob, finalTelemetry);
@@ -841,13 +920,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
               </div>
             )}
 
-            {/* Real-time speech captioning overlay */}
-            {liveTranscript && (
-              <div className="absolute bottom-16 left-4 right-4 text-center py-2 px-3 rounded-lg bg-black/75 text-white text-sm font-semibold border border-white/10 backdrop-blur-sm shadow-md transition-all duration-200">
-                <span className="animate-pulse mr-1.5 text-amber-400">●</span>
-                {liveTranscript}
-              </div>
-            )}
+
 
             {/* Premium Bottom Telemetry HUD overlay */}
             <div className="absolute bottom-4 left-4 right-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] md:text-xs text-white/95 font-mono bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg">
@@ -869,13 +942,13 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
 
               {/* Hand Gestures */}
               <div className="flex items-center justify-between border-r border-white/10 px-2">
-                <span>Gestures:</span>
+                <span>{copy.gesturesLabel}</span>
                 <span className="text-amber-400 font-bold">{handGesturesCount}</span>
               </div>
 
               {/* Realtime Speech Pace */}
               <div className="flex items-center justify-between border-r border-white/10 px-2">
-                <span>Pace:</span>
+                <span>{copy.paceLabel}</span>
                 <span className={cn(
                   "font-bold",
                   speechWpm > 150 ? "text-rose-400 animate-pulse" : speechWpm > 0 && speechWpm < 85 ? "text-amber-400 animate-pulse" : "text-emerald-400"
@@ -884,7 +957,7 @@ export const WebcamTelemetry: React.FC<WebcamTelemetryProps> = ({
 
               {/* Confidence Indicator */}
               <div className="flex items-center justify-between px-2">
-                <span>Confidence:</span>
+                <span>{copy.confidenceLabel}</span>
                 <span className={cn(
                   "font-bold",
                   confidenceScore >= 80 ? "text-emerald-400" : confidenceScore >= 55 ? "text-amber-400" : "text-rose-400"
