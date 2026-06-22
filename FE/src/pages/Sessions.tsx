@@ -9,7 +9,7 @@ import {
   Target, 
   ChevronRight,
   Download,
-  Mic,
+  Radio,
   Type,
   Video,
   Loader2
@@ -52,20 +52,26 @@ const Sessions = () => {
   const { data: sessions = [], isLoading, error } = useQuery<SessionOut[]>({
     queryKey: ['sessions'],
     queryFn: sessionsApi.list,
+    refetchInterval: (query) => {
+      const sessList = query.state.data;
+      if (sessList && sessList.some(s => s.status === 'COMPLETED' && !s.evaluation_report)) {
+        return 5000;
+      }
+      return false;
+    },
   });
 
   const filteredSessions = sessions.filter(session => {
     const roleLabel = roleLabelMap[session.role]?.en?.toLowerCase() || session.role;
     const matchesSearch = roleLabel.includes(searchQuery.toLowerCase());
     const matchesMode = !filterMode || 
-      (filterMode === 'camera' ? (session.mode === 'camera' || session.mode === 'video') : session.mode === filterMode);
+      session.mode === filterMode;
     return matchesSearch && matchesMode;
   });
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
-      case 'voice': return <Mic className="w-4 h-4" />;
-      case 'video':
+      case 'live': return <Radio className="w-4 h-4" />;
       case 'camera': return <Video className="w-4 h-4" />;
       default: return <Type className="w-4 h-4" />;
     }
@@ -126,11 +132,11 @@ const Sessions = () => {
               <Button variant={filterMode === null ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode(null)}>
                 {t('sessions', 'all')}
               </Button>
-              <Button variant={filterMode === 'voice' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('voice')}>
-                <Mic className="w-4 h-4" />{t('sessions', 'voice')}
-              </Button>
               <Button variant={filterMode === 'camera' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('camera')}>
                 <Video className="w-4 h-4" />Camera
+              </Button>
+              <Button variant={filterMode === 'live' ? "secondary" : "ghost"} size="sm" onClick={() => setFilterMode('live')}>
+                <Radio className="w-4 h-4" />Live session
               </Button>
             </div>
           </div>
@@ -185,14 +191,22 @@ const Sessions = () => {
                         <span>•</span>
                         <span className="flex items-center gap-1 capitalize">
                           {getModeIcon(session.mode)}
-                          {session.mode === 'camera' ? 'Camera' : t('sessions', session.mode)}
+                          {session.mode === 'live' ? 'Live session' : session.mode === 'camera' ? 'Camera' : t('sessions', session.mode)}
                         </span>
                         <span>•</span>
                         <span className={cn(
                           'font-medium text-xs px-1.5 py-0.5 rounded',
-                          session.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
+                          session.status === 'COMPLETED'
+                            ? session.evaluation_report
+                              ? 'bg-success/20 text-success'
+                              : 'bg-blue-500/10 text-blue-500'
+                            : 'bg-warning/20 text-warning'
                         )}>
-                          {session.status === 'COMPLETED' ? copy.completed : copy.inProgress}
+                          {session.status === 'COMPLETED'
+                            ? session.evaluation_report
+                              ? copy.completed
+                              : (language === 'vi' ? 'Đợi AI chấm điểm' : 'Waiting for AI grading')
+                            : copy.inProgress}
                         </span>
                       </div>
                     </div>

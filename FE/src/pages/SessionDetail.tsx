@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { 
   ArrowLeft, 
   Download, 
@@ -27,6 +28,8 @@ import { roleLabelMap } from '@/lib/mock-data';
 import { canExportSessions } from '@/lib/plans';
 import { formatScore, formatScoreValue, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
 import { useToast } from '@/hooks/use-toast';
+import EvaluationReport from '@/components/feedback/EvaluationReport';
+import { buildTelemetryImprovementSummary, buildTelemetryProgressSeries } from '@/lib/interview-progress';
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Intern', en: 'Intern' },
   fresher: { vi: 'Fresher', en: 'Fresher' },
@@ -41,7 +44,7 @@ const renderMarkdown = (text: string | null | undefined) => {
   let inList = false;
   const elements: React.ReactNode[] = [];
   lines.forEach((line, idx) => {
-    let cleanLine = line.trim();
+    const cleanLine = line.trim();
     if (!cleanLine) {
       if (inList) inList = false;
       return;
@@ -92,13 +95,19 @@ const SessionDetail = () => {
     answered: language === 'vi' ? 'Câu đã trả lời' : 'Answered questions',
     mode: language === 'vi' ? 'Chế độ' : 'Mode',
     qaTitle: language === 'vi' ? 'Câu hỏi & Câu trả lời' : 'Questions & Answers',
+    progressTitle: language === 'vi' ? 'Hồ sơ tiến bộ phi ngôn ngữ' : 'Non-verbal progress replay',
+    progressEmpty: language === 'vi' ? 'Chưa đủ telemetry để tạo đồ thị tiến bộ.' : 'Not enough telemetry to build a progress chart.',
+    progressInsight: language === 'vi' ? 'So sánh câu đầu và câu cuối' : 'First-to-last comparison',
     noQuestions: language === 'vi' ? 'Chưa có câu hỏi nào.' : 'No questions available yet.',
     yourAnswer: language === 'vi' ? 'Câu trả lời của bạn:' : 'Your answer:',
+    followUp: language === 'vi' ? 'Follow-up' : 'Follow-up',
+    followUpPending: language === 'vi' ? 'AI đang chờ follow-up...' : 'AI is preparing the follow-up...',
     emptyAnswer: language === 'vi' ? '(Không có)' : '(Empty)',
     newSession: language === 'vi' ? 'Tạo session mới' : 'Create new session',
     exportPdf: language === 'vi' ? 'Xuất PDF' : 'Export PDF',
+    exportDocx: language === 'vi' ? 'Xuất DOCX' : 'Export DOCX',
     exporting: language === 'vi' ? 'Đang xuất...' : 'Exporting...',
-    exportFailed: language === 'vi' ? 'Không thể xuất PDF lúc này.' : 'Unable to export the PDF right now.',
+    exportFailed: language === 'vi' ? 'Không thể xuất file lúc này.' : 'Unable to export the file right now.',
     locale: language === 'vi' ? 'vi-VN' : 'en-US',
   };
 
@@ -138,6 +147,8 @@ const SessionDetail = () => {
 
   const answerMap = Object.fromEntries(session.answers.map(a => [a.question_id, a]));
   const avgScore = session.avg_score;
+  const telemetryProgress = buildTelemetryProgressSeries(session.answers);
+  const telemetrySummary = buildTelemetryImprovementSummary(telemetryProgress);
 
   // Averages for Camera Telemetry
   const cameraAnswers = session.answers.filter(a => a.telemetry_data);
@@ -205,6 +216,30 @@ const SessionDetail = () => {
     }
   };
 
+  const handleExportDocx = async () => {
+    if (!id) return;
+    setIsExporting(true);
+    try {
+      const { blob, filename } = await sessionsApi.downloadDocx(id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || `invera-session-${id.slice(0, 8)}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: copy.exportFailed,
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -223,14 +258,22 @@ const SessionDetail = () => {
               {levelLabels[session.level]?.en || session.level} • {new Date(session.created_at).toLocaleDateString(copy.locale)} •{' '}
               <span className={cn(
                 'font-medium text-xs px-1.5 py-0.5 rounded',
-                session.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
+                session.status === 'COMPLETED'
+                  ? session.evaluation_report
+                    ? 'bg-success/20 text-success'
+                    : 'bg-blue-500/10 text-blue-500'
+                  : 'bg-warning/20 text-warning'
               )}>
-                {session.status === 'COMPLETED' ? copy.completed : copy.inProgress}
+                {session.status === 'COMPLETED'
+                  ? session.evaluation_report
+                    ? copy.completed
+                    : (language === 'vi' ? 'Đợi AI chấm điểm' : 'Waiting for AI grading')
+                  : copy.inProgress}
               </span>
             </p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {session.status === 'IN_PROGRESS' && (
             <Button variant="accent" onClick={() => navigate(`/app/interview/${id}`)}>
               <Play className="w-4 h-4" />
@@ -238,10 +281,16 @@ const SessionDetail = () => {
             </Button>
           )}
           {canExport && (
-            <Button variant="outline" disabled={isExporting} onClick={handleExport}>
-              <Download className="w-4 h-4" />
-              {isExporting ? copy.exporting : copy.exportPdf}
-            </Button>
+            <>
+              <Button variant="outline" disabled={isExporting} onClick={handleExportDocx}>
+                <Download className="w-4 h-4" />
+                {isExporting ? copy.exporting : copy.exportDocx}
+              </Button>
+              <Button variant="outline" disabled={isExporting} onClick={handleExport}>
+                <Download className="w-4 h-4" />
+                {isExporting ? copy.exporting : copy.exportPdf}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -283,6 +332,83 @@ const SessionDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Progress Replay */}
+      <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
+        <CardHeader className="border-b bg-muted/10 pb-4">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <TrendingUp className="w-5 h-5 text-accent" />
+            {copy.progressTitle}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          {telemetryProgress.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{copy.progressEmpty}</p>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+              <div className="h-72 rounded-2xl border bg-muted/20 p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={telemetryProgress} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gazeGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="confidenceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="gaze" stroke="#06b6d4" fill="url(#gazeGradient)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="confidence" stroke="#10b981" fill="url(#confidenceGradient)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="rounded-2xl border bg-muted/20 p-4">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{copy.progressInsight}</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span>{language === 'vi' ? 'Giao tiếp mắt' : 'Eye contact'}</span>
+                      <span className={telemetrySummary.gazeDelta >= 0 ? 'text-success' : 'text-destructive'}>
+                        {telemetrySummary.gazeDelta >= 0 ? '+' : ''}{telemetrySummary.gazeDelta}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>{language === 'vi' ? 'Tư thế' : 'Posture'}</span>
+                      <span className={telemetrySummary.postureDelta >= 0 ? 'text-success' : 'text-destructive'}>
+                        {telemetrySummary.postureDelta >= 0 ? '+' : ''}{telemetrySummary.postureDelta}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>{language === 'vi' ? 'Tự tin' : 'Confidence'}</span>
+                      <span className={telemetrySummary.confidenceDelta >= 0 ? 'text-success' : 'text-destructive'}>
+                        {telemetrySummary.confidenceDelta >= 0 ? '+' : ''}{telemetrySummary.confidenceDelta}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>{language === 'vi' ? 'Từ đệm' : 'Filler words'}</span>
+                      <span className={telemetrySummary.fillersDelta <= 0 ? 'text-success' : 'text-destructive'}>
+                        {telemetrySummary.fillersDelta >= 0 ? '+' : ''}{telemetrySummary.fillersDelta}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+                  {language === 'vi'
+                    ? 'Biểu đồ này dùng telemetry sẵn có theo từng câu trả lời để cho thấy xu hướng tiến bộ giữa các lần luyện tập.'
+                    : 'This chart uses existing per-answer telemetry to show progress trends across practice turns.'}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Non-Verbal Behavior & Gesture Analysis Card */}
       {session.mode === 'camera' && hasTelemetry && (
@@ -440,29 +566,24 @@ const SessionDetail = () => {
         </Card>
       )}
 
-      {/* AI Evaluation Report (If Completed and Available) */}
       {session.status === 'COMPLETED' && session.evaluation_report && (
-        <Card className="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b pb-4">
-            <CardTitle className="flex items-center justify-between text-base font-bold">
-              <span className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-accent animate-pulse" />
-                {language === 'vi' ? 'Báo cáo Đánh giá Tổng quan từ AI' : 'Overall AI Evaluation Report'}
-              </span>
-              {session.practice_plan && (
-                <Button variant="ghost" size="sm" asChild className="rounded-full text-accent hover:text-accent/80 hover:bg-accent/10 h-8 px-4 text-xs">
-                  <Link to={`/app/plan?session_id=${session.id}`}>
-                    {language === 'vi' ? 'Xem kế hoạch học tập' : 'View Practice Plan'}
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {renderMarkdown(session.evaluation_report)}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-accent" />
+              {language === 'vi' ? 'Báo cáo Đánh giá Tổng quan từ AI' : 'Overall AI Evaluation Report'}
+            </h3>
+            {session.practice_plan && (
+              <Button variant="ghost" size="sm" asChild className="rounded-full text-accent hover:text-accent/80 hover:bg-accent/10 h-8 px-4 text-xs">
+                <Link to={`/app/plan?session_id=${session.id}`}>
+                  {language === 'vi' ? 'Xem kế hoạch học tập' : 'View Practice Plan'}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Link>
+              </Button>
+            )}
+          </div>
+          <EvaluationReport report={session.evaluation_report} />
+        </div>
       )}
 
       {/* AI Evaluation Report (If Completed and Not Available yet) */}
@@ -503,6 +624,7 @@ const SessionDetail = () => {
             <div className="space-y-6">
               {session.answers.map((answer, index) => {
                 const question = session.questions.find(q => q.id === answer.question_id);
+                const hasFollowUp = Boolean(answer.follow_up_question_text);
                 return (
                   <div key={answer.id} className="rounded-xl border p-5 space-y-4">
                     <div className="flex items-start gap-4">
@@ -564,6 +686,35 @@ const SessionDetail = () => {
                     {answer.feedback !== 'PENDING' && (
                       <div className="ml-12">
                         <Progress value={toScoreProgress(answer.score)} className="h-1.5" />
+                      </div>
+                    )}
+                    {hasFollowUp && (
+                      <div className="ml-12 mt-4 rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-accent">{copy.followUp}</span>
+                          {answer.follow_up_score != null && answer.follow_up_feedback && answer.follow_up_feedback !== 'PENDING' && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {formatScore(answer.follow_up_score)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-foreground">{answer.follow_up_question_text}</p>
+                        {answer.follow_up_answer_text ? (
+                          <div className="rounded-lg bg-background/80 p-3">
+                            <p className="text-xs text-muted-foreground mb-1">{copy.yourAnswer}</p>
+                            <p className="text-sm text-foreground">{answer.follow_up_answer_text}</p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                            <span>{copy.followUpPending}</span>
+                          </div>
+                        )}
+                        {answer.follow_up_feedback && answer.follow_up_feedback !== 'PENDING' && (
+                          <div className="min-w-0">
+                            <StructuredFeedback feedback={answer.follow_up_feedback} />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
