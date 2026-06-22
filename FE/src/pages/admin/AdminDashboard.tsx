@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { adminApi, AdminManagedUser, AdminQuestionOut, AdminStats } from '@/lib/api';
+import { adminApi, AdminManagedUser, AdminStats } from '@/lib/api';
 import { Users, FileText, CheckCircle, Target, Loader2, DollarSign, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -26,7 +26,6 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminManagedUser[]>([]);
-  const [questions, setQuestions] = useState<AdminQuestionOut[]>([]);
   const [loading, setLoading] = useState(true);
 
   const copy = {
@@ -49,7 +48,7 @@ export function AdminDashboard() {
     locale: language === 'vi' ? 'vi-VN' : 'en-US',
     totalRevenue: language === 'vi' ? 'Tổng doanh thu' : 'Total Revenue',
     activeUsers: language === 'vi' ? 'User hoạt động' : 'Active users',
-    activeUsersDesc: language === 'vi' ? 'Hoạt động gần đây' : 'Recently active',
+    activeUsersDesc: language === 'vi' ? 'Online' : 'Online',
     revenueDesc: language === 'vi' ? 'Doanh thu cổng thanh toán' : 'Real-world gateway revenue',
   };
 
@@ -70,21 +69,12 @@ export function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, questionsData] = await Promise.all([
+      const [statsData, usersData] = await Promise.all([
         adminApi.getStats(),
         adminApi.getUsers({ limit: 24, offset: 0 }),
-        adminApi.getQuestions(),
       ]);
       setStats(statsData);
       setUsers(usersData || []);
-      
-      let questionsList: AdminQuestionOut[] = [];
-      if (Array.isArray(questionsData)) {
-        questionsList = questionsData;
-      } else if (questionsData && typeof questionsData === 'object' && Array.isArray((questionsData as any).items)) {
-        questionsList = (questionsData as any).items;
-      }
-      setQuestions(questionsList);
     } catch (err) {
       toast({
         title: copy.loadErrorTitle,
@@ -110,6 +100,8 @@ export function AdminDashboard() {
     total_questions: 0,
     active_users: 0,
     total_revenue: 0,
+    role_distribution: {},
+    level_distribution: {},
   };
 
   const statCards = [
@@ -159,22 +151,22 @@ export function AdminDashboard() {
 
   const questionRoleData = useMemo(
     () =>
-      ['frontend', 'backend', 'fullstack', 'data_scientist', 'machine_learning_engineer', 'devops_engineer']
-        .map((role) => ({
+      Object.entries(safeStats.role_distribution ?? {})
+        .map(([role, count]) => ({
           role: role.replaceAll('_', ' '),
-          count: questions.filter((question) => question.role === role).length,
+          count,
         }))
         .filter((item) => item.count > 0),
-    [questions],
+    [safeStats.role_distribution],
   );
 
   const questionLevelData = useMemo(
     () =>
       ['intern', 'junior', 'mid', 'senior'].map((level) => ({
         level,
-        count: questions.filter((question) => question.level === level).length,
+        count: safeStats.level_distribution?.[level] ?? 0,
       })),
-    [questions],
+    [safeStats.level_distribution],
   );
 
   const recentUsersChart = useMemo(() => {

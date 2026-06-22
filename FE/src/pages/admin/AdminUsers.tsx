@@ -12,6 +12,7 @@ import { formatBillingPeriod, formatPlanLabel, formatPlanStatus } from '@/lib/pl
 export default function AdminUsers() {
   const { toast } = useToast();
   const { language } = useLanguage();
+  const currentYear = new Date().getFullYear();
   const [users, setUsers] = useState<AdminManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [userSearch, setUserSearch] = useState('');
@@ -19,6 +20,9 @@ export default function AdminUsers() {
   const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified' | 'unverified'>('all');
   const [planFilter, setPlanFilter] = useState<'all' | 'free_trial' | 'basic' | 'pro' | 'premium'>('all');
   const [planStatusFilter, setPlanStatusFilter] = useState<'all' | 'active' | 'expired' | 'trial_exhausted'>('all');
+  const [createdDayFilter, setCreatedDayFilter] = useState<'all' | string>('all');
+  const [createdMonthFilter, setCreatedMonthFilter] = useState<'all' | string>('all');
+  const [createdYearFilter, setCreatedYearFilter] = useState<'all' | string>('all');
   const [planDrafts, setPlanDrafts] = useState<Record<string, { plan_tier: 'free_trial' | 'basic' | 'pro' | 'premium'; billing_period: 'month' | 'year' }>>({});
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [downloadingResumeUserId, setDownloadingResumeUserId] = useState<string | null>(null);
@@ -34,8 +38,8 @@ export default function AdminUsers() {
     retry: language === 'vi' ? 'Vui lòng thử lại.' : 'Please try again.',
     usersTitle: language === 'vi' ? 'Quản lý toàn bộ user' : 'All users',
     usersDescription: language === 'vi'
-      ? 'Lọc theo email, quyền admin, xác thực email và gói hiện tại. Bạn cũng có thể hủy gói hoặc nâng gói thủ công.'
-      : 'Filter by email, admin flag, email verification, and current plan. You can also cancel or upgrade plans manually.',
+      ? 'Lọc theo email, quyền admin, xác thực email, gói hiện tại và ngày tạo tài khoản. Bạn cũng có thể hủy gói hoặc nâng gói thủ công.'
+      : 'Filter by email, admin flag, email verification, current plan, and account creation date. You can also cancel or upgrade plans manually.',
     searchUsers: language === 'vi' ? 'Tìm email hoặc tên' : 'Search email or name',
     allUsers: language === 'vi' ? 'Tất cả user' : 'All users',
     onlyAdmins: language === 'vi' ? 'Chỉ admin' : 'Admins only',
@@ -45,6 +49,10 @@ export default function AdminUsers() {
     allVerification: language === 'vi' ? 'Mọi trạng thái xác thực' : 'Any verification state',
     allPlans: language === 'vi' ? 'Mọi gói' : 'Any plan',
     allStatuses: language === 'vi' ? 'Mọi trạng thái gói' : 'Any plan status',
+    allDates: language === 'vi' ? 'Mọi ngày tạo' : 'Any created date',
+    createdDay: language === 'vi' ? 'Ngày' : 'Day',
+    createdMonth: language === 'vi' ? 'Tháng' : 'Month',
+    createdYear: language === 'vi' ? 'Năm' : 'Year',
     manualPlan: language === 'vi' ? 'Đổi gói thủ công' : 'Manual plan update',
     cancelPlan: language === 'vi' ? 'Hủy gói' : 'Cancel plan',
     applyPlan: language === 'vi' ? 'Áp dụng' : 'Apply',
@@ -83,6 +91,9 @@ export default function AdminUsers() {
         email_verified: verificationFilter === 'all' ? undefined : verificationFilter === 'verified',
         plan_tier: planFilter === 'all' ? undefined : planFilter,
         plan_status: planStatusFilter === 'all' ? undefined : planStatusFilter,
+        created_day: createdDayFilter === 'all' ? undefined : Number(createdDayFilter),
+        created_month: createdMonthFilter === 'all' ? undefined : Number(createdMonthFilter),
+        created_year: createdYearFilter === 'all' ? undefined : Number(createdYearFilter),
       });
       setUsers(rows);
       setCurrentPage(page);
@@ -110,7 +121,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     loadUsers(1);
-  }, [adminFilter, verificationFilter, planFilter, planStatusFilter]);
+  }, [adminFilter, verificationFilter, planFilter, planStatusFilter, createdDayFilter, createdMonthFilter, createdYearFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,6 +253,44 @@ export default function AdminUsers() {
               <option value="trial_exhausted">Trial exhausted</option>
             </select>
           </form>
+          <div className="grid gap-3 md:grid-cols-4">
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdDayFilter}
+              onChange={(e) => setCreatedDayFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+                <option key={day} value={day}>
+                  {copy.createdDay} {day}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdMonthFilter}
+              onChange={(e) => setCreatedMonthFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                <option key={month} value={month}>
+                  {copy.createdMonth} {month}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdYearFilter}
+              onChange={(e) => setCreatedYearFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: currentYear - 2015 + 1 }, (_, index) => currentYear - index).map((year) => (
+                <option key={year} value={year}>
+                  {copy.createdYear} {year}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-10">

@@ -30,8 +30,8 @@ export function AdminLogin() {
       ? 'Đăng nhập bằng tài khoản admin local đã xác thực email. Quyền admin phụ chỉ được kích hoạt sau khi admin chính mời và bạn xác thực mã code.'
       : 'Sign in with a verified local admin account. Secondary admin access is only activated after the primary admin invites the account and email verification is completed.',
     subtitle: language === 'vi'
-      ? 'Dùng email và mật khẩu local của tài khoản admin. Google/GitHub không dùng cho khu vực admin.'
-      : 'Use the local email/password for your admin account. Google/GitHub is not used inside the admin area.',
+      ? 'Dùng email và mật khẩu local của tài khoản admin. OAuth không dùng cho khu vực admin.'
+      : 'Use the local email/password for your admin account. OAuth is not used inside the admin area.',
     adminEmail: language === 'vi' ? 'Email admin' : 'Admin email',
     password: language === 'vi' ? 'Mật khẩu' : 'Password',
     hidePassword: language === 'vi' ? 'Ẩn mật khẩu' : 'Hide password',
@@ -46,7 +46,7 @@ export function AdminLogin() {
 
   const adminNotice = useMemo(() => {
     if (notice === 'admin-local-only') {
-      return provider === 'google' || provider === 'github'
+      return provider === 'google'
         ? `Because ${noticeEmail || 'this account'} is managed as an admin account, ${provider} sign-in is disabled here. Use the admin sign-in link and continue with your local email/password admin credentials.`
         : 'This account is managed as an admin account. Use the admin sign-in link and continue with your local email/password admin credentials.';
     }

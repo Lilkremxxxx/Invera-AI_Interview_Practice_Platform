@@ -3,6 +3,7 @@ import { LayoutDashboard, ShieldCheck, LogOut, ArrowLeft, LibraryBig, Users, Mon
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 
 export function AdminLayout() {
   const { logout, user } = useAuth();
@@ -79,7 +80,9 @@ export function AdminLayout() {
             <h1 className="text-xl font-bold text-accent">Invera Admin</h1>
         </header>
         <div className="flex-1 overflow-auto p-6 md:p-8">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>

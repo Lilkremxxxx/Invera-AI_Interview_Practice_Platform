@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Loader2, MailPlus, ShieldCheck, ShieldX, Trash2, Users } from 'lucide-react';
+import { Download, Loader2, MailPlus, ShieldCheck, ShieldX, Trash2, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { adminApi, AdminAccessUser, AdminInviteOut, AdminManagedUser } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,6 +15,7 @@ export function AdminAccess() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { language } = useLanguage();
+  const currentYear = new Date().getFullYear();
   const copy = {
     loadErrorTitle: language === 'vi' ? 'Không thể tải quyền admin' : 'Unable to load admin access',
     loadErrorDescription: language === 'vi' ? 'Hãy kiểm tra lại quyền admin hiện tại.' : 'Please check the current admin permissions again.',
@@ -48,8 +49,8 @@ export function AdminAccess() {
     inviteList: language === 'vi' ? 'Danh sách lời mời' : 'Invitation list',
     usersTitle: language === 'vi' ? 'Quản lý toàn bộ user' : 'All users',
     usersDescription: language === 'vi'
-      ? 'Lọc theo email, quyền admin, xác thực email và gói hiện tại. Bạn cũng có thể hủy gói hoặc nâng gói thủ công.'
-      : 'Filter by email, admin flag, email verification, and current plan. You can also cancel or upgrade plans manually.',
+      ? 'Lọc theo email, quyền admin, xác thực email, gói hiện tại và ngày tạo tài khoản. Bạn cũng có thể hủy gói hoặc nâng gói thủ công.'
+      : 'Filter by email, admin flag, email verification, current plan, and account creation date. You can also cancel or upgrade plans manually.',
     searchUsers: language === 'vi' ? 'Tìm email hoặc tên' : 'Search email or name',
     allUsers: language === 'vi' ? 'Tất cả user' : 'All users',
     onlyAdmins: language === 'vi' ? 'Chỉ admin' : 'Admins only',
@@ -59,6 +60,10 @@ export function AdminAccess() {
     allVerification: language === 'vi' ? 'Mọi trạng thái xác thực' : 'Any verification state',
     allPlans: language === 'vi' ? 'Mọi gói' : 'Any plan',
     allStatuses: language === 'vi' ? 'Mọi trạng thái gói' : 'Any plan status',
+    allDates: language === 'vi' ? 'Mọi ngày tạo' : 'Any created date',
+    createdDay: language === 'vi' ? 'Ngày' : 'Day',
+    createdMonth: language === 'vi' ? 'Tháng' : 'Month',
+    createdYear: language === 'vi' ? 'Năm' : 'Year',
     manualPlan: language === 'vi' ? 'Đổi gói thủ công' : 'Manual plan update',
     cancelPlan: language === 'vi' ? 'Hủy gói' : 'Cancel plan',
     applyPlan: language === 'vi' ? 'Áp dụng' : 'Apply',
@@ -102,20 +107,32 @@ export function AdminAccess() {
   const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified' | 'unverified'>('all');
   const [planFilter, setPlanFilter] = useState<'all' | 'free_trial' | 'basic' | 'pro' | 'premium'>('all');
   const [planStatusFilter, setPlanStatusFilter] = useState<'all' | 'active' | 'expired' | 'trial_exhausted'>('all');
+  const [createdDayFilter, setCreatedDayFilter] = useState<'all' | string>('all');
+  const [createdMonthFilter, setCreatedMonthFilter] = useState<'all' | string>('all');
+  const [createdYearFilter, setCreatedYearFilter] = useState<'all' | string>('all');
   const [planDrafts, setPlanDrafts] = useState<Record<string, { plan_tier: 'free_trial' | 'basic' | 'pro' | 'premium'; billing_period: 'month' | 'year' }>>({});
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [downloadingResumeUserId, setDownloadingResumeUserId] = useState<string | null>(null);
 
-  const loadUsers = async () => {
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  const loadUsers = async (page = currentPage) => {
     const rows = await adminApi.getUsers({
-      limit: 100,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
       search: userSearch || undefined,
       is_admin: adminFilter === 'all' ? undefined : adminFilter === 'admins',
       email_verified: verificationFilter === 'all' ? undefined : verificationFilter === 'verified',
       plan_tier: planFilter === 'all' ? undefined : planFilter,
       plan_status: planStatusFilter === 'all' ? undefined : planStatusFilter,
+      created_day: createdDayFilter === 'all' ? undefined : Number(createdDayFilter),
+      created_month: createdMonthFilter === 'all' ? undefined : Number(createdMonthFilter),
+      created_year: createdYearFilter === 'all' ? undefined : Number(createdYearFilter),
     });
     setUsers(rows);
+    setCurrentPage(page);
     setPlanDrafts((current) => {
       const next = { ...current };
       for (const row of rows) {
@@ -137,7 +154,7 @@ export function AdminAccess() {
       ]);
       setAdmins(adminUsers);
       setInvites(inviteRows);
-      await loadUsers();
+      await loadUsers(1);
     } catch (err) {
       toast({
         title: copy.loadErrorTitle,
@@ -155,8 +172,8 @@ export function AdminAccess() {
 
   useEffect(() => {
     if (!user?.is_primary_admin) return;
-    void loadUsers();
-  }, [userSearch, adminFilter, verificationFilter, planFilter, planStatusFilter]);
+    void loadUsers(1);
+  }, [userSearch, adminFilter, verificationFilter, planFilter, planStatusFilter, createdDayFilter, createdMonthFilter, createdYearFilter]);
 
   const handleInvite = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -216,7 +233,7 @@ export function AdminAccess() {
     try {
       await adminApi.updateUserPlan(userId, draft);
       toast({ title: copy.userUpdatedTitle, description: copy.userUpdatedDescription });
-      await loadUsers();
+      await loadUsers(currentPage);
     } catch (err) {
       toast({
         title: copy.userUpdateErrorTitle,
@@ -233,7 +250,7 @@ export function AdminAccess() {
     try {
       await adminApi.updateUserPlan(userId, { plan_tier: 'free_trial', billing_period: 'month' });
       toast({ title: copy.userUpdatedTitle, description: copy.userUpdatedDescription });
-      await loadUsers();
+      await loadUsers(currentPage);
     } catch (err) {
       toast({
         title: copy.userUpdateErrorTitle,
@@ -250,7 +267,7 @@ export function AdminAccess() {
     try {
       await adminApi.deleteUser(userId);
       toast({ title: copy.userDeletedTitle, description: copy.userDeletedDescription });
-      await loadData();
+      await loadUsers(currentPage);
     } catch (err) {
       toast({
         title: copy.userDeleteErrorTitle,
@@ -466,6 +483,44 @@ export function AdminAccess() {
               <option value="trial_exhausted">Trial exhausted</option>
             </select>
           </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdDayFilter}
+              onChange={(e) => setCreatedDayFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+                <option key={day} value={day}>
+                  {copy.createdDay} {day}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdMonthFilter}
+              onChange={(e) => setCreatedMonthFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                <option key={month} value={month}>
+                  {copy.createdMonth} {month}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={createdYearFilter}
+              onChange={(e) => setCreatedYearFilter(e.target.value as 'all' | string)}
+            >
+              <option value="all">{copy.allDates}</option>
+              {Array.from({ length: currentYear - 2015 + 1 }, (_, index) => currentYear - index).map((year) => (
+                <option key={year} value={year}>
+                  {copy.createdYear} {year}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-10">
@@ -569,6 +624,35 @@ export function AdminAccess() {
                   </div>
                 );
               })}
+
+              {/* Pagination controls */}
+              <div className="flex items-center justify-between pt-4 border-t border-border mt-6">
+                <div className="text-sm text-muted-foreground font-medium">
+                  {language === 'vi' ? `Trang ${currentPage}` : `Page ${currentPage}`}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadUsers(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    className="hover:shadow-[0_0_10px_rgba(172,66,60,0.1)] transition-all duration-300"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    {language === 'vi' ? 'Trang trước' : 'Previous'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadUsers(currentPage + 1)}
+                    disabled={users.length < pageSize || loading}
+                    className="hover:shadow-[0_0_10px_rgba(172,66,60,0.1)] transition-all duration-300"
+                  >
+                    {language === 'vi' ? 'Trang sau' : 'Next'}
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

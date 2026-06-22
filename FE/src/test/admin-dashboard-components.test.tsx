@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -16,18 +17,19 @@ vi.mock("react-router-dom", async () => {
 
 // Mock Recharts to avoid DOM SVG issues in JSDOM
 vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
-  Area: () => <div />,
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
-  Bar: () => <div />,
-  PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
-  Pie: () => <div />,
+  ResponsiveContainer: ({ children }: any) =>
+    React.isValidElement(children) ? React.cloneElement(children, { children: null }) : <div />,
+  AreaChart: ({ data }: any) => <div data-testid="area-chart" data-chart={JSON.stringify(data)} />,
+  Area: () => null,
+  BarChart: ({ data }: any) => <div data-testid="bar-chart" data-chart={JSON.stringify(data)} />,
+  Bar: () => null,
+  PieChart: ({ data }: any) => <div data-testid="pie-chart" data-chart={JSON.stringify(data)} />,
+  Pie: () => null,
   Cell: () => <div />,
-  XAxis: () => <div />,
-  YAxis: () => <div />,
-  CartesianGrid: () => <div />,
-  Tooltip: () => <div />,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
 }));
 
 // Mock Auth context
@@ -84,7 +86,7 @@ describe("AdminDashboard and QuestionBank components", () => {
     getUsers.mockResolvedValue([]);
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AdminDashboard />
       </MemoryRouter>
     );
@@ -93,6 +95,8 @@ describe("AdminDashboard and QuestionBank components", () => {
     await waitFor(() => {
       expect(screen.getByText("Total users")).toBeTruthy();
     });
+
+    expect(getQuestions).not.toHaveBeenCalled();
 
     // Verify stats are visible
     expect(screen.getByText("100")).toBeTruthy();
@@ -129,7 +133,7 @@ describe("AdminDashboard and QuestionBank components", () => {
     });
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AdminQuestionBank />
       </MemoryRouter>
     );
