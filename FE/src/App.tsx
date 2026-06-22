@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { ScrollToHash } from "./components/layout/ScrollToHash";
+import { ErrorBoundary } from "./components/layout/ErrorBoundary";
 
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
@@ -18,6 +19,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail").then((module) => ({
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NewSession = lazy(() => import("./pages/NewSession"));
 const InterviewRoom = lazy(() => import("./pages/InterviewRoom"));
+const LiveInterviewRoom = lazy(() => import("./pages/LiveInterviewRoom"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const SessionDetail = lazy(() => import("./pages/SessionDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -109,6 +111,14 @@ function AppContent() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/app/live/:id"
+              element={
+                <PrivateRoute>
+                  <LiveInterviewRoom />
+                </PrivateRoute>
+              }
+            />
             
             {/* App routes with sidebar — protected */}
             <Route
@@ -121,6 +131,7 @@ function AppContent() {
             >
               <Route index element={<Dashboard />} />
               <Route path="new" element={<NewSession />} />
+              <Route path="live" element={<NewSession />} />
               <Route path="sessions" element={<Sessions />} />
               <Route path="sessions/:id" element={<SessionDetail />} />
               <Route path="plan" element={<Plan />} />
@@ -162,7 +173,9 @@ const App = () => (
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

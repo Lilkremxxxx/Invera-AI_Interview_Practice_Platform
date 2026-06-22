@@ -11,7 +11,8 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Radio
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,6 +43,7 @@ export const AppSidebar = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: t('sidebar', 'dashboard'), path: '/app' },
     { icon: PlusCircle, label: t('sidebar', 'newSession'), path: '/app/new' },
+    { icon: Radio, label: language === 'vi' ? 'Live session' : 'Live session', path: '/app/live' },
     { icon: History, label: t('sidebar', 'sessions'), path: '/app/sessions' },
     { icon: ClipboardList, label: language === 'vi' ? 'Lộ trình' : 'Plan', path: '/app/plan' },
     { icon: MessageSquareText, label: t('sidebar', 'qna'), path: '/app/qna' },

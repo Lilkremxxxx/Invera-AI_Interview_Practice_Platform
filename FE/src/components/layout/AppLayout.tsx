@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export const AppLayout = () => {
   return (
@@ -7,7 +8,9 @@ export const AppLayout = () => {
       <AppSidebar />
       <main className="ml-16 lg:ml-64 transition-all duration-300">
         <div className="p-6 lg:p-8">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>
