@@ -1,92 +1,24 @@
-import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { CheckCircle2, Mic, Crown, Zap } from 'lucide-react';
-import { pricingPlans } from '@/lib/mock-data';
-import { Link } from 'react-router-dom';
+
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { pricingPlanContent } from '@/lib/pricing-content';
 import { MascotDecoration } from './MascotDecoration';
-
-const planIcons: Record<string, ReactNode> = {
-  free: <Mic className="w-5 h-5" />,
-  basic: <Crown className="w-5 h-5" />,
-  pro: <Crown className="w-5 h-5 text-yellow-500" />,
-  premium: <Crown className="w-5 h-5 text-yellow-500" />,
-};
-
-const planColors: Record<string, { card: string; header: string; badge: string; divider: string; button: string }> = {
-  free: {
-    card: 'bg-card border-border',
-    header: 'bg-muted/40',
-    badge: '',
-    divider: 'border-border',
-    button: 'variant-outline',
-  },
-  basic: {
-    card: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800',
-    header: 'bg-violet-100/60 dark:bg-violet-900/30',
-    badge: '',
-    divider: 'border-violet-200 dark:border-violet-800',
-    button: 'bg-violet-600 hover:bg-violet-700 text-white',
-  },
-  pro: {
-    card: 'bg-violet-100 dark:bg-violet-900/40 border-violet-300 dark:border-violet-700',
-    header: 'bg-violet-200/60 dark:bg-violet-800/40',
-    badge: '',
-    divider: 'border-violet-300 dark:border-violet-700',
-    button: 'bg-violet-700 hover:bg-violet-800 text-white',
-  },
-  premium: {
-    card: 'bg-violet-200/70 dark:bg-violet-800/40 border-violet-400 dark:border-violet-600',
-    header: 'bg-violet-300/50 dark:bg-violet-700/40',
-    badge: '',
-    divider: 'border-violet-400 dark:border-violet-600',
-    button: 'bg-violet-800 hover:bg-violet-900 text-white',
-  },
-};
-
-function formatVnd(amount: number | null) {
-  if (amount === null) return '—';
-  if (amount === 0) return '0đ';
-  return amount.toLocaleString('vi-VN') + 'đ';
-}
+import { PricingComparisonSheet } from '@/components/pricing/PricingComparisonSheet';
 
 const pricingSectionCopy = {
   badge: { vi: 'Bảng giá', en: 'Pricing' },
-  title: { vi: 'Chọn gói phù hợp với bạn', en: 'Choose the plan that fits you' },
+  title: { vi: 'Bảng giá so sánh rõ ràng', en: 'A clear pricing comparison sheet' },
   description: {
-    vi: 'Bắt đầu miễn phí, nâng cấp khi cần. Không phí ẩn.',
-    en: 'Start free, upgrade when you need more. No hidden fees.',
+    vi: 'So sánh trực tiếp các gói trong một sheet, giống bảng tính bạn đã gửi.',
+    en: 'Compare every plan in a single sheet, matching the spreadsheet-style layout you shared.',
   },
   month: { vi: 'Theo tháng', en: 'Monthly' },
   year: { vi: 'Theo năm', en: 'Yearly' },
-  saveBadge: { vi: 'Tiết kiệm ~33%', en: 'Save ~33%' },
-  mostPopular: { vi: 'Phổ biến nhất', en: 'Most popular' },
-  chooseIf: { vi: 'Chọn {plan} nếu bạn:', en: 'Choose {plan} if you:' },
-  withFree: { vi: 'Với Free, bạn nhận được:', en: 'With Free, you get:' },
-  withBasic: { vi: 'Tính năng bạn nhận được:', en: 'Included features:' },
-  withPro: { vi: 'Tất cả Basic, cộng thêm:', en: 'Everything in Basic, plus:' },
-  withPremium: { vi: 'Tất cả Pro, cộng thêm:', en: 'Everything in Pro, plus:' },
-  perMonth: { vi: '/tháng', en: '/month' },
-  perYear: { vi: '/năm', en: '/year' },
-  sessionsPerMonth: { vi: 'phiên / tháng', en: 'sessions / month' },
-  tokensPerSession: { vi: 'tokens / phiên', en: 'tokens / session' },
-  extraSession: { vi: 'Phiên thêm', en: 'Extra session' },
-  perSession: { vi: '/phiên', en: '/session' },
-  perYearSession: { vi: '/phiên/năm', en: '/session (yearly)' },
-  note: {
-    vi: '* Giá phiên thêm (/year) áp dụng khi mua gói theo năm. Free plan không hỗ trợ mua thêm phiên theo năm.',
-    en: '* Yearly extra-session pricing applies only to annual purchases. The Free plan does not support yearly extra-session purchases.',
-  },
 } as const;
 
 export const PricingSection = () => {
   const [billing, setBilling] = useState<'month' | 'year'>('month');
   const { language } = useLanguage();
-
-  const sectionCopy = pricingSectionCopy;
 
   return (
     <section id="pricing" className="relative scroll-mt-24 overflow-hidden py-20 bg-background">
@@ -95,20 +27,18 @@ export const PricingSection = () => {
         className="absolute left-2 top-24 hidden w-24 -rotate-6 opacity-90 lg:block xl:left-12 xl:w-32"
       />
       <div className="container relative mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-            {sectionCopy.badge[language]}
+            {pricingSectionCopy.badge[language]}
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground mb-4">
-            {sectionCopy.title[language]}
+            {pricingSectionCopy.title[language]}
           </h2>
           <p className="text-lg text-primary/70 dark:text-muted-foreground max-w-2xl mx-auto">
-            {sectionCopy.description[language]}
+            {pricingSectionCopy.description[language]}
           </p>
         </div>
 
-        {/* Billing toggle */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <button
             onClick={() => setBilling('month')}
@@ -116,10 +46,10 @@ export const PricingSection = () => {
               'px-5 py-2 rounded-full text-sm font-medium transition-all',
               billing === 'month'
                 ? 'bg-accent text-white shadow'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
           >
-            {sectionCopy.month[language]}
+            {pricingSectionCopy.month[language]}
           </button>
           <button
             onClick={() => setBilling('year')}
@@ -127,128 +57,19 @@ export const PricingSection = () => {
               'px-5 py-2 rounded-full text-sm font-medium transition-all',
               billing === 'year'
                 ? 'bg-accent text-white shadow'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
           >
-            {sectionCopy.year[language]}
-            <span className="ml-2 text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
-              {sectionCopy.saveBadge[language]}
-            </span>
+            {pricingSectionCopy.year[language]}
           </button>
         </div>
 
-        {/* 4-column grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 max-w-7xl mx-auto items-start">
-          {pricingPlans.map((plan) => {
-            const colors = planColors[plan.id];
-            const price = billing === 'month' ? plan.priceMonth : plan.priceYear;
-            const priceSuffix = billing === 'month' ? sectionCopy.perMonth[language] : sectionCopy.perYear[language];
-            const localizedPlan = pricingPlanContent[plan.id as keyof typeof pricingPlanContent];
-
-            return (
-              <div
-                key={plan.id}
-                className={cn(
-                  'relative rounded-2xl border transition-all duration-300 flex flex-col',
-                  colors.card,
-                  plan.popular && 'ring-2 ring-violet-500 shadow-xl shadow-violet-200/40 dark:shadow-violet-900/30 pt-4'
-                )}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3.5 inset-x-0 flex justify-center pointer-events-none">
-                    <span className="inline-block px-4 py-1 rounded-full bg-accent text-white text-xs font-semibold shadow-md">
-                      {sectionCopy.mostPopular[language]}
-                    </span>
-                  </div>
-                )}
-
-                {/* Top section — description + targeting */}
-                <div className={cn('p-5 pt-6', colors.header)}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                    <span className="text-foreground/70">{planIcons[plan.id]}</span>
-                  </div>
-                  <p className="text-sm text-foreground/60 mb-4 leading-snug">{localizedPlan.description[language]}</p>
-
-                  <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-2">
-                    {sectionCopy.chooseIf[language].replace('{plan}', plan.name)}
-                  </p>
-                  <ul className="space-y-1.5 mb-3">
-                    {localizedPlan.targetUsers[language].map((u, i) => (
-                      <li key={i} className="text-sm text-foreground/70 flex items-start gap-1.5">
-                        <span className="mt-0.5 text-foreground/40">•</span>
-                        <span>{u}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Divider */}
-                <div className={cn('border-t', colors.divider)} />
-
-                {/* Bottom section — price + features */}
-                <div className="p-5 flex flex-col flex-1">
-                  {/* Price */}
-                  <div className="mb-5">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-foreground">
-                        {formatVnd(price)}
-                      </span>
-                      <span className="text-sm text-foreground/50">{priceSuffix}</span>
-                    </div>
-                    <div className="mt-1.5 text-xs text-foreground/50 space-y-0.5">
-                      <div>
-                        {plan.sessionsPerMonth} {sectionCopy.sessionsPerMonth[language]} &nbsp;·&nbsp; {plan.tokensPerSession.toLocaleString()} {sectionCopy.tokensPerSession[language]}
-                      </div>
-                      <div>
-                        {sectionCopy.extraSession[language]}:{' '}
-                        <span className="font-medium text-foreground/70">
-                          {formatVnd(plan.extraSessionMonth)}{sectionCopy.perSession[language]}
-                        </span>
-                        {plan.extraSessionYear !== null && (
-                          <span className="ml-1 text-foreground/40">
-                            ({formatVnd(plan.extraSessionYear)}{sectionCopy.perYearSession[language]})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Features */}
-                  <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-3">
-                    {plan.id === 'free' ? sectionCopy.withFree[language] :
-                      plan.id === 'basic' ? sectionCopy.withBasic[language] :
-                      plan.id === 'pro' ? sectionCopy.withPro[language] :
-                      sectionCopy.withPremium[language]}
-                  </p>
-                  <ul className="space-y-2.5 flex-1">
-                    {localizedPlan.features[language].map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2.5">
-                        <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground/80">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <Button
-                    className={cn('w-full mt-6 font-semibold', colors.button)}
-                    variant={plan.popular ? 'default' : 'outline'}
-                    size="lg"
-                    asChild
-                  >
-                    <Link to="/signup">{localizedPlan.cta[language]}</Link>
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="max-w-7xl mx-auto">
+          <PricingComparisonSheet
+            billingPeriod={billing}
+            language={language}
+          />
         </div>
-
-        {/* Extra session note */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          {sectionCopy.note[language]}
-        </p>
       </div>
     </section>
   );
