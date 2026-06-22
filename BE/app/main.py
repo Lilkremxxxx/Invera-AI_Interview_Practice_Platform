@@ -14,6 +14,7 @@ from app.api.endpoints.meetings import router as meetings_endpoint_router
 from app.api.endpoints.profile import router as profile_router
 from app.api.endpoints.qna import router as qna_router
 from app.api.endpoints.sessions import router as sessions_router
+from app.api.endpoints.test_automation import router as test_automation_router
 from app.core.config import settings
 from app.db.session import create_pool, close_pool
 from app.services.deepseek_client import close_deepseek_client
@@ -105,6 +106,8 @@ app.include_router(qna_router, prefix=f"{settings.api_prefix}/qna", tags=["qna"]
 app.include_router(sessions_router, prefix=f"{settings.api_prefix}/sessions", tags=["sessions"])
 app.include_router(billing_router, prefix=f"{settings.api_prefix}/billing", tags=["billing"])
 app.include_router(admin_router, prefix=f"{settings.api_prefix}/admin", tags=["admin"])
+if settings.test_automation_enabled:
+    app.include_router(test_automation_router, prefix=f"{settings.api_prefix}/test-automation", tags=["test-automation"])
 
 settings.uploads_dir.mkdir(exist_ok=True)
 settings.private_uploads_dir.mkdir(exist_ok=True)

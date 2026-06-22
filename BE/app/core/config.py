@@ -29,6 +29,7 @@ class Settings:
     api_prefix: str = os.getenv("API_PREFIX", "/api")
     backend_host: str = os.getenv("BACKEND_HOST", "127.0.0.1")
     backend_port: int = int(os.getenv("BACKEND_PORT", "9000"))
+    test_automation_enabled: bool = os.getenv("TEST_AUTOMATION_ENABLED", "false").lower() == "true"
     frontend_public_url: str = os.getenv("FRONTEND_URL", "https://invera.pp.ua")
     api_public_url: str = os.getenv("API_URL", "https://invera.pp.ua/api")
     pg_host: str | None = os.getenv("PG_HOST")
