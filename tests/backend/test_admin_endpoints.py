@@ -28,6 +28,18 @@ class FakeDb:
             return 1500000  # total revenue
         return 0
 
+    async def fetchrow(self, query, *params):
+        self.fetch_queries.append((query, params))
+        if "COALESCE(SUM(amount_vnd), 0)::int AS total_revenue" in query:
+            return {
+                "total_revenue": 1500000,
+                "basic_revenue": 0,
+                "pro_revenue": 0,
+                "premium_revenue": 0,
+                "additional_sessions_count": 0,
+            }
+        return None
+
     async def fetch(self, query, *params):
         self.fetch_queries.append((query, params))
         if "questions" in query:
@@ -53,9 +65,18 @@ class FakeDb:
             ]
         if "payment_orders" in query:
             if "day" in query:
-                return [{"day": "2026-05-30", "revenue": 500000}]
+                return [
+                    {
+                        "day": "2026-05-30",
+                        "total_revenue": 500000,
+                        "basic_revenue": 0,
+                        "pro_revenue": 0,
+                        "premium_revenue": 0,
+                        "additional_sessions_count": 0,
+                    }
+                ]
             if "month" in query:
-                return [{"month": "2026-05", "revenue": 1000000}]
+                return [{"month": "2026-05", "total_revenue": 1000000}]
         if "sessions" in query:
             return [
                 {
@@ -144,8 +165,9 @@ def test_admin_revenue_endpoint(monkeypatch):
     data = response.json()
     assert data["total_revenue"] == 1500000
     assert len(data["daily"]) == 1
-    assert len(data["monthly"]) == 1
     assert data["daily"][0]["revenue"] == 500000
+    assert data["breakdown"]["summary"]["total_revenue"] == 1500000
+    assert len(data["breakdown"]["daily"]) == 30
 
 
 def test_admin_list_sessions_endpoint():

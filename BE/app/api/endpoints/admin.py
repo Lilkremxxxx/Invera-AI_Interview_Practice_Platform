@@ -10,6 +10,8 @@ import json
 import re
 from typing import Optional
 from urllib.parse import urlencode
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -35,11 +37,14 @@ from app.services.plans import (
     activate_paid_plan,
     compute_entitlement,
 )
+from app.services.account_deletion import purge_user_data
 from app.services.profile_files import resume_file_path
 
 router = APIRouter()
 
 VALID_DIFFICULTIES = {"easy", "medium", "hard"}
+HO_CHI_MINH_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+REVENUE_CUTOFF = datetime(2026, 6, 19, 0, 0, 0, tzinfo=HO_CHI_MINH_TZ)
 
 
 def require_admin(current_user: UserOut = Depends(get_current_user)) -> UserOut:
@@ -81,6 +86,35 @@ def _normalize_question_tags(tags: list[str] | None) -> list[str]:
         if value and value not in normalized:
             normalized.append(value)
     return normalized
+
+
+def _revenue_metric_zero_row(day: str) -> dict[str, int | str]:
+    return {
+        "day": day,
+        "total_revenue": 0,
+        "basic_revenue": 0,
+        "pro_revenue": 0,
+        "premium_revenue": 0,
+        "additional_sessions_count": 0,
+    }
+
+
+def _build_revenue_daily_breakdown(rows: list[asyncpg.Record]) -> list[dict[str, int | str]]:
+    lookup = {
+        str(row["day"]): {
+            "day": str(row["day"]),
+            "total_revenue": int(row["total_revenue"] or 0),
+            "basic_revenue": int(row["basic_revenue"] or 0),
+            "pro_revenue": int(row["pro_revenue"] or 0),
+            "premium_revenue": int(row["premium_revenue"] or 0),
+            "additional_sessions_count": int(row["additional_sessions_count"] or 0),
+        }
+        for row in rows
+    }
+
+    today = datetime.now(HO_CHI_MINH_TZ).date()
+    days = [(today - timedelta(days=offset)).isoformat() for offset in range(29, -1, -1)]
+    return [lookup.get(day, _revenue_metric_zero_row(day)) for day in days]
 
 
 def _validate_question_payload(payload: AdminQuestionUpsert | AdminQuestionGenerateRequest) -> tuple[str, str, str, str]:
@@ -227,17 +261,48 @@ async def admin_stats(
 ):
     stats = await db.fetchrow(
         """
-        SELECT
-            (SELECT COUNT(*) FROM users) AS total_users,
-            (SELECT COUNT(*) FROM users WHERE is_admin = true) AS total_admins,
-            (SELECT COUNT(*) FROM sessions) AS total_sessions,
-            (SELECT COUNT(*) FROM sessions WHERE status = 'COMPLETED') AS completed_sessions,
-            (SELECT COUNT(*) FROM answers) AS total_answers,
-            (SELECT ROUND(AVG(score)::numeric, 1)::float FROM answers WHERE score > 0) AS avg_score,
-            (SELECT COUNT(*) FROM questions WHERE user_id IS NULL) AS total_questions,
-            (SELECT COUNT(DISTINCT user_id) FROM sessions) AS active_users,
-            (SELECT COALESCE(SUM(amount_vnd), 0)::int FROM payment_orders WHERE status = 'succeeded' AND paid_at IS NOT NULL) AS total_revenue
-        """
+        WITH u AS (
+            SELECT 
+                COUNT(*)::int AS total_users, 
+                COUNT(CASE WHEN is_admin = true THEN 1 END)::int AS total_admins 
+            FROM users
+        ),
+        s AS (
+            SELECT 
+                COUNT(*)::int AS total_sessions, 
+                COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END)::int AS completed_sessions,
+                COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '3 days' THEN user_id END)::int AS active_users
+            FROM sessions
+        ),
+        a AS (
+            SELECT 
+                COUNT(*)::int AS total_answers, 
+                COALESCE(ROUND(AVG(CASE WHEN score > 0 THEN score END)::numeric, 1)::float, 0.0) AS avg_score 
+            FROM answers
+        ),
+        q AS (
+            SELECT COUNT(*)::int AS total_questions FROM questions WHERE user_id IS NULL
+        ),
+        p AS (
+            SELECT COALESCE(SUM(amount_vnd), 0)::int AS total_revenue
+            FROM payment_orders
+            WHERE status = 'succeeded'
+              AND paid_at IS NOT NULL
+              AND paid_at >= $1
+        )
+        SELECT 
+            u.total_users, 
+            u.total_admins, 
+            s.total_sessions, 
+            s.completed_sessions, 
+            s.active_users, 
+            a.total_answers, 
+            a.avg_score, 
+            q.total_questions, 
+            p.total_revenue
+        FROM u, s, a, q, p
+        """,
+        REVENUE_CUTOFF,
     )
     
     role_rows = await db.fetch(
@@ -265,6 +330,9 @@ async def admin_list_users(
     plan_tier: Optional[str] = None,
     plan_status: Optional[str] = None,
     email_verified: Optional[bool] = None,
+    created_day: Optional[int] = None,
+    created_month: Optional[int] = None,
+    created_year: Optional[int] = None,
 ):
     clauses: list[str] = []
     params: list[object] = []
@@ -284,6 +352,15 @@ async def admin_list_users(
     if email_verified is not None:
         params.append(email_verified)
         clauses.append(f"u.email_verified = ${len(params)}")
+    if created_year is not None:
+        params.append(created_year)
+        clauses.append(f"EXTRACT(YEAR FROM (u.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')) = ${len(params)}")
+    if created_month is not None:
+        params.append(created_month)
+        clauses.append(f"EXTRACT(MONTH FROM (u.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')) = ${len(params)}")
+    if created_day is not None:
+        params.append(created_day)
+        clauses.append(f"EXTRACT(DAY FROM (u.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')) = ${len(params)}")
 
     where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     params.extend([limit, offset])
@@ -486,50 +563,7 @@ async def admin_delete_user(
 
     if _is_primary_admin_email(target["email"]):
         raise HTTPException(status_code=400, detail="Không thể xóa tài khoản admin chính.")
-
-    # Retrieve user files and answer IDs for disk cleanup
-    user_files = await db.fetchrow(
-        "SELECT avatar_path, resume_path FROM users WHERE id = $1",
-        user_id
-    )
-    answer_rows = await db.fetch(
-        """
-        SELECT a.id::text AS answer_id
-        FROM answers a
-        JOIN sessions s ON a.session_id = s.id
-        WHERE s.user_id = $1
-        """,
-        user_id
-    )
-
-    # Perform file deletion on disk
-    import shutil
-    from app.services.profile_files import delete_public_file, delete_private_file
-
-    if user_files:
-        if user_files["avatar_path"]:
-            delete_public_file(user_files["avatar_path"])
-        if user_files["resume_path"]:
-            delete_private_file(user_files["resume_path"])
-
-    # Clean up the directories recursively
-    avatar_dir = settings.uploads_dir / "avatars" / user_id
-    if avatar_dir.exists():
-        shutil.rmtree(avatar_dir, ignore_errors=True)
-
-    resume_dir = settings.private_uploads_dir / "resumes" / user_id
-    if resume_dir.exists():
-        shutil.rmtree(resume_dir, ignore_errors=True)
-
-    # Delete all TTS audio files for the user's answers
-    for row in answer_rows:
-        ans_id = row["answer_id"]
-        tts_file = settings.uploads_dir / "interview-tts" / f"{ans_id}.wav"
-        tts_file.unlink(missing_ok=True)
-
-    await db.execute("DELETE FROM users WHERE id = $1", user_id)
-    await db.execute("DELETE FROM admin_invites WHERE email = $1", _normalize_email(target["email"]))
-    return {"deleted": user_id, "email": target["email"]}
+    return await purge_user_data(db, user_id=user_id, email=target["email"])
 
 
 
@@ -1057,10 +1091,13 @@ async def sync_pending_payos_orders(db: asyncpg.Connection) -> None:
         """
         SELECT provider_order_ref
         FROM payment_orders
-        WHERE provider = 'payos' AND status = 'pending' AND created_at > NOW() - INTERVAL '3 days'
+        WHERE provider = 'payos'
+          AND status = 'pending'
+          AND created_at >= $1
         ORDER BY created_at DESC
         LIMIT 20
-        """
+        """,
+        REVENUE_CUTOFF,
     )
     if not pending_orders:
         return
@@ -1126,41 +1163,54 @@ async def admin_revenue(
         import logging
         logging.getLogger(__name__).warning("Failed to sync pending PayOS orders: %s", exc)
 
-    daily_rows = await db.fetch(
+    breakdown_rows = await db.fetch(
         """
         SELECT 
             DATE(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::text AS day,
-            SUM(amount_vnd)::int AS revenue
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'basic'), 0)::int AS basic_revenue,
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'pro'), 0)::int AS pro_revenue,
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'premium'), 0)::int AS premium_revenue,
+            COALESCE(SUM(CASE WHEN plan_tier = 'additional_sessions' THEN billing_period::int ELSE 0 END), 0)::int AS additional_sessions_count,
+            COALESCE(SUM(amount_vnd), 0)::int AS total_revenue
         FROM payment_orders
-        WHERE status = 'succeeded' AND paid_at IS NOT NULL
+        WHERE status = 'succeeded'
+          AND paid_at IS NOT NULL
+          AND paid_at >= $1
         GROUP BY day
-        ORDER BY day DESC
-        LIMIT 30
-        """
+        ORDER BY day ASC
+        """,
+        REVENUE_CUTOFF,
     )
-    monthly_rows = await db.fetch(
+    summary_row = await db.fetchrow(
         """
-        SELECT 
-            TO_CHAR(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
-            SUM(amount_vnd)::int AS revenue
+        SELECT
+            COALESCE(SUM(amount_vnd), 0)::int AS total_revenue,
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'basic'), 0)::int AS basic_revenue,
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'pro'), 0)::int AS pro_revenue,
+            COALESCE(SUM(amount_vnd) FILTER (WHERE plan_tier = 'premium'), 0)::int AS premium_revenue,
+            COALESCE(SUM(CASE WHEN plan_tier = 'additional_sessions' THEN billing_period::int ELSE 0 END), 0)::int AS additional_sessions_count
         FROM payment_orders
-        WHERE status = 'succeeded' AND paid_at IS NOT NULL
-        GROUP BY month
-        ORDER BY month DESC
-        """
+        WHERE status = 'succeeded'
+          AND paid_at IS NOT NULL
+          AND paid_at >= $1
+        """,
+        REVENUE_CUTOFF,
     )
-    total_val = await db.fetchval(
-        """
-        SELECT COALESCE(SUM(amount_vnd), 0)::int
-        FROM payment_orders
-        WHERE status = 'succeeded' AND paid_at IS NOT NULL
-        """
-    )
+    summary = {
+        "total_revenue": int(summary_row["total_revenue"] or 0) if summary_row else 0,
+        "basic_revenue": int(summary_row["basic_revenue"] or 0) if summary_row else 0,
+        "pro_revenue": int(summary_row["pro_revenue"] or 0) if summary_row else 0,
+        "premium_revenue": int(summary_row["premium_revenue"] or 0) if summary_row else 0,
+        "additional_sessions_count": int(summary_row["additional_sessions_count"] or 0) if summary_row else 0,
+    }
     
     return {
-        "daily": [{"day": r["day"], "revenue": r["revenue"]} for r in reversed(daily_rows)],
-        "monthly": [{"month": r["month"], "revenue": r["revenue"]} for r in reversed(monthly_rows)],
-        "total_revenue": total_val,
+        "daily": [{"day": row["day"], "revenue": row["total_revenue"]} for row in breakdown_rows],
+        "total_revenue": summary["total_revenue"],
+        "breakdown": {
+            "summary": summary,
+            "daily": _build_revenue_daily_breakdown(breakdown_rows),
+        },
     }
 
 
@@ -1257,5 +1307,3 @@ async def admin_list_sessions(
         "items": items,
         "total": total,
     }
-
-
