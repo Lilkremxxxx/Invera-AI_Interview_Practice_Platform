@@ -1,3 +1,4 @@
+import asyncio
 import time
 import logging
 from pathlib import Path
@@ -16,6 +17,7 @@ from app.api.endpoints.sessions import router as sessions_router
 from app.core.config import settings
 from app.db.session import create_pool, close_pool
 from app.services.deepseek_client import close_deepseek_client
+from app.services.payment_orders import payment_order_cleanup_loop
 
 # Filter out Chrome DevTools Protocol requests from logs
 class EndpointFilter(logging.Filter):
@@ -109,6 +111,8 @@ settings.private_uploads_dir.mkdir(exist_ok=True)
 settings.interview_tts_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(settings.uploads_dir)), name="media")
 
+_payment_order_cleanup_task: asyncio.Task[None] | None = None
+
 
 def _frontend_index() -> Path:
     return settings.frontend_dist_dir / "index.html"
@@ -158,22 +162,55 @@ async def startup_event():
             "017_add_user_resume_and_cv_questions.sql",
             "018_add_session_evaluation_and_plan.sql",
             "019_add_answer_telemetry.sql",
+            "020_add_sessions_created_at_index.sql",
+            "021_add_interview_follow_ups.sql",
+            "022_add_resume_questions_to_users.sql",
         ]
-        async with pool.acquire() as conn:
-            for migration in migrations:
-                migration_path = BASE_DIR / "migrations" / migration
-                if migration_path.exists():
-                    sql = migration_path.read_text(encoding="utf-8")
-                    await conn.execute(sql)
-                    print(f"✅ Migration applied: {migration}")
+        async def run_migrations_bg():
+            try:
+                import asyncpg
+                conn = await asyncpg.connect(
+                    host=settings.pg_host,
+                    port=settings.pg_port,
+                    database=settings.pg_dbname,
+                    user=settings.pg_user,
+                    password=settings.pg_password,
+                    timeout=30.0
+                )
+                try:
+                    for migration in migrations:
+                        migration_path = BASE_DIR / "migrations" / migration
+                        if migration_path.exists():
+                            sql = migration_path.read_text(encoding="utf-8")
+                            await conn.execute(sql, timeout=300.0)
+                            print(f"✅ Migration checked/applied: {migration}")
+                finally:
+                    await conn.close()
+            except Exception as e:
+                print(f"❌ Background migration error: {e}")
+
+        asyncio.create_task(run_migrations_bg())
     except Exception as e:
-        print(f"⚠️  Migration error (may already exist): {e}")
+        print(f"❌ Database pool initialization error: {e}")
+        await close_pool()
+        raise
+    global _payment_order_cleanup_task
+    if _payment_order_cleanup_task is None or _payment_order_cleanup_task.done():
+        _payment_order_cleanup_task = asyncio.create_task(payment_order_cleanup_loop(pool))
     print("✅ Server ready!")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     print("🛑 Shutting down server...")
+    global _payment_order_cleanup_task
+    if _payment_order_cleanup_task is not None:
+        _payment_order_cleanup_task.cancel()
+        try:
+            await _payment_order_cleanup_task
+        except asyncio.CancelledError:
+            pass
+        _payment_order_cleanup_task = None
     await close_deepseek_client()
     await close_pool()
     print("✅ Server stopped!")

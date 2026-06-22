@@ -41,8 +41,6 @@ class Settings:
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     google_client_id: str | None = os.getenv("GOOGLE_CLIENT_ID")
     google_client_secret: str | None = os.getenv("GOOGLE_CLIENT_SECRET")
-    github_client_id: str | None = os.getenv("GITHUB_CLIENT_ID")
-    github_client_secret: str | None = os.getenv("GITHUB_CLIENT_SECRET")
     email_delivery_mode: str = os.getenv("EMAIL_DELIVERY_MODE", "log")
     smtp_host: str | None = os.getenv("SMTP_HOST")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
@@ -64,25 +62,10 @@ class Settings:
     deepseek_temperature: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.2"))
     deepseek_scoring_timeout_seconds: float = float(os.getenv("DEEPSEEK_SCORING_TIMEOUT_SECONDS", "20"))
     deepseek_scoring_max_tokens: int = int(os.getenv("DEEPSEEK_SCORING_MAX_TOKENS", "1800"))
-    deepseek_qna_timeout_seconds: float = float(os.getenv("DEEPSEEK_QNA_TIMEOUT_SECONDS", "30"))
-    deepseek_qna_max_tokens: int = int(os.getenv("DEEPSEEK_QNA_MAX_TOKENS", "1000"))
+    deepseek_qna_timeout_seconds: float = float(os.getenv("DEEPSEEK_QNA_TIMEOUT_SECONDS", "60"))
+    deepseek_qna_max_tokens: int = int(os.getenv("DEEPSEEK_QNA_MAX_TOKENS", "3000"))
     deepseek_question_gen_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUESTION_GEN_TIMEOUT_SECONDS", "18"))
     deepseek_question_gen_max_tokens: int = int(os.getenv("DEEPSEEK_QUESTION_GEN_MAX_TOKENS", "650"))
-    vnpay_payment_url: str = os.getenv(
-        "VNPAY_PAYMENT_URL",
-        "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-    )
-    vnpay_tmn_code: str | None = os.getenv("VNPAY_TMN_CODE")
-    vnpay_hash_secret: str | None = os.getenv("VNPAY_HASH_SECRET")
-    vnpay_return_url: str = os.getenv(
-        "VNPAY_RETURN_URL",
-        f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/vnpay/return",
-    )
-    vnpay_ipn_url: str = os.getenv(
-        "VNPAY_IPN_URL",
-        f"{os.getenv('API_URL', 'https://invera.pp.ua/api')}/billing/vnpay/ipn",
-    )
-    vnpay_locale: str = os.getenv("VNPAY_LOCALE", "vn")
     payos_api_base_url: str = os.getenv("PAYOS_API_BASE_URL", "https://api-merchant.payos.vn")
     payos_client_id: str | None = os.getenv("PAYOS_CLIENT_ID")
     payos_api_key: str | None = os.getenv("PAYOS_API_KEY")
@@ -142,6 +125,11 @@ class Settings:
     kokoro_tts_voice: str = os.getenv("KOKORO_TTS_VOICE", "af_sarah")
     kokoro_tts_speed: float = float(os.getenv("KOKORO_TTS_SPEED", "1.0"))
     kokoro_tts_language: str = os.getenv("KOKORO_TTS_LANGUAGE", "en-us")
+    gemini_live_enabled: bool = os.getenv("GEMINI_LIVE_ENABLED", "true").lower() == "true"
+    gemini_live_api_key: str | None = os.getenv("GEMINI_LIVE_API_KEY")
+    gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-3.1-flash-live-preview")
+    gemini_live_voice: str = os.getenv("GEMINI_LIVE_VOICE", "Kore")
+    gemini_live_timeout_seconds: float = float(os.getenv("GEMINI_LIVE_TIMEOUT_SECONDS", "45"))
 
     @cached_property
     def uploads_dir(self) -> Path:

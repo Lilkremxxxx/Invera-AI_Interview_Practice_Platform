@@ -25,6 +25,10 @@ This is the backend service for the **Invera AI Interview Practice Platform**, h
    ```
 
 2. Setup environment variables (refer to `.env.example`).
+   - For Google sign-in, set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+   - The Google OAuth callback URL should be:
+     `https://invera.pp.ua/api/auth/oauth/google/callback`
+   - In local development, point the callback to your local API URL instead.
 3. Run migrations and start the server:
    ```bash
    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
