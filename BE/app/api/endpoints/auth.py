@@ -573,10 +573,11 @@ async def resend_verification_code(
 async def forgot_password(req: ForgotPasswordRequest, db: asyncpg.Connection = Depends(get_db)):
     normalized_email = _normalize_email(req.email)
     user = await db.fetchrow(
-        "SELECT id, email FROM users WHERE email = $1 AND provider = 'local'",
+        "SELECT id, email, provider FROM users WHERE email = $1",
         normalized_email,
     )
-    if not user:
+    provider = user.get("provider") if user else None
+    if not user or (provider or "local") != "local":
         return {"message": "Nếu email hợp lệ, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn."}
 
     reset_token = secrets.token_urlsafe(32)
@@ -642,7 +643,7 @@ async def process_oauth_login(
             status_code=404,
             detail=(
                 "Tài khoản chưa tồn tại trong hệ thống. "
-                "Vui lòng đăng ký trước, sau đó mới đăng nhập bằng Google hoặc GitHub."
+                "Vui lòng đăng ký trước, sau đó mới đăng nhập bằng Google."
             ),
         )
 
@@ -848,101 +849,3 @@ async def google_callback(code: str, state: str = "login", db: asyncpg.Connectio
         return _oauth_error_redirect("google", "Không thể đăng nhập với Google lúc này.")
 
 
-# GitHub OAuth
-@router.get("/oauth/github")
-async def github_login(mode: str = "login"):
-    client_id = settings.github_client_id
-    if not client_id:
-        raise HTTPException(status_code=500, detail="GitHub Client ID chưa được cấu hình")
-    oauth_mode = _normalize_oauth_mode(mode)
-    redirect_uri = f"{settings.api_public_url}/auth/oauth/github/callback"
-    scope = "user:email"
-    auth_url = (
-        f"https://github.com/login/oauth/authorize"
-        f"?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={oauth_mode}"
-    )
-    return {"url": auth_url}
-
-
-@router.get("/oauth/github/callback")
-async def github_callback(code: str, state: str = "login", db: asyncpg.Connection = Depends(get_db)):
-    client_id = settings.github_client_id
-    client_secret = settings.github_client_secret
-    redirect_uri = f"{settings.api_public_url}/auth/oauth/github/callback"
-    email: str | None = None
-    oauth_mode = _normalize_oauth_mode(state)
-
-    try:
-        async with httpx.AsyncClient() as client:
-            token_res = await client.post(
-                "https://github.com/login/oauth/access_token",
-                data={
-                    "client_id": client_id,
-                    "client_secret": client_secret,
-                    "code": code,
-                    "redirect_uri": redirect_uri,
-                },
-                headers={"Accept": "application/json"},
-            )
-            if token_res.status_code != 200:
-                raise HTTPException(status_code=400, detail="Lỗi khi xác thực với GitHub")
-
-            token_data = token_res.json()
-
-            if "error" in token_data:
-                raise HTTPException(status_code=400, detail=f"GitHub error: {token_data['error']}")
-
-            user_res = await client.get(
-                "https://api.github.com/user",
-                headers={"Authorization": f"Bearer {token_data['access_token']}"},
-            )
-            user_info = user_res.json()
-
-            email = user_info.get("email")
-            if not email:
-                emails_res = await client.get(
-                    "https://api.github.com/user/emails",
-                    headers={"Authorization": f"Bearer {token_data['access_token']}"},
-                )
-                emails = emails_res.json()
-                primary_email = next((e for e in emails if e["primary"]), None)
-                if primary_email:
-                    email = primary_email["email"]
-
-        if not email:
-            raise HTTPException(status_code=400, detail="Không lấy được email từ GitHub")
-
-        if oauth_mode == "signup":
-            signup_result = await process_oauth_signup(
-                db,
-                email,
-                "github",
-                str(user_info["id"]),
-                user_info.get("name"),
-            )
-            if signup_result["action"] == "login":
-                return RedirectResponse(
-                    f"{settings.frontend_public_url}/oauth/callback?token={signup_result['access_token']}"
-                )
-            return _oauth_verification_redirect(
-                email=str(signup_result["email"]),
-                message=str(signup_result["message"]),
-                resend_available_in_seconds=int(signup_result["resend_available_in_seconds"]),
-            )
-
-        access_token = await process_oauth_login(
-            db, email, "github", str(user_info["id"]), user_info.get("name")
-        )
-        return RedirectResponse(f"{settings.frontend_public_url}/oauth/callback?token={access_token}")
-    except HTTPException as exc:
-        detail = str(exc.detail)
-        return _oauth_error_redirect(
-            "github",
-            detail,
-            email=email,
-            admin_restricted="admin" in detail.lower(),
-            signup_required=exc.status_code == 404,
-        )
-    except Exception:
-        logger.exception("Unexpected GitHub OAuth callback failure")
-        return _oauth_error_redirect("github", "Không thể đăng nhập với GitHub lúc này.")

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import smtplib
+from datetime import datetime
 from email.message import EmailMessage
 
 from app.core.config import settings
@@ -128,7 +129,7 @@ async def send_admin_invite_email(
         button_label = "Open admin login"
         footer_note = (
             "The admin area only accepts local email/password sign-in. "
-            "Google/GitHub is not used for admin access."
+            "OAuth sign-in is not used for admin access."
         )
     else:
         action_intro = (
@@ -140,7 +141,7 @@ async def send_admin_invite_email(
         button_label = "Create admin account"
         footer_note = (
             "For security, admin accounts still need local credentials and email verification. "
-            "Google/GitHub is not used for admin access."
+            "OAuth sign-in is not used for admin access."
         )
 
     body_text = (
@@ -318,22 +319,34 @@ async def send_payment_success_email(
             "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#090d16' style='background:#090d16;padding:24px 12px;'>"
             "<tr><td align='center'>"
             "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#111827' style='max-width:640px;background:#111827;border-radius:24px;overflow:hidden;border:1px solid #1e293b;'>"
-            "<tr><td style='padding:30px 32px 24px;background:#111827;border-bottom:1px solid #1e293b;'>"
+            "<tr><td bgcolor='#111827' style='padding:28px 32px 24px;background-color:#111827;background:#111827;border-bottom:1px solid #1e293b;'>"
             "<div style='font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#14b8a6;font-weight:700;margin-bottom:14px;'>Invera</div>"
-            "<div style='font-size:30px;line-height:1.15;font-weight:800;color:#ffffff;margin:0 0 12px;'>Thanh toán thành công</div>"
-            f"<div style='font-size:16px;line-height:1.7;color:#94a3b8;'>Đã cộng thêm {quantity} phiên phỏng vấn vào tài khoản của bạn.</div>"
+            "<div style='font-size:32px;line-height:1.15;font-weight:800;margin:0 0 12px;color:#ffffff;'>Thanh toán thành công</div>"
+            f"<div style='font-size:16px;line-height:1.7;color:#94a3b8;margin:0;'>Đã cộng thêm {quantity} phiên phỏng vấn vào tài khoản của bạn.</div>"
             "</td></tr>"
-            "<tr><td style='padding:32px;'>"
-            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:22px;'>"
-            f"Invera đã ghi nhận thanh toán thành công cho việc <strong style='color:#ffffff;'>mua thêm {quantity} phiên phỏng vấn</strong>."
+            "<tr><td bgcolor='#111827' style='padding:32px;background-color:#111827;background:#111827;'>"
+            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:18px;'>Xin chào,</div>"
+            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:24px;'>\n"
+            f"Invera đã ghi nhận giao dịch thanh toán thành công của bạn cho việc <strong>mua thêm {quantity} phiên phỏng vấn</strong>."
             "</div>"
-            "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:12px 0 24px;'>"
-            "<tr><td style='padding:14px 16px;border-radius:16px;background:#1e293b;border:1px solid #334155;font-size:14px;line-height:1.7;color:#cbd5e1;'>"
-            f"<strong style='color:#ffffff;'>Số tiền:</strong> {amount_label} VND<br>"
-            f"<strong style='color:#ffffff;'>Mã đơn hàng:</strong> {order_ref}"
-            "</td></tr></table>"
+            "<div style='text-align:center;margin:28px 0;'>"
+            "<div role='presentation' aria-label='Paid amount' style='display:inline-block;padding:20px 32px;border-radius:20px;background-color:#1e293b;background:#1e293b;border:2px solid #14b8a6;text-align:center;'>"
+            "<div style='font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;font-weight:600;'>Tổng tiền đã thanh toán</div>"
+            f"<div style='font-size:32px;line-height:1;font-weight:800;color:#14b8a6;'>{amount_label} VND</div>"
+            "</div>"
+            "</div>"
+            "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:12px 0 24px;border-collapse:separate;border-spacing:0;background-color:#1e293b;background:#1e293b;border-radius:18px;border:1px solid #334155;overflow:hidden;'>"
+            "<tr>"
+            "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Dịch vụ</td>"
+            f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;font-weight:700;text-align:right;'>Mua thêm {quantity} phiên phỏng vấn</td>"
+            "</tr>"
+            "<tr>"
+            "<td style='padding:14px 20px;font-size:14px;color:#94a3b8;'>Mã đơn hàng</td>"
+            f"<td style='padding:14px 20px;font-size:14px;color:#ffffff;font-family:monospace;text-align:right;'>{order_ref}</td>"
+            "</tr>"
+            "</table>"
             "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;'>"
-            "Cảm ơn bạn đã sử dụng dịch vụ của Invera. Chúc bạn luyện phỏng vấn hiệu quả."
+            "Cảm ơn bạn đã sử dụng dịch vụ của Invera. Chúc bạn luyện tập phỏng vấn đạt kết quả thật tốt!"
             "</div>"
             "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #1e293b;font-size:13px;line-height:1.7;color:#64748b;'>Invera • AI Interview Practice Platform</div>"
             "</td></tr></table>"
@@ -370,22 +383,34 @@ async def send_payment_success_email(
             "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#090d16' style='background:#090d16;padding:24px 12px;'>"
             "<tr><td align='center'>"
             "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#111827' style='max-width:640px;background:#111827;border-radius:24px;overflow:hidden;border:1px solid #1e293b;'>"
-            "<tr><td style='padding:30px 32px 24px;background:#111827;border-bottom:1px solid #1e293b;'>"
+            "<tr><td bgcolor='#111827' style='padding:28px 32px 24px;background-color:#111827;background:#111827;border-bottom:1px solid #1e293b;'>"
             "<div style='font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#14b8a6;font-weight:700;margin-bottom:14px;'>Invera</div>"
-            "<div style='font-size:30px;line-height:1.15;font-weight:800;color:#ffffff;margin:0 0 12px;'>Thanh toán thành công</div>"
-            f"<div style='font-size:16px;line-height:1.7;color:#94a3b8;'>Gói {plan_label} của bạn đã được kích hoạt.</div>"
+            "<div style='font-size:32px;line-height:1.15;font-weight:800;margin:0 0 12px;color:#ffffff;'>Thanh toán thành công</div>"
+            f"<div style='font-size:16px;line-height:1.7;color:#94a3b8;margin:0;'>Tài khoản của bạn đã được kích hoạt gói {plan_label}.</div>"
             "</td></tr>"
-            "<tr><td style='padding:32px;'>"
-            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:22px;'>"
-            f"Invera đã ghi nhận thanh toán thành công cho gói <strong style='color:#ffffff;'>{plan_label}</strong> theo {period_label}."
+            "<tr><td bgcolor='#111827' style='padding:32px;background-color:#111827;background:#111827;'>"
+            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:18px;'>Xin chào,</div>"
+            "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;margin-bottom:24px;'>\n"
+            f"Invera đã ghi nhận giao dịch thanh toán thành công của bạn cho gói <strong>{plan_label}</strong> theo {period_label}."
             "</div>"
-            "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:12px 0 24px;'>"
-            "<tr><td style='padding:14px 16px;border-radius:16px;background:#1e293b;border:1px solid #334155;font-size:14px;line-height:1.7;color:#cbd5e1;'>"
-            f"<strong style='color:#ffffff;'>Số tiền:</strong> {amount_label} VND<br>"
-            f"<strong style='color:#ffffff;'>Mã đơn hàng:</strong> {order_ref}"
-            "</td></tr></table>"
+            "<div style='text-align:center;margin:28px 0;'>"
+            "<div role='presentation' aria-label='Paid amount' style='display:inline-block;padding:20px 32px;border-radius:20px;background-color:#1e293b;background:#1e293b;border:2px solid #14b8a6;text-align:center;'>"
+            "<div style='font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;font-weight:600;'>Tổng tiền đã thanh toán</div>"
+            f"<div style='font-size:32px;line-height:1;font-weight:800;color:#14b8a6;'>{amount_label} VND</div>"
+            "</div>"
+            "</div>"
+            "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:12px 0 24px;border-collapse:separate;border-spacing:0;background-color:#1e293b;background:#1e293b;border-radius:18px;border:1px solid #334155;overflow:hidden;'>"
+            "<tr>"
+            "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Gói dịch vụ</td>"
+            f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;font-weight:700;text-align:right;'>{plan_label} ({period_label})</td>"
+            "</tr>"
+            "<tr>"
+            "<td style='padding:14px 20px;font-size:14px;color:#94a3b8;'>Mã đơn hàng</td>"
+            f"<td style='padding:14px 20px;font-size:14px;color:#ffffff;font-family:monospace;text-align:right;'>{order_ref}</td>"
+            "</tr>"
+            "</table>"
             "<div style='font-size:16px;line-height:1.7;color:#cbd5e1;'>"
-            "Cảm ơn bạn đã sử dụng dịch vụ của Invera. Chúc bạn luyện phỏng vấn hiệu quả hơn với gói mới."
+            "Cảm ơn bạn đã nâng cấp dịch vụ. Chúc bạn có những phiên luyện tập phỏng vấn AI thật hiệu quả!"
             "</div>"
             "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #1e293b;font-size:13px;line-height:1.7;color:#64748b;'>Invera • AI Interview Practice Platform</div>"
             "</td></tr></table>"
@@ -407,6 +432,136 @@ async def send_payment_success_email(
             billing_period,
             amount_vnd,
             order_ref,
+        )
+        return
+
+    if delivery_mode != "smtp":
+        raise RuntimeError(f"Unsupported EMAIL_DELIVERY_MODE: {settings.email_delivery_mode}")
+
+    if not settings.smtp_host:
+        raise RuntimeError("SMTP_HOST is not configured")
+
+    await asyncio.to_thread(_send_email_sync, recipient, subject, body_text, body_html)
+
+
+async def send_transaction_notification_to_admin(
+    *,
+    user_email: str,
+    user_name: str | None,
+    plan_tier: str,
+    billing_period: str,
+    amount_vnd: int,
+    order_ref: str,
+    paid_at: datetime,
+) -> None:
+    from datetime import timezone, timedelta
+    recipient = "inveraexe101@gmail.com"
+    subject = f"[Invera Admin] Thông báo giao dịch thành công từ {user_email}"
+
+    # Format plan/sessions
+    if plan_tier == "additional_sessions":
+        try:
+            quantity = int(billing_period)
+        except (ValueError, TypeError):
+            quantity = 1
+        plan_label = f"Mua thêm {quantity} phiên phỏng vấn"
+    else:
+        plan_label = {
+            "basic": "Gói Basic",
+            "pro": "Gói Pro",
+            "premium": "Gói Premium",
+        }.get(plan_tier, f"Gói {plan_tier.title()}")
+        period_label = "tháng" if billing_period == "month" else "năm"
+        plan_label = f"{plan_label} ({period_label})"
+
+    amount_label = f"{amount_vnd:,.0f}".replace(",", ".")
+    # Vietnam timezone is UTC+7
+    vietnam_tz = timezone(timedelta(hours=7))
+    local_time = paid_at.astimezone(vietnam_tz)
+    time_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
+
+    body_text = (
+        "Kính gửi Admin,\n\n"
+        "Hệ thống Invera ghi nhận một giao dịch nạp tiền thành công:\n"
+        f"- Họ và tên: {user_name or 'N/A'}\n"
+        f"- Gmail đăng ký: {user_email}\n"
+        f"- Gói mua: {plan_label}\n"
+        f"- Số tiền: {amount_label} VND\n"
+        f"- Thời gian: {time_str} (GMT+7)\n"
+        f"- Mã đơn hàng: {order_ref}\n\n"
+        "Trân trọng,\n"
+        "Invera AI System"
+    )
+
+    body_html = (
+        "<!DOCTYPE html>"
+        "<html lang='vi'>"
+        "<head>"
+        "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+        "<meta name='color-scheme' content='dark'>"
+        "<meta name='supported-color-schemes' content='dark'>"
+        "</head>"
+        "<body style='margin:0;padding:0;background:#090d16;font-family:Arial,sans-serif;color:#cbd5e1;'>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#090d16' style='background:#090d16;padding:24px 12px;'>"
+        "<tr><td align='center'>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' bgcolor='#111827' style='max-width:640px;background:#111827;border-radius:24px;overflow:hidden;border:1px solid #1e293b;'>"
+        "<tr><td bgcolor='#111827' style='padding:28px 32px 24px;background-color:#111827;background:#111827;border-bottom:1px solid #1e293b;'>"
+        "<div style='font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#14b8a6;font-weight:700;margin-bottom:14px;'>Invera Admin</div>"
+        "<div style='font-size:32px;line-height:1.15;font-weight:800;margin:0 0 12px;color:#ffffff;'>Giao dịch mới thành công</div>"
+        f"<div style='font-size:16px;line-height:1.7;color:#94a3b8;margin:0;'>Hệ thống đã tự động kích hoạt dịch vụ cho người dùng {user_email}.</div>"
+        "</td></tr>"
+        "<tr><td bgcolor='#111827' style='padding:32px;background-color:#111827;background:#111827;'>"
+        "<div style='text-align:center;margin:10px 0 28px;'>"
+        "<div role='presentation' aria-label='Transaction amount' style='display:inline-block;padding:20px 32px;border-radius:20px;background-color:#1e293b;background:#1e293b;border:2px solid #14b8a6;text-align:center;'>"
+        "<div style='font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;font-weight:600;'>Số tiền giao dịch</div>"
+        f"<div style='font-size:32px;line-height:1;font-weight:800;color:#14b8a6;'>+{amount_label} VND</div>"
+        "</div>"
+        "</div>"
+        "<div style='font-size:15px;line-height:1.7;color:#cbd5e1;margin-bottom:16px;font-weight:600;'>"
+        "Thông tin chi tiết giao dịch:"
+        "</div>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0' style='margin:12px 0 24px;border-collapse:separate;border-spacing:0;background-color:#1e293b;background:#1e293b;border-radius:18px;border:1px solid #334155;overflow:hidden;'>"
+        "<tr>"
+        "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Họ và tên</td>"
+        f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;font-weight:700;text-align:right;'>{user_name or 'N/A'}</td>"
+        "</tr>"
+        "<tr>"
+        "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Gmail đăng ký</td>"
+        f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;text-align:right;'>{user_email}</td>"
+        "</tr>"
+        "<tr>"
+        "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Gói mua</td>"
+        f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;font-weight:700;text-align:right;'>{plan_label}</td>"
+        "</tr>"
+        "<tr>"
+        "<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#94a3b8;'>Thời gian</td>"
+        f"<td style='padding:14px 20px;border-bottom:1px solid #334155;font-size:14px;color:#ffffff;text-align:right;'>{time_str} (GMT+7)</td>"
+        "</tr>"
+        "<tr>"
+        "<td style='padding:14px 20px;font-size:14px;color:#94a3b8;'>Mã đơn hàng</td>"
+        f"<td style='padding:14px 20px;font-size:14px;color:#ffffff;font-family:monospace;text-align:right;'>{order_ref}</td>"
+        "</tr>"
+        "</table>"
+        "<div style='font-size:14px;line-height:1.7;color:#94a3b8;margin-bottom:12px;'>"
+        "Giao dịch đã được hệ thống tự động xử lý và cộng quyền lợi gói tương ứng cho tài khoản người dùng."
+        "</div>"
+        "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #1e293b;font-size:13px;line-height:1.7;color:#64748b;'>Invera • AI Interview Practice Platform</div>"
+        "</td></tr></table>"
+        "</td></tr></table>"
+        "</body>"
+        "</html>"
+    )
+
+    delivery_mode = settings.email_delivery_mode.lower()
+    if delivery_mode == "disabled":
+        logger.warning("Admin transaction notification skipped because delivery is disabled")
+        return
+
+    if delivery_mode == "log":
+        logger.warning(
+            "Admin transaction notification: email=%s name=%s plan=%s amount=%s time=%s",
+            user_email, user_name, plan_tier, amount_vnd, time_str
         )
         return
 
