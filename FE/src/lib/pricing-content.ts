@@ -22,14 +22,14 @@ export const pricingPlanContent = {
       vi: [
         '1 phiên duy nhất',
         '1 vai trò / 1 cấp độ',
-        'Phỏng vấn AI giọng nói cơ bản',
+        'Phỏng vấn AI camera cơ bản',
         'Chấm điểm rubric cơ bản',
         'Báo cáo tóm tắt ngắn',
       ],
       en: [
         '1 session total',
         '1 role / 1 level',
-        'Basic voice AI interview',
+        'Basic camera AI interview',
         'Basic rubric scoring',
         'Short summary report',
       ],
@@ -58,7 +58,7 @@ export const pricingPlanContent = {
     features: {
       vi: [
         '5 phiên phỏng vấn / tháng',
-        'Phỏng vấn AI giọng nói (chọn vai trò & cấp độ)',
+        'Phỏng vấn AI camera (chọn vai trò & cấp độ)',
         'Câu hỏi hành vi + kỹ thuật',
         'Chấm điểm theo rubric',
         'Báo cáo tóm tắt phiên',
@@ -67,7 +67,7 @@ export const pricingPlanContent = {
       ],
       en: [
         '5 sessions / month',
-        'Voice AI interviews with role and level selection',
+        'Camera AI interviews with role and level selection',
         'Behavioral and technical question sets',
         'Rubric-based scoring',
         'Session summary reports',

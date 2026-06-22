@@ -61,8 +61,8 @@ export const roleLabelMap = Object.fromEntries(
 ) as Record<string, { vi: string; en: string }>;
 
 export const answerModes = [
-  { id: 'voice', name: { vi: 'Giọng nói', en: 'Voice' }, icon: '🎤', description: { vi: 'Nói câu trả lời của bạn', en: 'Speak your answer' } },
   { id: 'camera', name: { vi: 'Camera', en: 'Camera' }, icon: '📹', description: { vi: 'Ghi hình câu trả lời của bạn', en: 'Record your answer on camera' } },
+  { id: 'live', name: { vi: 'Live session', en: 'Live session' }, icon: '🟢', description: { vi: 'HR agent hỏi trực tiếp, bạn trả lời bằng camera.', en: 'A live HR agent asks the question while you answer on camera.' } },
 ];
 
 export const questionCounts = [5, 10, 15];
@@ -201,7 +201,7 @@ export const recentSessions = [
     date: '2024-01-19',
     score: 75,
     questionsCount: 10,
-    mode: 'voice',
+    mode: 'camera',
     duration: { vi: '32 phút', en: '32 min' },
   },
   {
@@ -221,7 +221,7 @@ export const recentSessions = [
     date: '2024-01-17',
     score: 71,
     questionsCount: 10,
-    mode: 'voice',
+    mode: 'camera',
     duration: { vi: '28 phút', en: '28 min' },
   },
   {

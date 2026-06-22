@@ -4,6 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "@/pages/Index";
 
+vi.mock("@/components/landing/DashboardDemoSection", () => ({
+  DashboardDemoSection: () => (
+    <div data-testid="dashboard-demo-section">
+      <img alt="Invera mascot" src="/mascot/animation-8.png" className="absolute right-0" />
+    </div>
+  ),
+}));
+
 beforeEach(() => {
   vi.stubGlobal("localStorage", {
     getItem: vi.fn(() => null),
@@ -19,11 +27,12 @@ beforeEach(() => {
       disconnect() {}
     }
   );
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 });
 
 const renderLanding = () =>
   render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <LanguageProvider>
         <Index />
       </LanguageProvider>
@@ -44,7 +53,7 @@ describe("landing mascot decorations", () => {
       "/mascot/animation-2.png",
       "/mascot/animation-3.png",
       "/mascot/animation-4.png",
-      "/mascot/animation-5.png",
+      "/mascot/animation-8.png",
       "/mascot/animation-6.png",
       "/mascot/animation-7.png",
       "/mascot/animation-8.png",

@@ -85,7 +85,7 @@ export const translations = {
       },
       {
         title: { vi: 'Luyện tập trả lời',        en: 'Practice answering' },
-        desc:  { vi: 'Trả lời câu hỏi qua văn bản, giọng nói hoặc video. Người phỏng vấn AI của chúng tôi tạo ra trải nghiệm thực tế.', en: 'Answer questions via text, voice, or video. Our AI interviewer creates a realistic experience.' },
+        desc:  { vi: 'Trả lời câu hỏi qua văn bản, camera hoặc video. Người phỏng vấn AI của chúng tôi tạo ra trải nghiệm thực tế.', en: 'Answer questions via text, camera, or video. Our AI interviewer creates a realistic experience.' },
       },
       {
         title: { vi: 'Nhận phản hồi & Cải thiện', en: 'Get feedback & improve' },
@@ -112,10 +112,10 @@ export const translations = {
       },
       {
         title: { vi: 'Nhiều chế độ trả lời',        en: 'Multiple answer modes' },
-        desc:  { vi: 'Luyện tập theo cách của bạn—nhập câu trả lời, ghi âm giọng nói hoặc sử dụng video.', en: 'Practice your way—type answers, record voice, or use video for a full simulation.' },
+        desc:  { vi: 'Luyện tập theo cách của bạn—nhập câu trả lời, dùng camera hoặc sử dụng video.', en: 'Practice your way—type answers, use camera, or use video for a full simulation.' },
         highlights: [
           { vi: 'Nhập văn bản', en: 'Text input' },
-          { vi: 'Ghi âm giọng nói', en: 'Voice recording' },
+          { vi: 'Dùng camera', en: 'Camera mode' },
           { vi: 'Chế độ video', en: 'Video mode' },
         ],
       },
@@ -141,7 +141,7 @@ export const translations = {
         title: { vi: 'Chuyển văn bản thành giọng nói', en: 'Text-to-speech' },
         desc:  { vi: 'Nghe phản hồi của bạn được đọc to. Tuyệt vời để xem lại khi di chuyển.', en: 'Hear your feedback read aloud. Great for reviewing on the go or accessibility.' },
         highlights: [
-          { vi: 'Giọng nói tự nhiên', en: 'Natural voice' },
+          { vi: 'Hậu kỳ mượt mà', en: 'Polished playback' },
           { vi: 'Tốc độ điều chỉnh', en: 'Adjustable speed' },
           { vi: 'Nhiều ngôn ngữ',    en: 'Multiple languages' },
         ],
@@ -176,8 +176,8 @@ export const translations = {
       {
         q: { vi: 'Phản hồi AI hoạt động như thế nào?', en: 'How does the AI feedback work?' },
         a: {
-          vi: 'AI của chúng tôi phân tích câu trả lời của bạn dựa trên nhiều tiêu chí bao gồm mức độ liên quan, mạch lạc, cấu trúc và cách diễn đạt. Đối với chế độ giọng nói và video, chúng tôi cũng phân tích các khía cạnh trình bày như nhịp độ và sự tự tin.',
-          en: 'Our AI analyzes your answers based on multiple criteria including relevance, coherence, structure, and delivery. For voice and video modes, we also analyze presentation aspects like pace and confidence.',
+          vi: 'AI của chúng tôi phân tích câu trả lời của bạn dựa trên nhiều tiêu chí bao gồm mức độ liên quan, mạch lạc, cấu trúc và cách diễn đạt. Đối với chế độ camera và live session, chúng tôi cũng phân tích các khía cạnh trình bày như nhịp độ và sự tự tin.',
+          en: 'Our AI analyzes your answers based on multiple criteria including relevance, coherence, structure, and delivery. For camera and video modes, we also analyze presentation aspects like pace and confidence.',
         },
       },
       {
@@ -274,13 +274,13 @@ export const translations = {
 
   // ── Sessions page ────────────────────────────────────────────────────────
   sessions: {
-    title:        { vi: 'Phiên',                                    en: 'Sessions' },
+    title:        { vi: 'Lịch sử',                                  en: 'Sessions' },
     subtitle:     { vi: 'Xem và quản lý các phiên luyện tập của bạn', en: 'View and manage your practice sessions' },
     exportAll:    { vi: 'Xuất tất cả',                             en: 'Export all' },
     searchPlaceholder: { vi: 'Tìm kiếm theo vị trí...',           en: 'Search by role...' },
     all:          { vi: 'Tất cả',                                  en: 'All' },
     text:         { vi: 'Văn bản',                                 en: 'Text' },
-    voice:        { vi: 'Giọng nói',                               en: 'Voice' },
+    camera:      { vi: 'Camera',                                  en: 'Camera' },
     video:        { vi: 'Video',                                   en: 'Video' },
     historyTitle: { vi: 'Lịch sử luyện tập',                      en: 'Practice history' },
     noFound:      { vi: 'Không tìm thấy phiên nào',               en: 'No sessions found' },
@@ -430,7 +430,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
-    return (localStorage.getItem('invera-language') as Language) || 'en';
+    return (localStorage.getItem('invera-language') as Language) || 'vi';
   });
 
   const handleSetLanguage = (lang: Language) => {
