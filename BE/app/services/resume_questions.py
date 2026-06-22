@@ -34,7 +34,7 @@ def _parse_json_content(content: str) -> dict:
     return json.loads(cleaned)
 
 async def generate_and_save_cv_questions(db: asyncpg.Connection, user_id: uuid.UUID, resume_text: str) -> list[dict]:
-    """Generate 5 interview questions based on user's resume and save them to database."""
+    """Generate 5 interview questions based on user's resume for user-scoped storage."""
     if not resume_text or not resume_text.strip():
         logger.warning(f"Empty resume text provided for user {user_id}. Skipping question generation.")
         return []
@@ -47,22 +47,32 @@ Return a STRICT JSON object only with this exact shape:
 {
   "questions": [
     {
-      "text_en": "English question tailored to their CV",
-      "text_vi": "Vietnamese translation of the same question",
-      "category_en": "English category (e.g. Experience, Projects, Education)",
-      "category_vi": "Vietnamese category (e.g. Kinh nghiệm, Dự án, Học vấn)",
+      "text_en": "I saw in your CV that ... Can you elaborate?",
+      "text_vi": "Tôi thấy trong CV bạn có ghi ... bạn có thể nói rõ hơn không?",
+      "category_en": "English category (e.g. Projects, Technical Skills, Education, Experience, Behavioral)",
+      "category_vi": "Vietnamese category (e.g. Dự án, Kỹ năng chuyên môn, Học vấn, Kinh nghiệm, Tình huống hành vi)",
       "difficulty": "medium",
-      "ideal_answer_en": "Detailed ideal answer in English",
-      "ideal_answer_vi": "Detailed ideal answer in Vietnamese"
+      "ideal_answer_en": "Detailed ideal answer in English outlining expected technical concepts or behavioral response details",
+      "ideal_answer_vi": "Detailed ideal answer in Vietnamese outlining expected technical concepts or behavioral response details",
+      "tags": ["CV-based"]
     }
   ]
 }
 
-Rules:
+Rules for Question Generation:
 - Generate exactly 5 questions.
+- Maintain a balanced mix:
+  - 3 to 4 questions should be technical and project-focused, assessing the candidate's specific domain knowledge, technical correctness, practical depth, and understanding of skills, databases, tools, or projects listed in their CV (e.g., if their CV lists Postgres, ask a technical question about PostgreSQL database usage or RAG integration).
+  - 1 to 2 questions should be behavioral/situational questions (category: 'Behavioral' / 'Tình huống hành vi') relating to their experiences or projects mentioned in their CV (e.g., how they handled a specific technical challenge, team conflict, or resolved a bug under pressure).
+- Do NOT generate questions that force the candidate to structure answers using the STAR method. Keep the scoring/evaluation expectations flexible.
+- Allowed categories are: "Projects" / "Dự án", "Technical Skills" / "Kỹ năng chuyên môn", "Experience" / "Kinh nghiệm", "Education" / "Học vấn", or "Behavioral" / "Tình huống hành vi".
+- The ideal answers should define the technical expectations (e.g., if asking about PostgreSQL, specify the expectations for basic usage up to advanced features like RAG vector database indexing or query optimization) or key behavioral indicator expectations.
 - Maintain high translation quality between English and Vietnamese versions.
-- The questions must be directly related to the projects, education, or experiences in the candidate's CV. Do not ask generic questions.
 - Keep the difficulty of all generated questions as 'medium'.
+- Every question must explicitly open with the CV-reference framing. Examples:
+  - Vietnamese: "Tôi thấy trong CV bạn có ghi ..."
+  - English: "I saw in your CV that ..."
+- Every question must include the tag "CV-based".
 """
 
     user_prompt = f"""
@@ -88,80 +98,73 @@ Generate exactly 5 bilingual questions in JSON.
         # Return fallback questions if DeepSeek fails so we don't break the profile upload flow entirely
         fallback_questions = [
             {
-                "text_vi": "Hãy chia sẻ về một dự án nổi bật nhất trong CV của bạn và vai trò của bạn trong dự án đó.",
-                "text_en": "Please share one of the most prominent projects in your CV and your role in it.",
+                "text_vi": "Tôi thấy trong CV bạn có ghi một dự án nổi bật. Bạn có thể chia sẻ rõ hơn về dự án đó và vai trò của bạn không?",
+                "text_en": "I saw in your CV that you highlighted a major project. Can you explain that project and your role in more detail?",
                 "category_vi": "Dự án",
                 "category_en": "Projects",
                 "difficulty": "medium",
                 "ideal_answer_vi": "Ứng viên cần trình bày rõ ràng về mục tiêu dự án, công nghệ sử dụng, đóng góp cá nhân và kết quả đạt được.",
-                "ideal_answer_en": "Candidates should clearly state the project goal, technologies used, personal contributions, and key achievements."
+                "ideal_answer_en": "Candidates should clearly state the project goal, technologies used, personal contributions, and key achievements.",
+                "tags": ["CV-based"],
             },
             {
-                "text_vi": "Dựa trên kinh nghiệm làm việc trong CV, bạn đã từng giải quyết khó khăn kỹ thuật nào khó nhất?",
-                "text_en": "Based on your work experience, what was the most challenging technical problem you solved?",
-                "category_vi": "Kinh nghiệm làm việc",
-                "category_en": "Work Experience",
+                "text_vi": "Tôi thấy trong CV bạn có ghi kinh nghiệm xử lý các bài toán kỹ thuật. Bạn có thể kể rõ hơn về một khó khăn kỹ thuật hoặc sự cố nghiêm trọng mà bạn đã trực tiếp giải quyết không?",
+                "text_en": "I saw in your CV that you handled technical challenges. Can you walk me through a serious technical issue that you directly resolved?",
+                "category_vi": "Kinh nghiệm",
+                "category_en": "Experience",
                 "difficulty": "medium",
-                "ideal_answer_vi": "Câu trả lời nên áp dụng phương pháp STAR (Situation, Task, Action, Result) để mô tả quá trình xử lý vấn đề.",
-                "ideal_answer_en": "The answer should apply the STAR method to describe the problem-solving process."
+                "ideal_answer_vi": "Ứng viên giải thích rõ nguyên nhân kỹ thuật của vấn đề, cách điều tra và giải pháp xử lý triệt để (như viết test case, sửa lỗi bộ nhớ, tối ưu câu lệnh).",
+                "ideal_answer_en": "The candidate should explain the technical root cause of the issue, how it was investigated, and the technical solution implemented (such as writing tests, fixing memory leaks, or optimizing queries).",
+                "tags": ["CV-based"],
             },
             {
-                "text_vi": "Bạn đã áp dụng những kiến thức học vấn của mình vào công việc thực tế như thế nào?",
-                "text_en": "How have you applied your academic knowledge to your practical work?",
-                "category_vi": "Học vấn",
-                "category_en": "Education",
+                "text_vi": "Tôi thấy trong CV bạn có ghi kinh nghiệm làm việc nhóm. Bạn có thể kể lại một tình huống bạn gặp mâu thuẫn ý kiến với đồng nghiệp hoặc quản lý và cách bạn xử lý không?",
+                "text_en": "I saw in your CV that you worked closely with teams. Can you describe a disagreement with a teammate or manager and how you handled it?",
+                "category_vi": "Tình huống hành vi",
+                "category_en": "Behavioral",
                 "difficulty": "medium",
-                "ideal_answer_vi": "Ứng viên nên kết nối các môn học/đề tài nghiên cứu với dự án hoặc công việc thực tế đã làm.",
-                "ideal_answer_en": "Candidates should connect coursework or research topics with their projects or actual work."
+                "ideal_answer_vi": "Ứng viên chỉ ra rõ nguyên nhân bất đồng, cách giao tiếp tôn trọng, thấu hiểu quan điểm đối phương và cùng tìm ra giải pháp trung hòa hoặc thuyết phục dựa trên số liệu/thực tế.",
+                "ideal_answer_en": "The candidate should identify the cause of the disagreement, demonstrate respectful communication, understanding of the other person's perspective, and how they reached a compromise or persuaded them based on data/facts.",
+                "tags": ["CV-based"],
             },
             {
-                "text_vi": "Trong số các công nghệ bạn liệt kê trong CV, công nghệ nào bạn tự tin nhất và tại sao?",
-                "text_en": "Among the technologies listed in your CV, which one are you most confident in and why?",
+                "text_vi": "Tôi thấy trong CV bạn có ghi nhiều công nghệ khác nhau. Công nghệ nào bạn tự tin nhất và tại sao?",
+                "text_en": "I saw in your CV that you listed several technologies. Which one are you most confident with and why?",
                 "category_vi": "Kỹ năng chuyên môn",
                 "category_en": "Technical Skills",
                 "difficulty": "medium",
                 "ideal_answer_vi": "Trình bày sâu về kiến thức nền tảng của công nghệ đó và ví dụ minh họa bằng một dự án cụ thể.",
-                "ideal_answer_en": "Demonstrate deep understanding of the technology's fundamentals and illustrate with a specific project example."
+                "ideal_answer_en": "Demonstrate deep understanding of the technology's fundamentals and illustrate with a specific project example.",
+                "tags": ["CV-based"],
             },
             {
-                "text_vi": "Mục tiêu phát triển sự nghiệp tiếp theo của bạn phù hợp thế nào với các kinh nghiệm đã có trong CV?",
-                "text_en": "How does your next career goal align with the experiences listed in your CV?",
-                "category_vi": "Kinh nghiệm làm việc",
-                "category_en": "Work Experience",
+                "text_vi": "Tôi thấy trong CV bạn có ghi các công nghệ giải quyết những bài toán tương tự. Bạn có thể so sánh hai công nghệ hoặc thư viện đó và giải thích vì sao bạn chọn giải pháp hiện tại không?",
+                "text_en": "I saw in your CV that you worked with technologies that solve similar problems. Can you compare two of them and explain why you chose the current solution?",
+                "category_vi": "Kỹ năng chuyên môn",
+                "category_en": "Technical Skills",
                 "difficulty": "medium",
-                "ideal_answer_vi": "Thể hiện định hướng phát triển bản thân dựa trên nền tảng sẵn có và khao khát học hỏi công nghệ mới.",
-                "ideal_answer_en": "Show self-development direction based on existing foundations and the eagerness to learn new technologies."
+                "ideal_answer_vi": "Ứng viên so sánh khách quan về ưu nhược điểm (như hiệu năng, sự dễ dàng tích hợp, độ bảo trì) và đưa ra lý do phù hợp ngữ cảnh dự án.",
+                "ideal_answer_en": "Candidates should objectively compare pros and cons (such as performance, ease of integration, maintainability) and provide reasons suitable for the project context.",
+                "tags": ["CV-based"],
             }
         ]
         questions = fallback_questions
 
-    # Save to database
-    # In a transaction, delete old CV questions and insert new ones
-    async with db.transaction():
-        await db.execute("DELETE FROM questions WHERE user_id = $1", user_id)
-        for q in questions:
-            await db.execute(
-                """
-                INSERT INTO questions (
-                    role, level, major, text, category, difficulty, ideal_answer,
-                    text_vi, text_en, category_vi, category_en, ideal_answer_vi, ideal_answer_en,
-                    tags, user_id
-                ) VALUES (
-                    'cv', 'cv', 'cv', $1, $2, $3, $4,
-                    $5, $6, $7, $8, $9, $10,
-                    ARRAY['cv-question']::TEXT[], $11
-                )
-                """,
-                q.get("text_vi") or q.get("text_en"),
-                q.get("category_vi") or q.get("category_en"),
-                q.get("difficulty") or "medium",
-                q.get("ideal_answer_vi") or q.get("ideal_answer_en"),
-                q.get("text_vi"),
-                q.get("text_en"),
-                q.get("category_vi"),
-                q.get("category_en"),
-                q.get("ideal_answer_vi"),
-                q.get("ideal_answer_en"),
-                user_id
-            )
-    return questions
+    normalized_questions: list[dict] = []
+    for q in questions:
+        tags = q.get("tags") if isinstance(q.get("tags"), list) else []
+        if "CV-based" not in tags:
+            tags = [*tags, "CV-based"]
+        normalized_questions.append(
+            {
+                "text_vi": q.get("text_vi") or q.get("text_en"),
+                "text_en": q.get("text_en") or q.get("text_vi"),
+                "category_vi": q.get("category_vi") or q.get("category_en") or "Dự án",
+                "category_en": q.get("category_en") or q.get("category_vi") or "Projects",
+                "difficulty": q.get("difficulty") or "medium",
+                "ideal_answer_vi": q.get("ideal_answer_vi") or q.get("ideal_answer_en") or "",
+                "ideal_answer_en": q.get("ideal_answer_en") or q.get("ideal_answer_vi") or "",
+                "tags": tags,
+            }
+        )
+    return normalized_questions

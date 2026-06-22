@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import asyncpg
@@ -8,7 +9,8 @@ from fastapi.responses import FileResponse
 
 from app.api.endpoints.auth import get_current_user
 from app.db.session import get_db
-from app.schemas.user import AvatarUploadResponse, ResumeUploadResponse, UserOut
+from app.schemas.user import AccountDeletionResponse, AvatarUploadResponse, ResumeUploadResponse, UserOut
+from app.services.account_deletion import purge_user_data
 from app.services.profile_files import (
     FileValidationError,
     avatar_url,
@@ -22,6 +24,7 @@ from app.services.resume_questions import extract_text_from_pdf, generate_and_sa
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 async def _current_file_state(db: asyncpg.Connection, user_id) -> asyncpg.Record | None:
@@ -116,6 +119,19 @@ async def upload_resume(
         extracted_text = extract_text_from_pdf(abs_path)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Lỗi đọc file PDF: {str(exc)}") from exc
+    if not extracted_text.strip():
+        delete_private_file(storage_path)
+        raise HTTPException(
+            status_code=400,
+            detail="Không trích xuất được nội dung văn bản từ PDF. Vui lòng dùng PDF có text thay vì bản scan ảnh.",
+        )
+
+    generated_questions = []
+    try:
+        generated_questions = await generate_and_save_cv_questions(db, current_user.id, extracted_text)
+    except Exception as exc:
+        # Keep the upload successful even if downstream CV-question generation fails.
+        logger.error("Error generating questions from CV: %s", exc)
 
     await db.execute(
         """
@@ -125,23 +141,18 @@ async def upload_resume(
             resume_size_bytes = $3,
             resume_content_type = $4,
             resume_text = $5,
+            resume_questions = $6::jsonb,
             updated_at = NOW()
-        WHERE id = $6
+        WHERE id = $7
         """,
         storage_path,
         safe_filename,
         size,
         content_type,
         extracted_text,
+        generated_questions,
         current_user.id,
     )
-
-    try:
-        await generate_and_save_cv_questions(db, current_user.id, extracted_text)
-    except Exception as exc:
-        # Generate and save has fallback, but if it fails completely (e.g. database error), we log it
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error generating questions from CV: {exc}")
 
     if current["resume_path"] and current["resume_path"] != storage_path:
         delete_private_file(current["resume_path"])
@@ -191,12 +202,12 @@ async def delete_resume(
                 resume_size_bytes = NULL,
                 resume_content_type = NULL,
                 resume_text = NULL,
+                resume_questions = NULL,
                 updated_at = NOW()
             WHERE id = $1
             """,
             current_user.id,
         )
-        await db.execute("DELETE FROM questions WHERE user_id = $1", current_user.id)
 
     delete_private_file(current["resume_path"])
     return ResumeUploadResponse(
@@ -204,3 +215,14 @@ async def delete_resume(
         resume_uploaded=False,
         resume_filename=None,
     )
+
+
+@router.delete("/account", response_model=AccountDeletionResponse)
+async def delete_account(
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    if current_user.is_primary_admin:
+        raise HTTPException(status_code=400, detail="Không thể tự xóa tài khoản admin chính.")
+
+    return await purge_user_data(db, user_id=str(current_user.id), email=current_user.email)
