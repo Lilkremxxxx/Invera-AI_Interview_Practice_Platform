@@ -6,22 +6,22 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_billing_period VARCHAR(10);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_started_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ;
 
-UPDATE users
-SET plan_tier = 'free_trial',
-    plan_status = 'active',
-    plan_billing_period = NULL,
-    plan_started_at = NULL,
-    plan_expires_at = NULL
-WHERE is_admin = FALSE;
-
-UPDATE users
-SET plan_status = 'active'
-WHERE is_admin = TRUE;
+-- UPDATE users
+-- SET plan_tier = 'free_trial',
+--     plan_status = 'active',
+--     plan_billing_period = NULL,
+--     plan_started_at = NULL,
+--     plan_expires_at = NULL
+-- WHERE is_admin = FALSE;
+-- 
+-- UPDATE users
+-- SET plan_status = 'active'
+-- WHERE is_admin = TRUE;
 
 CREATE TABLE IF NOT EXISTS payment_orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    provider VARCHAR(20) NOT NULL DEFAULT 'vnpay',
+    provider VARCHAR(20) NOT NULL DEFAULT 'payos',
     plan_tier VARCHAR(20) NOT NULL,
     billing_period VARCHAR(10) NOT NULL,
     amount_vnd INTEGER NOT NULL CHECK (amount_vnd > 0),

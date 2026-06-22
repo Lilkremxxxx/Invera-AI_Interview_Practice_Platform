@@ -1,0 +1,5 @@
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS resume_questions JSONB;
+
+ALTER TABLE sessions
+ADD COLUMN IF NOT EXISTS custom_questions JSONB;
