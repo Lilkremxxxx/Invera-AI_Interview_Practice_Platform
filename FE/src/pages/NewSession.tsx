@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -25,29 +25,83 @@ type SessionConfig = {
   major: string;
   role: string;
   level: string;
+  language: 'vi' | 'en';
   questionCount: number | null;
-  answerMode: 'voice' | 'camera';
+  answerMode: 'camera' | 'live';
   difficulty: string;
 };
 
+function normalizeAnswerMode(mode: unknown): 'camera' | 'live' {
+  return mode === 'live' ? 'live' : 'camera';
+}
+
 const NewSession = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const { user } = useAuthContext();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<number>(() => {
+    const saved = sessionStorage.getItem('invera_new_session_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [catalog, setCatalog] = useState<SessionCatalogRole[]>([]);
+  const isLiveSetup = location.pathname.startsWith('/app/live');
+  const canUseLiveSession = Boolean(
+    user?.is_admin ||
+    (user?.plan_status === 'active' && (user?.plan_tier === 'pro' || user?.plan_tier === 'premium')),
+  );
+  const liveModeOption = {
+    id: 'live',
+    icon: '🟢',
+    name: { vi: 'Live session', en: 'Live session' },
+    description: {
+      vi: 'HR agent hỏi trực tiếp, bạn trả lời bằng camera.',
+      en: 'A live HR agent asks the question while you answer on camera.',
+    },
+  } as const;
   
-  const [config, setConfig] = useState<SessionConfig>({
-    major: 'technology',
-    role: '',
-    level: '',
-    questionCount: null,
-    answerMode: 'voice',
-    difficulty: '',
+  const [config, setConfig] = useState<SessionConfig>(() => {
+    const saved = sessionStorage.getItem('invera_new_session_config');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          language: parsed.language === 'en' ? 'en' : language,
+          answerMode: isLiveSetup ? 'live' : normalizeAnswerMode(parsed.answerMode),
+        };
+      } catch (e) {
+        console.error("Failed to parse saved config:", e);
+      }
+    }
+    return {
+      major: 'technology',
+      role: '',
+      level: '',
+      language,
+      questionCount: null,
+      answerMode: isLiveSetup ? 'live' : 'camera',
+      difficulty: '',
+    };
   });
+
+  useEffect(() => {
+    setConfig((current) => ({
+      ...current,
+      answerMode: isLiveSetup ? 'live' : normalizeAnswerMode(current.answerMode),
+    }));
+  }, [isLiveSetup]);
+
+  useEffect(() => {
+    sessionStorage.setItem('invera_new_session_step', String(step));
+  }, [step]);
+
+  useEffect(() => {
+    sessionStorage.setItem('invera_new_session_config', JSON.stringify(config));
+  }, [config]);
 
   const filteredRoles = roles.filter(role =>
     role.major === config.major &&
@@ -82,15 +136,10 @@ const NewSession = () => {
     : availableQuestionCount > 0
       ? Math.min(config.questionCount, availableQuestionCount)
       : config.questionCount;
-  const isProOrAbove =
-    user?.is_admin ||
-    (user?.plan_status === 'active' &&
-      (user?.plan_tier === 'pro' || user?.plan_tier === 'premium'));
   const canStartNewSession = user?.can_start_new_session ?? true;
-  const minutesPerQuestion = isProOrAbove ? 10 : 5;
-  const estimatedTimeMinutes = requestedQuestionCount == null ? null : requestedQuestionCount * minutesPerQuestion;
+  const minutesPerQuestion = 5;
   const selectedDifficulty = difficulties.find((difficulty) => difficulty.id === config.difficulty);
-  const isStep1Complete = Boolean(config.role);
+  const isStep1Complete = Boolean(config.role) && Boolean(config.language);
   const isStep2Complete = Boolean(config.level);
   const isStep3Complete = config.questionCount != null && Boolean(config.difficulty);
   const canStartInterview = isStep1Complete && isStep2Complete && isStep3Complete && step === 3 && !isCreating;
@@ -106,6 +155,12 @@ const NewSession = () => {
     creating: language === 'vi' ? 'Đang tạo...' : 'Creating...',
     questionWord: language === 'vi' ? 'câu hỏi' : 'questions',
     chooseMajor: language === 'vi' ? 'Chọn major' : 'Choose a major',
+    chooseLanguage: language === 'vi' ? 'Chọn ngôn ngữ phỏng vấn' : 'Choose interview language',
+    languageHint: language === 'vi'
+      ? 'Ngôn ngữ này sẽ được dùng cho câu hỏi, transcript và STT.'
+      : 'This language will be used for questions, transcripts, and speech-to-text.',
+    vietnamese: language === 'vi' ? 'Tiếng Việt' : 'Vietnamese',
+    english: language === 'vi' ? 'Tiếng Anh' : 'English',
     availableQuestions: language === 'vi' ? 'Câu hỏi khả dụng' : 'Available questions',
     unavailableLevel: language === 'vi'
       ? 'Level này chưa có sẵn câu hỏi. Hệ thống sẽ tự đồng bộ và tạo bộ câu hỏi khi bạn bắt đầu.'
@@ -126,10 +181,9 @@ const NewSession = () => {
       ? 'Bạn cần chọn đủ cấu hình ở bước 3.'
       : 'You need to finish the options in step 3.',
     fixedTimeLimitBody: language === 'vi'
-      ? `Hệ thống tự tính ${minutesPerQuestion} phút cho mỗi câu hỏi, bất kể mode.`
-      : `The system automatically allocates ${minutesPerQuestion} minutes per question, regardless of mode.`,
+      ? 'Mỗi câu hỏi và follow-up có tối đa 5 phút. Không còn tính tổng giờ cho toàn bộ session.'
+      : 'Each question and follow-up has a 5-minute cap. There is no session-wide total time budget.',
     minutesPerQuestion: language === 'vi' ? `${minutesPerQuestion} phút / câu` : `${minutesPerQuestion} min / question`,
-    estimatedDuration: language === 'vi' ? 'Tổng thời gian ước tính' : 'Estimated total time',
   };
 
   useEffect(() => {
@@ -150,11 +204,17 @@ const NewSession = () => {
         role: config.role,
         level: config.level,
         mode: config.answerMode,
+        language: config.language,
         question_count: requestedQuestionCount,
       });
       // Store session questions in sessionStorage so InterviewRoom can use them
       sessionStorage.setItem(`session_${session.id}`, JSON.stringify(session));
-      navigate(`/app/interview/${session.id}`);
+      
+      // Clear wizard temporary state
+      sessionStorage.removeItem('invera_new_session_step');
+      sessionStorage.removeItem('invera_new_session_config');
+      
+      navigate(config.answerMode === 'live' ? `/app/live/${session.id}` : `/app/interview/${session.id}`);
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         navigate('/app/upgrade');
@@ -229,17 +289,82 @@ const NewSession = () => {
 
           {/* Step Content */}
           <Card>
-            <CardHeader>
-              <CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b">
+              <CardTitle className="text-xl font-bold">
                 {step === 1 && t('newSession', 'chooseRole')}
                 {step === 2 && t('newSession', 'selectLevel')}
                 {step === 3 && t('newSession', 'configOptions')}
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep(step - 1)}
+                  disabled={step === 1}
+                  className="h-9 px-3"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1.5" />
+                  {t('newSession', 'back')}
+                </Button>
+                {step < 3 ? (
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    onClick={() => setStep(step + 1)}
+                    disabled={(step === 1 && !isStep1Complete) || (step === 2 && !isStep2Complete)}
+                    className="h-9 px-3"
+                  >
+                    {t('newSession', 'next')}
+                    <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    onClick={handleStartInterview}
+                    disabled={!canStartInterview}
+                    className="h-9 px-3"
+                  >
+                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
+                    {isCreating ? copy.creating : t('newSession', 'startInterview')}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {/* Step 1: Role Selection */}
               {step === 1 && (
-                <div className="space-y-4">
+        <div className="space-y-4">
+                  <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                    <div className="mb-3">
+                      <Label className="block text-base">{copy.chooseLanguage}</Label>
+                      <p className="mt-1 text-sm text-muted-foreground">{copy.languageHint}</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(['vi', 'en'] as const).map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setConfig((current) => ({ ...current, language: item }))}
+                          className={cn(
+                            "rounded-xl border p-4 text-left transition-all hover:shadow-md",
+                            config.language === item
+                              ? "border-accent bg-accent/5 shadow-sm"
+                              : "border-border hover:border-accent/50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-foreground">
+                              {item === 'vi' ? copy.vietnamese : copy.english}
+                            </span>
+                            <span className="text-xs font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                              {item.toUpperCase()}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     <Label className="block">{copy.chooseMajor}</Label>
                     <div className="grid gap-3 sm:grid-cols-3">
@@ -382,9 +507,7 @@ const NewSession = () => {
                     <p className="text-sm text-muted-foreground">{copy.fixedTimeLimitBody}</p>
                     <div className="mt-3 flex items-center justify-between rounded-lg border bg-background px-4 py-3">
                       <span className="text-sm font-medium text-foreground">{copy.minutesPerQuestion}</span>
-                      <span className="text-sm font-semibold text-accent">
-                        {estimatedTimeMinutes == null ? '—' : `${estimatedTimeMinutes} min`}
-                      </span>
+                      <span className="text-sm font-semibold text-accent">5 min</span>
                     </div>
                   </div>
 
@@ -392,17 +515,25 @@ const NewSession = () => {
                   <div>
                     <Label className="mb-3 block">{t('newSession', 'answerMode')}</Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {answerModes.map((mode) => {
+                      {(isLiveSetup ? [liveModeOption] : answerModes).map((mode) => {
+                        const isLockedLive = mode.id === 'live' && !canUseLiveSession;
                         return (
                         <button
                           key={mode.id}
                           type="button"
-                          onClick={() => setConfig({ ...config, answerMode: mode.id as 'voice' | 'camera' })}
+                          onClick={() => {
+                            if (mode.id === 'live' && !canUseLiveSession) {
+                              navigate('/app/upgrade');
+                              return;
+                            }
+                            setConfig({ ...config, answerMode: mode.id as 'camera' | 'live' });
+                          }}
                           className={cn(
                             "relative p-4 rounded-lg border text-center transition-all",
                             config.answerMode === mode.id
                               ? "border-accent bg-accent/5"
-                              : "border-border hover:border-accent/50"
+                              : "border-border hover:border-accent/50",
+                            isLockedLive && "opacity-70",
                           )}
                         >
                           <span className="text-2xl block mb-1">{mode.icon}</span>
@@ -410,6 +541,11 @@ const NewSession = () => {
                           <p className="text-xs text-muted-foreground">
                             {mode.description[language]}
                           </p>
+                          {isLockedLive && (
+                            <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-amber-600">
+                              {language === 'vi' ? 'Cần Pro / Premium' : 'Pro / Premium required'}
+                            </p>
+                          )}
                         </button>
                       )})}
                     </div>
@@ -438,36 +574,7 @@ const NewSession = () => {
                 </div>
               )}
 
-              {/* Navigation */}
-              <div className="flex justify-between mt-8 pt-6 border-t">
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep(step - 1)}
-                  disabled={step === 1}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  {t('newSession', 'back')}
-                </Button>
-                {step < 3 ? (
-                  <Button
-                    variant="accent"
-                    onClick={() => setStep(step + 1)}
-                    disabled={(step === 1 && !isStep1Complete) || (step === 2 && !isStep2Complete)}
-                  >
-                    {t('newSession', 'next')}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="accent"
-                    onClick={handleStartInterview}
-                    disabled={!canStartInterview}
-                  >
-                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isCreating ? copy.creating : t('newSession', 'startInterview')}
-                  </Button>
-                )}
-              </div>
+
             </CardContent>
           </Card>
         </div>
@@ -484,6 +591,12 @@ const NewSession = () => {
                   <span className="text-muted-foreground">{copy.chooseMajor}</span>
                   <span className="font-medium text-foreground">
                     {selectedMajor ? selectedMajor.name['en'] : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{copy.chooseLanguage}</span>
+                  <span className="font-medium text-foreground">
+                    {config.language === 'vi' ? copy.vietnamese : copy.english}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -508,14 +621,12 @@ const NewSession = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'timeLimit')}</span>
-                  <span className="font-medium text-foreground">
-                    {estimatedTimeMinutes == null ? t('newSession', 'notSelected') : `${estimatedTimeMinutes} min`}
-                  </span>
+                  <span className="font-medium text-foreground">{copy.minutesPerQuestion}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('newSession', 'answerModeLabel')}</span>
                   <span className="font-medium text-foreground">
-                    {answerModes.find((mode) => mode.id === config.answerMode)?.name[language] ?? 'Voice'}
+                    {(isLiveSetup ? [liveModeOption] : answerModes).find((mode) => mode.id === config.answerMode)?.name[language] ?? 'Camera'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
