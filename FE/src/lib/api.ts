@@ -11,8 +11,8 @@ export const TOKEN_KEY = 'invera_token';
 type UiLanguage = 'vi' | 'en';
 
 function getCurrentLanguage(): UiLanguage {
-  if (typeof window === 'undefined') return 'en';
-  return localStorage.getItem('invera-language') === 'vi' ? 'vi' : 'en';
+  if (typeof window === 'undefined') return 'vi';
+  return localStorage.getItem('invera-language') === 'en' ? 'en' : 'vi';
 }
 
 function uiMessage(key: 'offline' | 'server' | 'sessionExpired'): string {
@@ -188,6 +188,30 @@ function buildRealtimeSttSocketUrl(
   return url.toString();
 }
 
+function buildLiveAgentSocketUrl(sessionId: string): string | null {
+  if (typeof window === 'undefined') return null;
+
+  const apiBase = BASE_URL;
+  const isAbsolute = /^https?:\/\//i.test(apiBase);
+  const baseUrl = isAbsolute ? new URL(apiBase) : new URL(apiBase, window.location.origin);
+  const protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = new URL(`${protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/$/, '')}/sessions/${sessionId}/live-agent`);
+  const token = getToken();
+  if (!token) return null;
+
+  url.searchParams.set('token', token);
+  return url.toString();
+}
+
+export type LiveAgentSocketStatus = 'idle' | 'speaking';
+
+export type LiveAgentSocketMessage =
+  | { type: 'ready' }
+  | { type: 'agent_status'; status: LiveAgentSocketStatus }
+  | { type: 'agent_transcript'; text: string }
+  | { type: 'agent_audio'; audio: string }
+  | { type: 'error'; message?: string };
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface LoginResponse {
   access_token: string;
@@ -263,19 +287,30 @@ export interface AdminStats {
 }
 
 
-export interface DailyRevenue {
+export interface AdminRevenueDailyBreakdown {
   day: string;
-  revenue: number;
+  total_revenue: number;
+  basic_revenue: number;
+  pro_revenue: number;
+  premium_revenue: number;
+  additional_sessions_count: number;
 }
 
-export interface MonthlyRevenue {
-  month: string;
-  revenue: number;
+export interface AdminRevenueSummary {
+  total_revenue: number;
+  basic_revenue: number;
+  pro_revenue: number;
+  premium_revenue: number;
+  additional_sessions_count: number;
 }
 
 export interface AdminRevenueResponse {
-  daily: DailyRevenue[];
-  monthly: MonthlyRevenue[];
+  breakdown: {
+    summary: AdminRevenueSummary;
+    daily: AdminRevenueDailyBreakdown[];
+  };
+  daily?: { day: string; revenue: number }[];
+  monthly?: { month: string; revenue: number }[];
   total_revenue: number;
 }
 
@@ -361,6 +396,48 @@ export interface AnswerOut {
   answer_text: string;
   score: number;
   feedback: string;
+  telemetry_data?: {
+    gazeRatio?: number;
+    smileRatio?: number;
+    slouchRatio?: number;
+    handGestures?: number;
+    fidgetRatio?: number;
+    cameraFramingScore?: number;
+    bodyPostureScore?: number;
+    presentationConfidence?: number;
+    speakingPace?: number;
+    fillerWordsCount?: number;
+    longPausesCount?: number;
+    blinkRatio?: number;
+    avgHeadYaw?: number;
+    avgTensionScore?: number;
+    recordingDurationSec?: number;
+  } | null;
+  follow_up_id?: string | null;
+  follow_up_style?: string | null;
+  follow_up_question_text?: string | null;
+  follow_up_answer_text?: string | null;
+  follow_up_score?: number | null;
+  follow_up_feedback?: string | null;
+  follow_up_telemetry_data?: {
+    gazeRatio?: number;
+    smileRatio?: number;
+    slouchRatio?: number;
+    handGestures?: number;
+    fidgetRatio?: number;
+    cameraFramingScore?: number;
+    bodyPostureScore?: number;
+    presentationConfidence?: number;
+    speakingPace?: number;
+    fillerWordsCount?: number;
+    longPausesCount?: number;
+    blinkRatio?: number;
+    avgHeadYaw?: number;
+    avgTensionScore?: number;
+    recordingDurationSec?: number;
+  } | null;
+  follow_up_generated_at?: string | null;
+  follow_up_answered_at?: string | null;
   tts_script?: string | null;
   tts_audio_url?: string | null;
   submitted_at: string;
@@ -375,6 +452,11 @@ export interface AnswerTtsOut {
   tts_audio_url?: string | null;
 }
 
+export interface AccountDeletionResponse {
+  deleted: string;
+  email: string;
+}
+
 export interface SessionOut {
   id: string;
   user_id: string;
@@ -382,6 +464,7 @@ export interface SessionOut {
   role: string;
   level: string;
   mode: string;
+  language: 'vi' | 'en';
   status: string;
   created_at: string;
   completed_at: string | null;
@@ -395,6 +478,42 @@ export interface SessionOut {
 export interface SessionDetail extends SessionOut {
   questions: QuestionOut[];
   answers: AnswerOut[];
+}
+
+export interface TelemetrySessionSummary {
+  gaze: number;
+  posture: number;
+  wpm: number;
+  fillers: number;
+  confidence: number;
+  blink: number;
+  tension: number;
+  answer_count: number;
+}
+
+export interface TelemetryAnswerPointOut {
+  label: string;
+  question_id: number;
+  is_follow_up: boolean;
+  score?: number | null;
+  submitted_at?: string | null;
+  telemetry_data?: AnswerOut["telemetry_data"] | null;
+}
+
+export interface TelemetrySessionOverviewOut {
+  session_id: string;
+  role: string;
+  level: string;
+  mode: string;
+  created_at: string;
+  completed_at?: string | null;
+  avg_score?: number | null;
+  summary: TelemetrySessionSummary;
+  answers: TelemetryAnswerPointOut[];
+}
+
+export interface TelemetryOverviewOut {
+  sessions: TelemetrySessionOverviewOut[];
 }
 
 export interface SessionCatalogRole {
@@ -432,7 +551,8 @@ export interface SessionCreate {
   major: string;
   role: string;
   level: string;
-  mode?: 'text' | 'voice';
+  mode?: 'camera' | 'live';
+  language: 'vi' | 'en';
   question_count?: number;
 }
 
@@ -510,6 +630,20 @@ export interface AnswerSubmit {
     handGestures: number;
     fidgetRatio: number;
   };
+  question_started_at?: string | null;
+}
+
+export interface AnswerFollowUpSubmit {
+  answer_text: string;
+  output_language?: 'vi' | 'en';
+  telemetry_data?: {
+    gazeRatio: number;
+    smileRatio: number;
+    slouchRatio: number;
+    handGestures: number;
+    fidgetRatio: number;
+  };
+  question_started_at?: string | null;
 }
 
 // ─── Auth API ───────────────────────────────────────────────────────────────
@@ -587,7 +721,7 @@ export const authApi = {
   },
 
   /** Gọi để lấy URL đăng nhập OAuth từ Backend rồi redirect browser. */
-  oauthRedirect: async (provider: 'google' | 'github', mode: 'login' | 'signup' = 'login'): Promise<void> => {
+  oauthRedirect: async (provider: 'google', mode: 'login' | 'signup' = 'login'): Promise<void> => {
     const res = await request<{ url: string }>(`/auth/oauth/${provider}?mode=${mode}`);
     if (res.url) {
       window.location.href = res.url;
@@ -621,8 +755,16 @@ export const sessionsApi = {
     return request<SessionDetail>(`/sessions/${id}`);
   },
 
+  telemetryOverview: async (): Promise<TelemetryOverviewOut> => {
+    return request<TelemetryOverviewOut>('/sessions/telemetry/overview');
+  },
+
   downloadPdf: async (id: string): Promise<{ blob: Blob; filename: string | null }> => {
     return requestFile(`/sessions/${id}/export-pdf`);
+  },
+
+  downloadDocx: async (id: string): Promise<{ blob: Blob; filename: string | null }> => {
+    return requestFile(`/sessions/${id}/export-docx`);
   },
 
   downloadAllPdf: async (): Promise<{ blob: Blob; filename: string | null }> => {
@@ -632,6 +774,24 @@ export const sessionsApi = {
   /** Nộp câu trả lời cho 1 câu hỏi, nhận về score + feedback */
   submitAnswer: async (sessionId: string, data: AnswerSubmit): Promise<AnswerOut> => {
     return request<AnswerOut>(`/sessions/${sessionId}/answers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  generateFollowUp: async (sessionId: string, answerId: string): Promise<AnswerOut> => {
+    return request<AnswerOut>(`/sessions/${sessionId}/answers/${answerId}/follow-up`, {
+      method: 'POST',
+    });
+  },
+
+  submitFollowUp: async (
+    sessionId: string,
+    answerId: string,
+    data: AnswerFollowUpSubmit,
+  ): Promise<AnswerOut> => {
+    return request<AnswerOut>(`/sessions/${sessionId}/answers/${answerId}/submit-follow-up`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -665,6 +825,14 @@ export const sessionsApi = {
     },
   ): WebSocket | null => {
     const url = buildRealtimeSttSocketUrl(sessionId, options);
+    if (!url || typeof WebSocket === 'undefined') {
+      return null;
+    }
+    return new WebSocket(url);
+  },
+
+  createLiveAgentSocket: (sessionId: string): WebSocket | null => {
+    const url = buildLiveAgentSocketUrl(sessionId);
     if (!url || typeof WebSocket === 'undefined') {
       return null;
     }
@@ -776,6 +944,11 @@ export const profileApi = {
 
   downloadResume: async (): Promise<{ blob: Blob; filename: string | null }> =>
     requestFile('/profile/resume'),
+
+  deleteAccount: async (): Promise<AccountDeletionResponse> =>
+    request<AccountDeletionResponse>('/profile/account', {
+      method: 'DELETE',
+    }),
 };
 
 export const qnaApi = {
@@ -810,6 +983,9 @@ export const adminApi = {
     plan_tier?: 'free_trial' | 'basic' | 'pro' | 'premium';
     plan_status?: 'active' | 'expired' | 'trial_exhausted';
     email_verified?: boolean;
+    created_day?: number;
+    created_month?: number;
+    created_year?: number;
   }): Promise<AdminManagedUser[]> => {
     const search = new URLSearchParams();
     if (typeof params?.limit === 'number') search.set('limit', String(params.limit));
@@ -819,6 +995,9 @@ export const adminApi = {
     if (params?.plan_tier) search.set('plan_tier', params.plan_tier);
     if (params?.plan_status) search.set('plan_status', params.plan_status);
     if (typeof params?.email_verified === 'boolean') search.set('email_verified', String(params.email_verified));
+    if (typeof params?.created_day === 'number') search.set('created_day', String(params.created_day));
+    if (typeof params?.created_month === 'number') search.set('created_month', String(params.created_month));
+    if (typeof params?.created_year === 'number') search.set('created_year', String(params.created_year));
     const query = search.toString();
     return request<AdminManagedUser[]>(`/admin/users${query ? `?${query}` : ''}`);
   },
