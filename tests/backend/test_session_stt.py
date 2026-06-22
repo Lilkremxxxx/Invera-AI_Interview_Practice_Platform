@@ -19,7 +19,39 @@ class FakeMissingSessionDb:
 
 class FakeInProgressSessionDb:
     async def fetchrow(self, *args, **kwargs):
-        return {"id": uuid.uuid4(), "status": "IN_PROGRESS"}
+        query = args[0] if args else ""
+        if "sessions" in query:
+            return {"id": uuid.uuid4(), "status": "IN_PROGRESS"}
+        elif "answers" in query:
+            return {"id": uuid.uuid4()}
+        return None
+
+    async def execute(self, *args, **kwargs):
+        return "UPDATE 1"
+
+    async def fetchval(self, *args, **kwargs):
+        return uuid.uuid4()
+
+
+class FakeLiveAgentDb:
+    async def fetchrow(self, *args, **kwargs):
+        query = args[0] if args else ""
+        if "FROM sessions" in query:
+            return {
+                "id": uuid.UUID("11111111-1111-1111-1111-111111111111"),
+                "role": "frontend",
+                "level": "junior",
+                "mode": "live",
+                "status": "IN_PROGRESS",
+            }
+        if "JOIN questions" in query:
+            return {
+                "id": 101,
+                "text": "Tell me about a project you shipped.",
+                "text_en": "Tell me about a project you shipped.",
+                "text_vi": "Hãy kể về một dự án bạn đã triển khai.",
+            }
+        return None
 
 
 def _build_user() -> UserOut:
@@ -153,12 +185,13 @@ def test_session_stt_route_runs_transcription_off_event_loop(monkeypatch):
     async def override_db():
         yield FakeInProgressSessionDb()
 
-    async def fake_to_thread(func, **kwargs):
-        assert func is sessions_endpoint.transcribe_audio_bytes
-        assert kwargs["audio_bytes"] == b"stub-audio"
-        return "thread transcript"
+    async def fake_process_voice(
+        answer_id, session_id, question_id, audio_bytes, filename, language, feedback_language, force_feedback_language
+    ):
+        assert audio_bytes == b"stub-audio"
+        assert filename == "answer.webm"
 
-    monkeypatch.setattr(sessions_endpoint.asyncio, "to_thread", fake_to_thread)
+    monkeypatch.setattr(sessions_endpoint, "process_voice_answer_background", fake_process_voice)
 
     from app.db.session import get_db
 
@@ -172,7 +205,7 @@ def test_session_stt_route_runs_transcription_off_event_loop(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"text": "thread transcript"}
+    assert response.json() == {"text": "Đang xử lý..."}
 
 
 def test_answer_submit_accepts_telemetry_data():
@@ -203,12 +236,16 @@ def test_session_video_route_runs_transcription_off_event_loop(monkeypatch):
     async def override_db():
         yield FakeInProgressSessionDb()
 
-    async def fake_to_thread(func, **kwargs):
-        assert func is sessions_endpoint.transcribe_audio_bytes
-        assert kwargs["audio_bytes"] == b"stub-video"
-        return "video transcript"
+    async def fake_process_video(
+        answer_id, session_id, question_id, video_bytes, filename, telemetry_data_str, language, feedback_language, force_feedback_language
+    ):
+        assert video_bytes == b"stub-video"
+        assert filename == "answer.webm"
+        import json
+        telemetry = json.loads(telemetry_data_str)
+        assert telemetry["gazeRatio"] == 0.8
 
-    monkeypatch.setattr(sessions_endpoint.asyncio, "to_thread", fake_to_thread)
+    monkeypatch.setattr(sessions_endpoint, "process_video_answer_background", fake_process_video)
 
     from app.db.session import get_db
 
@@ -223,7 +260,7 @@ def test_session_video_route_runs_transcription_off_event_loop(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"text": "video transcript"}
+    assert response.json() == {"text": "Đang xử lý..."}
 
 
 def test_session_stt_websocket_streams_chunk_transcripts(monkeypatch):
@@ -283,6 +320,56 @@ def test_session_stt_websocket_streams_chunk_transcripts(monkeypatch):
     }
 
 
+def test_live_agent_websocket_streams_prompt_events(monkeypatch):
+    from app.api.endpoints import sessions as sessions_endpoint
+
+    app = FastAPI()
+    app.include_router(sessions_router, prefix="/api/sessions")
+
+    async def override_db():
+        yield FakeLiveAgentDb()
+
+    async def fake_authenticate_ws_user(websocket, db):
+        return _build_user()
+
+    async def fake_stream_agent_prompt(*, role, level, question_text, language="vi"):
+        assert role == "frontend"
+        assert level == "junior"
+        assert question_text == "Tell me about a project you shipped."
+        assert language == "en"
+        yield {"type": "agent_status", "status": "speaking"}
+        yield {"type": "agent_transcript", "text": "Tell me about a project you shipped."}
+        yield {"type": "agent_audio", "audio": "cGNhbQ=="}
+        yield {"type": "agent_status", "status": "idle"}
+        yield {"type": "turn_complete"}
+
+    monkeypatch.setattr(sessions_endpoint, "_authenticate_ws_user", fake_authenticate_ws_user)
+    monkeypatch.setattr(sessions_endpoint, "stream_agent_prompt", fake_stream_agent_prompt)
+
+    from app.db.session import get_db
+
+    app.dependency_overrides[get_db] = override_db
+
+    client = TestClient(app)
+    with client.websocket_connect(
+        "/api/sessions/11111111-1111-1111-1111-111111111111/live-agent?token=test"
+    ) as websocket:
+        ready_payload = websocket.receive_json()
+        websocket.send_json({"type": "ask", "questionId": 101, "language": "en"})
+        speaking_payload = websocket.receive_json()
+        transcript_payload = websocket.receive_json()
+        audio_payload = websocket.receive_json()
+        idle_payload = websocket.receive_json()
+        turn_complete_payload = websocket.receive_json()
+
+    assert ready_payload == {"type": "ready"}
+    assert speaking_payload == {"type": "agent_status", "status": "speaking"}
+    assert transcript_payload == {"type": "agent_transcript", "text": "Tell me about a project you shipped."}
+    assert audio_payload == {"type": "agent_audio", "audio": "cGNhbQ=="}
+    assert idle_payload == {"type": "agent_status", "status": "idle"}
+    assert turn_complete_payload == {"type": "turn_complete"}
+
+
 def test_resample_pcm_to_16k():
     from app.services.interview_stt_realtime import _resample_pcm_to_16k
     import struct
@@ -302,4 +389,3 @@ def test_resample_pcm_to_16k():
     assert len(out_samples) == 2
     assert out_samples[0] == 0
     assert out_samples[1] == 300
-

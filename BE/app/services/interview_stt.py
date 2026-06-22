@@ -33,10 +33,7 @@ _HALLUCINATION_PATTERNS = [
     r"hit subscribe",
     r"click subscribe",
     r"speaking in foreign language",
-    r"xem thêm",
-    r"theo dõi",
-    r"bạn ơi",
-    r"là ơn",
+    # Removed: xem thêm, theo dõi, bạn ơi, là ơn — these are common Vietnamese speech, not hallucinations
     # Very short no-meaning vietnamese
     r"^\s*à\s*$",
     r"^\s*ờ\s*$",
@@ -49,7 +46,7 @@ _HALLUCINATION_PATTERNS = [
 ]
 
 # Minimally meaningful word count threshold to filter silence/noise
-_MIN_MEANINGFUL_WORDS = 3
+_MIN_MEANINGFUL_WORDS = 2
 # Words that do not count as "meaningful content"
 _NON_MEANINGFUL = {
     "à", "á", "ả", "ã", "ạ",
@@ -66,6 +63,13 @@ _NON_MEANINGFUL = {
     "và", "là", "của", "các", "có",
     "the", "a", "an", "is", "are",
     "la", "va", "co",
+    # Common Vietnamese discourse markers / pronouns / particles
+    "tôi", "anh", "chị", "bạn", "em",
+    "thì", "mà", "này", "nhé", "nhỉ", "nhá",
+    "ạ", "vâng", "dạ", "ừ",
+    "ồ", "à", "ơi",
+    "cũng", "đã", "sẽ", "đang",
+    "nó", "họ", "chúng",
 }
 _SUPPORTED_STT_LANGUAGES = {"auto", "en", "vi"}
 
