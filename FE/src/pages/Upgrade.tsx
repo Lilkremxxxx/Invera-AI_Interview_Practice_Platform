@@ -55,7 +55,7 @@ const copy = {
     title: 'Nâng cấp gói',
     subtitle: 'Mở khóa Basic hoặc Pro để tiếp tục luyện tập ngoài giới hạn Free trial.',
     qnaLockedTitle: 'QnA đang bị khóa',
-    qnaLockedDescription: 'Gói Free không dùng được QnA. Hãy nâng cấp hoặc nhập redeem code để mở khóa.',
+    qnaLockedDescription: 'Gói Free không dùng được QnA. Hãy nâng cấp hoặc nhập redeem code UUID do admin cấp để mở khóa.',
     viewSessions: 'Xem lịch sử session',
     currentStatus: 'Trạng thái hiện tại',
     sessionsUsed: 'Sessions đã dùng',
@@ -67,12 +67,12 @@ const copy = {
     trialExhaustedDescription: 'Bạn đã dùng session miễn phí duy nhất. Hãy chọn Basic hoặc Pro để tiếp tục.',
     choosePlan: 'Chọn gói nâng cấp',
     redeemTitle: 'Redeem code',
-    redeemDescription: 'Bạn có thể kích hoạt gói bằng redeem code thay vì thanh toán.',
-    redeemPlaceholder: 'Nhập redeem code',
+    redeemDescription: 'Bạn có thể kích hoạt gói bằng redeem code UUID do admin cấp thay vì thanh toán.',
+    redeemPlaceholder: 'Nhập redeem code UUID',
     redeemButton: 'Áp dụng mã',
     redeeming: 'Đang áp dụng mã',
     redeemSuccessTitle: 'Redeem code thành công',
-    redeemSuccessDescription: 'Gói của bạn đã được cập nhật bằng redeem code.',
+    redeemSuccessDescription: 'Gói của bạn đã được cập nhật bằng redeem code UUID.',
     redeemErrorTitle: 'Không thể áp dụng redeem code',
     monthly: 'Theo tháng',
     yearly: 'Theo năm',
@@ -109,7 +109,7 @@ const copy = {
     title: 'Upgrade plan',
     subtitle: 'Unlock Basic, Pro, or Premium to keep practicing beyond the Free trial limit.',
     qnaLockedTitle: 'QnA is locked',
-    qnaLockedDescription: 'The Free plan cannot use QnA. Upgrade or enter a redeem code to unlock it.',
+    qnaLockedDescription: 'The Free plan cannot use QnA. Upgrade or enter a UUID redeem code issued by an admin to unlock it.',
     viewSessions: 'View session history',
     currentStatus: 'Current status',
     sessionsUsed: 'Sessions used',
@@ -121,12 +121,12 @@ const copy = {
     trialExhaustedDescription: 'You have used your only free session. Choose Basic or Pro to continue.',
     choosePlan: 'Choose your upgrade',
     redeemTitle: 'Redeem code',
-    redeemDescription: 'You can activate a plan with a redeem code instead of paying.',
-    redeemPlaceholder: 'Enter your redeem code',
+    redeemDescription: 'You can activate a plan with an admin-issued UUID redeem code instead of paying.',
+    redeemPlaceholder: 'Enter your UUID redeem code',
     redeemButton: 'Apply code',
     redeeming: 'Applying code',
     redeemSuccessTitle: 'Redeem code applied',
-    redeemSuccessDescription: 'Your plan was updated using the redeem code.',
+    redeemSuccessDescription: 'Your plan was updated using the UUID redeem code.',
     redeemErrorTitle: 'Unable to apply redeem code',
     monthly: 'Monthly',
     yearly: 'Yearly',
@@ -322,72 +322,169 @@ export default function Upgrade() {
         </Alert>
       )}
 
-      <div className="grid lg:grid-cols-[1.1fr_1.6fr] gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              {text.currentStatus}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{formatPlanLabel(user, language)}</Badge>
+      {/* Current Status Bar (Full width) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            {text.currentStatus}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="px-3 py-1 text-sm">{formatPlanLabel(user, language)}</Badge>
               {user?.plan_status && (
-                <Badge variant={user.plan_status === 'active' ? 'default' : 'outline'}>
+                <Badge variant={user.plan_status === 'active' ? 'default' : 'outline'} className="px-3 py-1 text-sm">
                   {formatPlanStatus(user, language)}
                 </Badge>
               )}
             </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                {text.sessionsUsed}:{' '}
-                <strong className="text-foreground">{user?.sessions_used ?? 0}</strong>
-                {typeof user?.session_limit === 'number' ? (
-                  <>
-                    {' '}
-                    / <strong className="text-foreground">{user.session_limit}</strong>
-                  </>
-                ) : (
-                  <>
-                    {' '}
-                    / <strong className="text-foreground">{text.unlimited}</strong>
-                  </>
-                )}
-              </p>
-              <p>
-                {text.billingCycle}:{' '}
-                <strong className="text-foreground">
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 flex-1 max-w-3xl">
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">{text.sessionsUsed}</div>
+                <div className="text-sm font-semibold text-foreground">
+                  {user?.sessions_used ?? 0}
+                  {typeof user?.session_limit === 'number' ? ` / ${user.session_limit}` : ` / ${text.unlimited}`}
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">{text.billingCycle}</div>
+                <div className="text-sm font-semibold text-foreground">
                   {formatBillingPeriod(user?.plan_billing_period ?? null, language)}
-                </strong>
-              </p>
-              <p>
-                {text.expiresAt}:{' '}
-                <strong className="text-foreground">
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">{text.expiresAt}</div>
+                <div className="text-sm font-semibold text-foreground">
                   {user?.plan_expires_at ? new Date(user.plan_expires_at).toLocaleString(locale) : text.notApplied}
-                </strong>
-              </p>
-              <p>
-                {text.additionalSessionsLabel}:{' '}
-                <strong className="text-foreground">{user?.additional_sessions ?? 0}</strong>
-              </p>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">{text.additionalSessionsLabel}</div>
+                <div className="text-sm font-semibold text-foreground">
+                  {user?.additional_sessions ?? 0}
+                </div>
+              </div>
             </div>
-            {!user?.can_start_new_session && (
-              <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                <AlertTitle>{text.trialExhaustedTitle}</AlertTitle>
-                <AlertDescription>{text.trialExhaustedDescription}</AlertDescription>
-              </Alert>
-            )}
-            {user && !user.can_use_qna && (
-              <Alert className="border-sky-200 bg-sky-50 text-sky-900">
-                <AlertTitle>{text.qnaLockedTitle}</AlertTitle>
-                <AlertDescription>{text.qnaLockedDescription}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {((!user?.can_start_new_session) || (user && !user.can_use_qna)) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+              {!user?.can_start_new_session && (
+                <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                  <AlertTitle>{text.trialExhaustedTitle}</AlertTitle>
+                  <AlertDescription>{text.trialExhaustedDescription}</AlertDescription>
+                </Alert>
+              )}
+              {user && !user.can_use_qna && (
+                <Alert className="border-sky-200 bg-sky-50 text-sky-900">
+                  <AlertTitle>{text.qnaLockedTitle}</AlertTitle>
+                  <AlertDescription>{text.qnaLockedDescription}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Main Grid Below Status */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Choose Plan (Pricing Comparison Sheet) */}
+          <Card>
+            <CardHeader className="space-y-4">
+              <CardTitle>{text.choosePlan}</CardTitle>
+              <Tabs value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as 'month' | 'year')}>
+                <TabsList>
+                  <TabsTrigger value="month">{text.monthly}</TabsTrigger>
+                  <TabsTrigger value="year">{text.yearly}</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              <PricingComparisonSheet
+                billingPeriod={billingPeriod}
+                currentPlanTier={(user?.plan_tier as 'basic' | 'pro' | 'premium' | 'free' | undefined) ?? null}
+                language={language}
+                loadingPlanId={loadingPlanId as 'basic' | 'pro' | 'premium' | null}
+                mode="upgrade"
+                getActionLabel={(planId, isCurrent) =>
+                  isCurrent ? text.renewPlan : `${text.upgradeTo} ${planId === 'free' ? 'Free' : planId.charAt(0).toUpperCase() + planId.slice(1)}`
+                }
+                onSelectPlan={(planId) => {
+                  if (planId === 'free') return;
+                  void handleCheckout(planId as 'basic' | 'pro' | 'premium');
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Payment History */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{text.paymentHistory}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoadingOrders ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                </div>
+              ) : orders.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{text.noOrders}</p>
+              ) : (
+                orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="rounded-xl border border-border p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">
+                        {order.plan_tier === 'additional_sessions' ? (
+                          language === 'vi' ? (
+                            `Mua thêm ${order.billing_period} phiên`
+                          ) : (
+                            `Purchase ${order.billing_period} sessions`
+                          )
+                        ) : (
+                          `${order.plan_tier.toUpperCase()} · ${formatBillingPeriod(order.billing_period, language)}`
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatCurrency(order.amount_vnd)} · {text.orderCode} {order.provider_order_ref}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={getPaymentStatusBadgeClass(order.status)}>
+                        {formatPaymentStatus(order.status, language)}
+                      </Badge>
+                      {order.provider === 'payos' && order.status === 'pending' && order.payment_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="border-sky-200 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                        >
+                          <a href={order.payment_url}>{text.continuePayment}</a>
+                        </Button>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleString(locale)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-6">
+          {/* Redeem Code */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -417,34 +514,7 @@ export default function Upgrade() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="space-y-4">
-              <CardTitle>{text.choosePlan}</CardTitle>
-              <Tabs value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as 'month' | 'year')}>
-                <TabsList>
-                  <TabsTrigger value="month">{text.monthly}</TabsTrigger>
-                  <TabsTrigger value="year">{text.yearly}</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              <PricingComparisonSheet
-                billingPeriod={billingPeriod}
-                currentPlanTier={(user?.plan_tier as 'basic' | 'pro' | 'premium' | 'free' | undefined) ?? null}
-                language={language}
-                loadingPlanId={loadingPlanId as 'basic' | 'pro' | 'premium' | null}
-                mode="upgrade"
-                getActionLabel={(planId, isCurrent) =>
-                  isCurrent ? text.renewPlan : `${text.upgradeTo} ${planId === 'free' ? 'Free' : planId.charAt(0).toUpperCase() + planId.slice(1)}`
-                }
-                onSelectPlan={(planId) => {
-                  if (planId === 'free') return;
-                  void handleCheckout(planId as 'basic' | 'pro' | 'premium');
-                }}
-              />
-            </CardContent>
-          </Card>
-
+          {/* Buy Sessions */}
           <Card>
             <CardHeader className="space-y-1">
               <CardTitle className="flex items-center gap-2">
@@ -535,63 +605,6 @@ export default function Upgrade() {
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{text.paymentHistory}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoadingOrders ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-accent" />
-                </div>
-              ) : orders.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{text.noOrders}</p>
-              ) : (
-                orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="rounded-xl border border-border p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="font-medium text-foreground">
-                        {order.plan_tier === 'additional_sessions' ? (
-                          language === 'vi' ? (
-                            `Mua thêm ${order.billing_period} phiên`
-                          ) : (
-                            `Purchase ${order.billing_period} sessions`
-                          )
-                        ) : (
-                          `${order.plan_tier.toUpperCase()} · ${formatBillingPeriod(order.billing_period, language)}`
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatCurrency(order.amount_vnd)} · {text.orderCode} {order.provider_order_ref}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={getPaymentStatusBadgeClass(order.status)}>
-                        {formatPaymentStatus(order.status, language)}
-                      </Badge>
-                      {order.provider === 'payos' && order.status === 'pending' && order.payment_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="border-sky-200 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
-                        >
-                          <a href={order.payment_url}>{text.continuePayment}</a>
-                        </Button>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(order.created_at).toLocaleString(locale)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
             </CardContent>
           </Card>
         </div>

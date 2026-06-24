@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShieldCheck, LogOut, ArrowLeft, LibraryBig, Users, MonitorPlay, DollarSign } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, LogOut, ArrowLeft, LibraryBig, Users, MonitorPlay, DollarSign, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -25,6 +25,7 @@ export function AdminLayout() {
     { name: language === 'vi' ? 'Quản lý User' : 'User Management', path: '/admin/users', icon: Users, exact: false },
     { name: language === 'vi' ? 'Quản lý Session' : 'Sessions', path: '/admin/sessions', icon: MonitorPlay, exact: false },
     { name: language === 'vi' ? 'Doanh thu' : 'Revenue', path: '/admin/revenue', icon: DollarSign, exact: false },
+    { name: language === 'vi' ? 'Redeem code' : 'Redeem Codes', path: '/admin/redeem-codes', icon: Gift, exact: false },
     ...(user?.is_primary_admin
       ? [{ name: 'Admin Access', path: '/admin/access', icon: ShieldCheck, exact: false }]
       : []),

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import Any
+import uuid
 
 import asyncpg
 
@@ -41,12 +42,6 @@ PLAN_PRICES_VND = {
     },
 }
 
-REDEEM_CODE_PLAN_MAP = {
-    "INVERA_BASIC": BASIC_PLAN,
-    "INVERA_PRO": PRO_PLAN,
-    "INVERA_PREMIUM": PREMIUM_PLAN,
-}
-
 PLAN_SESSION_TIME_LIMITS = {
     FREE_TRIAL_PLAN: 5,
     BASIC_PLAN: 7,
@@ -83,14 +78,59 @@ def duration_for_period(period: str) -> timedelta:
 
 
 def normalize_redeem_code(code: str) -> str:
-    return code.strip().upper()
+    return str(uuid.UUID(code.strip()))
 
 
-def resolve_redeem_code_plan(code: str) -> str:
-    normalized_code = normalize_redeem_code(code)
-    if normalized_code not in REDEEM_CODE_PLAN_MAP:
-        raise ValueError("Invalid redeem code")
-    return REDEEM_CODE_PLAN_MAP[normalized_code]
+def _normalize_redeem_plan_tier(plan_tier: str) -> str:
+    normalized = plan_tier.strip().lower()
+    if normalized not in PURCHASABLE_PLAN_TIERS:
+        raise ValueError("Unsupported redeem plan tier")
+    return normalized
+
+
+async def create_redeem_code_record(
+    db: asyncpg.Connection,
+    *,
+    created_by_admin_id,
+    plan_tier: str,
+    expires_at: datetime,
+) -> dict[str, Any]:
+    normalized_plan_tier = _normalize_redeem_plan_tier(plan_tier)
+    code_value = uuid.uuid4()
+    row = await db.fetchrow(
+        """
+        INSERT INTO redeem_codes (code, plan_tier, expires_at, created_by_admin_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, code, plan_tier, expires_at, redeemed_at, redeemed_by_user_id, created_at
+        """,
+        code_value,
+        normalized_plan_tier,
+        expires_at,
+        created_by_admin_id,
+    )
+    if row is None:
+        raise ValueError("Unable to create redeem code")
+    return dict(row)
+
+
+async def list_redeem_code_records(db: asyncpg.Connection) -> list[dict[str, Any]]:
+    rows = await db.fetch(
+        """
+        SELECT
+            rc.id,
+            rc.code,
+            rc.plan_tier,
+            rc.expires_at,
+            rc.redeemed_at,
+            u.email AS redeemed_by_email,
+            rc.created_at
+        FROM redeem_codes rc
+        LEFT JOIN users u ON u.id = rc.redeemed_by_user_id
+        ORDER BY rc.created_at DESC
+        LIMIT 100
+        """
+    )
+    return [dict(row) for row in rows]
 
 
 def resolve_plan_price(plan_tier: str, billing_period: str) -> int:
@@ -360,27 +400,56 @@ async def redeem_plan_code(
     redeemed_at: datetime | None = None,
 ) -> dict[str, Any]:
     normalized_code = normalize_redeem_code(code)
-    plan_tier = resolve_redeem_code_plan(normalized_code)
     activated_at = redeemed_at or utcnow()
+    async with db.transaction():
+        row = await db.fetchrow(
+            """
+            UPDATE redeem_codes
+               SET redeemed_at = $1,
+                   redeemed_by_user_id = $2,
+                   updated_at = NOW()
+             WHERE code = $3::uuid
+               AND redeemed_at IS NULL
+               AND expires_at > $1
+         RETURNING id, code, plan_tier, expires_at, redeemed_at, redeemed_by_user_id, created_at
+            """,
+            activated_at,
+            user_id,
+            normalized_code,
+        )
+        if row is None:
+            existing = await db.fetchrow(
+                """
+                SELECT redeemed_at, expires_at
+                FROM redeem_codes
+                WHERE code = $1::uuid
+                """,
+                normalized_code,
+            )
+            if existing is None:
+                raise ValueError("Invalid redeem code")
+            if existing["redeemed_at"] is not None:
+                raise ValueError("Redeem code already used")
+            raise ValueError("Redeem code expired")
 
-    snapshot = await activate_paid_plan(
-        db,
-        user_id=user_id,
-        plan_tier=plan_tier,
-        billing_period=MONTHLY_PERIOD,
-        activated_at=activated_at,
-    )
+        snapshot = await activate_paid_plan(
+            db,
+            user_id=user_id,
+            plan_tier=row["plan_tier"],
+            billing_period=MONTHLY_PERIOD,
+            activated_at=activated_at,
+        )
 
-    await db.execute(
-        """
-        INSERT INTO redeem_code_redemptions (user_id, redeem_code, plan_tier, billing_period, redeemed_at)
-        VALUES ($1, $2, $3, $4, $5)
-        """,
-        user_id,
-        normalized_code,
-        plan_tier,
-        MONTHLY_PERIOD,
-        activated_at,
-    )
+        await db.execute(
+            """
+            INSERT INTO redeem_code_redemptions (user_id, redeem_code, plan_tier, billing_period, redeemed_at)
+            VALUES ($1, $2, $3, $4, $5)
+            """,
+            user_id,
+            normalized_code,
+            row["plan_tier"],
+            MONTHLY_PERIOD,
+            activated_at,
+        )
 
-    return snapshot
+        return snapshot

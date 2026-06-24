@@ -23,6 +23,8 @@ from app.db.session import get_db
 from app.schemas.admin import (
     AdminInviteCreate,
     AdminInviteOut,
+    AdminRedeemCodeCreateRequest,
+    AdminRedeemCodeOut,
     AdminManagedUserOut,
     AdminUserAccessOut,
     AdminUserPlanUpdateRequest,
@@ -36,6 +38,9 @@ from app.services.plans import (
     FREE_TRIAL_PLAN,
     activate_paid_plan,
     compute_entitlement,
+    create_redeem_code_record,
+    list_redeem_code_records,
+    utcnow,
 )
 from app.services.account_deletion import purge_user_data
 from app.services.profile_files import resume_file_path
@@ -430,8 +435,45 @@ async def admin_list_users(
                 can_use_qna=entitlement["can_use_qna"],
                 avg_score=float(row["avg_score"]) if row["avg_score"] is not None else None,
             )
-        )
+    )
     return users
+
+
+@router.get("/redeem-codes", response_model=list[AdminRedeemCodeOut])
+async def admin_list_redeem_codes(
+    db: asyncpg.Connection = Depends(get_db),
+    _: UserOut = Depends(require_admin),
+):
+    rows = await list_redeem_code_records(db)
+    return [AdminRedeemCodeOut(**row) for row in rows]
+
+
+@router.post("/redeem-codes", response_model=AdminRedeemCodeOut)
+async def admin_create_redeem_code(
+    payload: AdminRedeemCodeCreateRequest,
+    db: asyncpg.Connection = Depends(get_db),
+    current_user: UserOut = Depends(require_admin),
+):
+    if payload.expires_in_days is not None and payload.expires_at is not None:
+        raise HTTPException(status_code=400, detail="Chỉ chọn một kiểu hạn dùng cho redeem code.")
+
+    if payload.expires_in_days is not None:
+        expires_at = utcnow() + timedelta(days=payload.expires_in_days)
+    else:
+        expires_at = payload.expires_at
+
+    if expires_at is None:
+        raise HTTPException(status_code=400, detail="Chưa chọn hạn dùng cho redeem code.")
+    if expires_at <= utcnow():
+        raise HTTPException(status_code=400, detail="Hạn dùng phải ở tương lai.")
+
+    row = await create_redeem_code_record(
+        db,
+        created_by_admin_id=current_user.id,
+        plan_tier=payload.plan_tier,
+        expires_at=expires_at,
+    )
+    return AdminRedeemCodeOut(**row)
 
 
 @router.api_route("/users/{user_id}/plan", methods=["PUT", "PATCH", "POST"], response_model=AdminManagedUserOut)

@@ -45,6 +45,7 @@ const AdminQuestionBank = lazy(() => import("./pages/admin/AdminQuestionBank").t
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminRedeemCodes = lazy(() => import("./pages/admin/AdminRedeemCodes").then((module) => ({ default: module.AdminRedeemCodes })));
 
 
 const queryClient = new QueryClient();
@@ -155,6 +156,7 @@ function AppContent() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="sessions" element={<AdminSessions />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="redeem-codes" element={<AdminRedeemCodes />} />
               <Route path="access" element={<AdminAccess />} />
             </Route>
 

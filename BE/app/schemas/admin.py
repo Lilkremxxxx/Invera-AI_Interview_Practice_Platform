@@ -58,3 +58,19 @@ class AdminManagedUserOut(BaseModel):
 class AdminUserPlanUpdateRequest(BaseModel):
     plan_tier: Literal["free_trial", "basic", "pro", "premium"]
     billing_period: Literal["month", "year"] = "month"
+
+
+class AdminRedeemCodeCreateRequest(BaseModel):
+    plan_tier: Literal["basic", "pro", "premium"]
+    expires_in_days: Literal[7, 30] | None = None
+    expires_at: Optional[datetime] = None
+
+
+class AdminRedeemCodeOut(BaseModel):
+    id: uuid.UUID
+    code: uuid.UUID
+    plan_tier: Literal["basic", "pro", "premium"]
+    expires_at: datetime
+    redeemed_at: Optional[datetime] = None
+    redeemed_by_email: Optional[str] = None
+    created_at: datetime

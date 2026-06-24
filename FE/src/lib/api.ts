@@ -159,35 +159,6 @@ async function requestFile(path: string): Promise<{ blob: Blob; filename: string
   };
 }
 
-function buildRealtimeSttSocketUrl(
-  sessionId: string,
-  options: {
-    language: 'vi' | 'en' | 'auto';
-    questionId?: number;
-    sampleRate?: number;
-  },
-): string | null {
-  if (typeof window === 'undefined') return null;
-
-  const apiBase = BASE_URL;
-  const isAbsolute = /^https?:\/\//i.test(apiBase);
-  const baseUrl = isAbsolute ? new URL(apiBase) : new URL(apiBase, window.location.origin);
-  const protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-  const url = new URL(`${protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/$/, '')}/sessions/${sessionId}/stt-stream`);
-  const token = getToken();
-  if (!token) return null;
-
-  url.searchParams.set('token', token);
-  url.searchParams.set('language', options.language);
-  if (options.questionId != null) {
-    url.searchParams.set('question_id', String(options.questionId));
-  }
-  if (options.sampleRate != null) {
-    url.searchParams.set('sample_rate', String(options.sampleRate));
-  }
-  return url.toString();
-}
-
 function buildLiveAgentSocketUrl(sessionId: string): string | null {
   if (typeof window === 'undefined') return null;
 
@@ -340,6 +311,22 @@ export interface AdminManagedUser extends UserOut {
   avg_score?: number | null;
 }
 
+export interface AdminRedeemCodeOut {
+  id: string;
+  code: string;
+  plan_tier: 'basic' | 'pro' | 'premium';
+  expires_at: string;
+  redeemed_at?: string | null;
+  redeemed_by_email?: string | null;
+  created_at: string;
+}
+
+export interface AdminRedeemCodeCreateRequest {
+  plan_tier: 'basic' | 'pro' | 'premium';
+  expires_in_days?: 7 | 30;
+  expires_at?: string;
+}
+
 export interface RegisterData {
   email: string;
   password: string;
@@ -402,7 +389,6 @@ export interface AnswerOut {
     slouchRatio?: number;
     handGestures?: number;
     fidgetRatio?: number;
-    cameraFramingScore?: number;
     bodyPostureScore?: number;
     presentationConfidence?: number;
     speakingPace?: number;
@@ -425,7 +411,6 @@ export interface AnswerOut {
     slouchRatio?: number;
     handGestures?: number;
     fidgetRatio?: number;
-    cameraFramingScore?: number;
     bodyPostureScore?: number;
     presentationConfidence?: number;
     speakingPace?: number;
@@ -816,21 +801,6 @@ export const sessionsApi = {
     });
   },
 
-  createRealtimeSttSocket: (
-    sessionId: string,
-    options: {
-      language: 'vi' | 'en' | 'auto';
-      questionId?: number;
-      sampleRate?: number;
-    },
-  ): WebSocket | null => {
-    const url = buildRealtimeSttSocketUrl(sessionId, options);
-    if (!url || typeof WebSocket === 'undefined') {
-      return null;
-    }
-    return new WebSocket(url);
-  },
-
   createLiveAgentSocket: (sessionId: string): WebSocket | null => {
     const url = buildLiveAgentSocketUrl(sessionId);
     if (!url || typeof WebSocket === 'undefined') {
@@ -1020,6 +990,16 @@ export const adminApi = {
 
   removeAdmin: async (userId: string): Promise<{ removed: string; email: string }> =>
     request<{ removed: string; email: string }>(`/admin/admin-users/${userId}`, { method: 'DELETE' }),
+
+  getRedeemCodes: async (): Promise<AdminRedeemCodeOut[]> =>
+    request<AdminRedeemCodeOut[]>('/admin/redeem-codes'),
+
+  createRedeemCode: async (payload: AdminRedeemCodeCreateRequest): Promise<AdminRedeemCodeOut> =>
+    request<AdminRedeemCodeOut>('/admin/redeem-codes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
 
   updateUserPlan: async (
     userId: string,

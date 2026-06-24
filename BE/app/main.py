@@ -139,60 +139,61 @@ async def healthcheck():
 async def openapi_alias():
     return JSONResponse(_build_openapi())
 
+
+async def _run_startup_migrations() -> None:
+    migrations = [
+        "001_create_sessions_questions_answers.sql",
+        "002_add_admin_and_reset_token.sql",
+        "003_add_email_verification.sql",
+        "004_add_verification_resend_cooldown.sql",
+        "005_add_admin_invites.sql",
+        "006_add_plan_billing.sql",
+        "007_add_profile_uploads.sql",
+        "008_add_question_bank_majors.sql",
+        "009_add_qna_threads.sql",
+        "010_add_redeem_code_redemptions.sql",
+        "011_add_session_question_sets.sql",
+        "012_add_question_localizations.sql",
+        "013_convert_answer_scores_to_ten_scale.sql",
+        "014_add_session_time_limit.sql",
+        "015_update_session_time_limit_constraint.sql",
+        "016_add_additional_sessions.sql",
+        "017_add_user_resume_and_cv_questions.sql",
+        "018_add_session_evaluation_and_plan.sql",
+        "019_add_answer_telemetry.sql",
+        "020_add_sessions_created_at_index.sql",
+        "021_add_interview_follow_ups.sql",
+        "022_add_resume_questions_to_users.sql",
+        "023_add_session_language.sql",
+        "024_add_redeem_codes.sql",
+    ]
+    import asyncpg
+
+    conn = await asyncpg.connect(
+        host=settings.pg_host,
+        port=settings.pg_port,
+        database=settings.pg_dbname,
+        user=settings.pg_user,
+        password=settings.pg_password,
+        timeout=30.0,
+    )
+    try:
+        for migration in migrations:
+            migration_path = BASE_DIR / "migrations" / migration
+            if migration_path.exists():
+                sql = migration_path.read_text(encoding="utf-8")
+                await conn.execute(sql, timeout=300.0)
+                print(f"✅ Migration checked/applied: {migration}")
+    finally:
+        await conn.close()
+
+
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Starting server...")
     pool = await create_pool()
-    # Run migrations on startup
     try:
-        migrations = [
-            "001_create_sessions_questions_answers.sql",
-            "002_add_admin_and_reset_token.sql",
-            "003_add_email_verification.sql",
-            "004_add_verification_resend_cooldown.sql",
-            "005_add_admin_invites.sql",
-            "006_add_plan_billing.sql",
-            "007_add_profile_uploads.sql",
-            "008_add_question_bank_majors.sql",
-            "009_add_qna_threads.sql",
-            "010_add_redeem_code_redemptions.sql",
-            "011_add_session_question_sets.sql",
-            "012_add_question_localizations.sql",
-            "013_convert_answer_scores_to_ten_scale.sql",
-            "014_add_session_time_limit.sql",
-            "015_update_session_time_limit_constraint.sql",
-            "016_add_additional_sessions.sql",
-            "017_add_user_resume_and_cv_questions.sql",
-            "018_add_session_evaluation_and_plan.sql",
-            "019_add_answer_telemetry.sql",
-            "020_add_sessions_created_at_index.sql",
-            "021_add_interview_follow_ups.sql",
-            "022_add_resume_questions_to_users.sql",
-        ]
-        async def run_migrations_bg():
-            try:
-                import asyncpg
-                conn = await asyncpg.connect(
-                    host=settings.pg_host,
-                    port=settings.pg_port,
-                    database=settings.pg_dbname,
-                    user=settings.pg_user,
-                    password=settings.pg_password,
-                    timeout=30.0
-                )
-                try:
-                    for migration in migrations:
-                        migration_path = BASE_DIR / "migrations" / migration
-                        if migration_path.exists():
-                            sql = migration_path.read_text(encoding="utf-8")
-                            await conn.execute(sql, timeout=300.0)
-                            print(f"✅ Migration checked/applied: {migration}")
-                finally:
-                    await conn.close()
-            except Exception as e:
-                print(f"❌ Background migration error: {e}")
-
-        asyncio.create_task(run_migrations_bg())
+        await _run_startup_migrations()
     except Exception as e:
         print(f"❌ Database pool initialization error: {e}")
         await close_pool()
