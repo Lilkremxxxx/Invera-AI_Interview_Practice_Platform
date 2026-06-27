@@ -1,7 +1,6 @@
 import uuid
 import random
 import asyncio
-import subprocess
 import json
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -53,10 +52,6 @@ from app.services.scoring import ScoringRequest, score_answer
 from app.services.interview_tts import build_feedback_tts_script, synthesize_feedback_audio
 from app.services.transcript_cleanup import correct_transcript_text
 from app.core.security import SECRET_KEY, ALGORITHM
-from app.services.interview_stt_realtime import (
-    InterviewRealtimeSttRuntimeError,
-    VoskRealtimeSession,
-)
 from app.services.gemini_live import GeminiLiveAgentError, stream_agent_prompt
 
 router = APIRouter()
@@ -625,6 +620,20 @@ async def _upsert_follow_up_question(
 
 _generating_reports: set[uuid.UUID] = set()
 
+
+async def _wait_for_session_answers_ready(db: asyncpg.Connection, session_id: uuid.UUID, *, max_wait: int = 180) -> None:
+    wait_interval = 2
+    waited = 0
+    while waited < max_wait:
+        pending_count = await db.fetchval(
+            "SELECT COUNT(*)::int FROM answers WHERE session_id = $1 AND feedback = 'PENDING'",
+            session_id,
+        )
+        if pending_count == 0:
+            return
+        await asyncio.sleep(wait_interval)
+        waited += wait_interval
+
 async def _generate_session_report_background(*, session_id: uuid.UUID, language: str) -> None:
     if session_id in _generating_reports:
         return
@@ -634,19 +643,7 @@ async def _generate_session_report_background(*, session_id: uuid.UUID, language
     try:
         pool = await create_pool()
         async with pool.acquire() as conn:
-            # Poll database for pending answers
-            max_wait = 180  # 3 minutes maximum wait time
-            wait_interval = 2
-            waited = 0
-            while waited < max_wait:
-                pending_count = await conn.fetchval(
-                    "SELECT COUNT(*)::int FROM answers WHERE session_id = $1 AND feedback = 'PENDING'",
-                    session_id,
-                )
-                if pending_count == 0:
-                    break
-                await asyncio.sleep(wait_interval)
-                waited += wait_interval
+            await _wait_for_session_answers_ready(conn, session_id)
 
             session_row = await conn.fetchrow(
                 """
@@ -685,8 +682,12 @@ async def _generate_session_report_background(*, session_id: uuid.UUID, language
         _generating_reports.discard(session_id)
 
 
+_active_report_tasks: set[asyncio.Task] = set()
+
 def _schedule_session_report_generation(*, session_id: uuid.UUID, language: str) -> None:
-    asyncio.create_task(_generate_session_report_background(session_id=session_id, language=language))
+    task = asyncio.create_task(_generate_session_report_background(session_id=session_id, language=language))
+    _active_report_tasks.add(task)
+    task.add_done_callback(_active_report_tasks.discard)
 
 
 # ─── POST /sessions ──────────────────────────────────────────────────────────
@@ -1214,100 +1215,118 @@ async def process_voice_answer_background(
     feedback_language: str,
     force_feedback_language: bool,
 ):
+    telemetry_dict = None
     try:
-        async with STT_SEMAPHORE:
-            transcript = await asyncio.wait_for(
-                asyncio.to_thread(
-                    transcribe_audio_bytes,
-                    audio_bytes=audio_bytes,
-                    original_filename=filename,
-                    language=language,
-                ),
-                timeout=settings.interview_stt_timeout_seconds,
-            )
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        transcript = f"[Lỗi STT: {str(exc)}]"
-        print(f"Error in STT transcription for answer_id={answer_id}: {exc}")
-
-    pool = await create_pool()
-    async with pool.acquire() as db:
-        cleaned_transcript = await _cleanup_transcript_for_question(
-            db=db,
-            session_id=session_id,
-            question_id=question_id,
-            transcript=transcript,
-            language=language,
-        )
-        cleaned_answer_text = sanitize_user_text(cleaned_transcript)
-
-        question_row = await db.fetchrow(
-            """
-            SELECT q.text, q.text_en, q.text_vi,
-                   q.category, q.category_en, q.category_vi,
-                   q.difficulty,
-                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major,
-                   u.plan_tier, u.plan_status, u.resume_text
-            FROM questions q
-            JOIN sessions s ON s.id = $2
-            JOIN users u ON u.id = s.user_id
-            WHERE q.id = $1
-            """,
-            question_id, session_id,
-        )
-        if not question_row:
-            return
-
-        plan_tier = "free_trial"
-        if question_row:
-            plan_tier = question_row["plan_tier"] or "free_trial"
-            if question_row["plan_status"] != "active":
-                plan_tier = "free_trial"
-
         try:
-            async with SCORING_SEMAPHORE:
-                score, feedback = await score_answer(
-                    ScoringRequest(
-                        answer_text=cleaned_answer_text,
-                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
-                        question_text=localized_question_field(question_row, "text", feedback_language),
-                        role=question_row["role"],
-                        level=question_row["level"],
-                        category=localized_question_field(question_row, "category", feedback_language),
-                        difficulty=question_row["difficulty"],
-                        major=question_row["major"],
-                        preferred_language=feedback_language,
-                        force_language=force_feedback_language,
-                        telemetry_data=None,
-                        plan_tier=plan_tier,
-                        resume_text=question_row["resume_text"],
-                    )
+            async with STT_SEMAPHORE:
+                transcript = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        transcribe_audio_bytes,
+                        audio_bytes=audio_bytes,
+                        original_filename=filename,
+                        language=language,
+                    ),
+                    timeout=settings.interview_stt_timeout_seconds,
                 )
         except Exception as exc:
-            score = 0
-            feedback = f"Lỗi chấm điểm: {str(exc)}"
+            import traceback
+            traceback.print_exc()
+            transcript = f"[Lỗi STT: {str(exc)}]"
+            print(f"Error in STT transcription for answer_id={answer_id}: {exc}")
 
-        await db.execute(
-            """
-            UPDATE answers
-            SET answer_text = $1, score = $2, feedback = $3, submitted_at = NOW()
-            WHERE id = $4
-            """,
-            cleaned_answer_text, score, feedback, answer_id,
-        )
+        pool = await create_pool()
+        async with pool.acquire() as db:
+            cleaned_transcript = await _cleanup_transcript_for_question(
+                db=db,
+                session_id=session_id,
+                question_id=question_id,
+                transcript=transcript,
+                language=language,
+            )
+            cleaned_answer_text = sanitize_user_text(cleaned_transcript)
 
-        await _upsert_follow_up_question(
-            db=db,
-            session_id=session_id,
-            answer_id=answer_id,
-            answer_text=cleaned_answer_text,
-            score=float(score),
-            question_row=question_row,
-            language=feedback_language,
-            telemetry_data=telemetry_dict,
-        )
+            question_row = await db.fetchrow(
+                """
+                SELECT q.text, q.text_en, q.text_vi,
+                       q.category, q.category_en, q.category_vi,
+                       q.difficulty,
+                       q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                       s.role, s.level, s.major,
+                       u.plan_tier, u.plan_status, u.resume_text
+                FROM questions q
+                JOIN sessions s ON s.id = $2
+                JOIN users u ON u.id = s.user_id
+                WHERE q.id = $1
+                """,
+                question_id, session_id,
+            )
+            if not question_row:
+                return
+
+            plan_tier = "free_trial"
+            if question_row:
+                plan_tier = question_row["plan_tier"] or "free_trial"
+                if question_row["plan_status"] != "active":
+                    plan_tier = "free_trial"
+
+            try:
+                async with SCORING_SEMAPHORE:
+                    score, feedback = await score_answer(
+                        ScoringRequest(
+                            answer_text=cleaned_answer_text,
+                            ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                            question_text=localized_question_field(question_row, "text", feedback_language),
+                            role=question_row["role"],
+                            level=question_row["level"],
+                            category=localized_question_field(question_row, "category", feedback_language),
+                            difficulty=question_row["difficulty"],
+                            major=question_row["major"],
+                            preferred_language=feedback_language,
+                            force_language=force_feedback_language,
+                            telemetry_data=None,
+                            plan_tier=plan_tier,
+                            resume_text=question_row["resume_text"],
+                        )
+                    )
+            except Exception as exc:
+                score = 0
+                feedback = f"Lỗi chấm điểm: {str(exc)}"
+
+            await db.execute(
+                """
+                UPDATE answers
+                SET answer_text = $1, score = $2, feedback = $3, submitted_at = NOW()
+                WHERE id = $4
+                """,
+                cleaned_answer_text, score, feedback, answer_id,
+            )
+
+            await _upsert_follow_up_question(
+                db=db,
+                session_id=session_id,
+                answer_id=answer_id,
+                answer_text=cleaned_answer_text,
+                score=float(score),
+                question_row=question_row,
+                language=feedback_language,
+                telemetry_data=telemetry_dict,
+            )
+    except Exception as e:
+        print(f"Error in process_voice_answer_background for answer_id={answer_id}: {e}")
+        try:
+            pool = await create_pool()
+            async with pool.acquire() as db:
+                await db.execute(
+                    """
+                    UPDATE answers
+                    SET feedback = $1, score = 0, submitted_at = NOW()
+                    WHERE id = $2 AND feedback = 'PENDING'
+                    """,
+                    f"Lỗi xử lý: {str(e)}",
+                    answer_id,
+                )
+        except Exception as db_exc:
+            print(f"Failed to update answer fallback for answer_id={answer_id}: {db_exc}")
 
 
 async def process_video_answer_background(
@@ -1322,123 +1341,140 @@ async def process_video_answer_background(
     force_feedback_language: bool,
 ):
     try:
-        async with STT_SEMAPHORE:
-            transcript = await asyncio.wait_for(
-                asyncio.to_thread(
-                    transcribe_audio_bytes,
-                    audio_bytes=video_bytes,
-                    original_filename=filename,
-                    language=language,
-                ),
-                timeout=settings.interview_stt_timeout_seconds,
-            )
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        transcript = f"[Lỗi STT: {str(exc)}]"
-        print(f"Error in video STT transcription for answer_id={answer_id}: {exc}")
-
-    pool = await create_pool()
-    async with pool.acquire() as db:
-        cleaned_transcript = await _cleanup_transcript_for_question(
-            db=db,
-            session_id=session_id,
-            question_id=question_id,
-            transcript=transcript,
-            language=language,
-        )
-        cleaned_answer_text = sanitize_user_text(cleaned_transcript)
-
-        question_row = await db.fetchrow(
-            """
-            SELECT q.text, q.text_en, q.text_vi,
-                   q.category, q.category_en, q.category_vi,
-                   q.difficulty,
-                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major,
-                   u.plan_tier, u.plan_status, u.resume_text
-            FROM questions q
-            JOIN sessions s ON s.id = $2
-            JOIN users u ON u.id = s.user_id
-            WHERE q.id = $1
-            """,
-            question_id, session_id,
-        )
-        if not question_row:
-            return
-
-        plan_tier = "free_trial"
-        if question_row:
-            plan_tier = question_row["plan_tier"] or "free_trial"
-            if question_row["plan_status"] != "active":
-                plan_tier = "free_trial"
-
-        import json
-        telemetry_dict = None
-        if telemetry_data_str:
-            try:
-                telemetry_dict = json.loads(telemetry_data_str)
-            except Exception:
-                pass
-
-        # Recalculate WPM and fillers from the actual Whisper transcript
-        if telemetry_dict is not None and cleaned_answer_text:
-            word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
-            duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
-            if duration_sec > 0 and word_count > 0:
-                telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
-            # Recalculate filler words from actual transcript
-            vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
-            en_fillers = {"uh", "um", "like", "actually", "basically"}
-            words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
-            filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
-            text_lower = cleaned_answer_text.lower()
-            filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
-            telemetry_dict["fillerWordsCount"] = filler_count
-            telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
-
         try:
-            async with SCORING_SEMAPHORE:
-                score, feedback = await score_answer(
-                    ScoringRequest(
-                        answer_text=cleaned_answer_text,
-                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
-                        question_text=localized_question_field(question_row, "text", feedback_language),
-                        role=question_row["role"],
-                        level=question_row["level"],
-                        category=localized_question_field(question_row, "category", feedback_language),
-                        difficulty=question_row["difficulty"],
-                        major=question_row["major"],
-                        preferred_language=feedback_language,
-                        force_language=force_feedback_language,
-                        telemetry_data=telemetry_dict,
-                        plan_tier=plan_tier,
-                        resume_text=question_row["resume_text"],
-                    )
+            async with STT_SEMAPHORE:
+                transcript = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        transcribe_audio_bytes,
+                        audio_bytes=video_bytes,
+                        original_filename=filename,
+                        language=language,
+                    ),
+                    timeout=settings.interview_stt_timeout_seconds,
                 )
         except Exception as exc:
-            score = 0
-            feedback = f"Lỗi chấm điểm: {str(exc)}"
+            import traceback
+            traceback.print_exc()
+            transcript = f"[Lỗi STT: {str(exc)}]"
+            print(f"Error in video STT transcription for answer_id={answer_id}: {exc}")
 
-        await db.execute(
-            """
-            UPDATE answers
-            SET answer_text = $1, score = $2, feedback = $3, telemetry_data = $4, submitted_at = NOW()
-            WHERE id = $5
-            """,
-            cleaned_answer_text, score, feedback, telemetry_data_str, answer_id,
-        )
+        pool = await create_pool()
+        async with pool.acquire() as db:
+            cleaned_transcript = await _cleanup_transcript_for_question(
+                db=db,
+                session_id=session_id,
+                question_id=question_id,
+                transcript=transcript,
+                language=language,
+            )
+            cleaned_answer_text = sanitize_user_text(cleaned_transcript)
 
-        await _upsert_follow_up_question(
-            db=db,
-            session_id=session_id,
-            answer_id=answer_id,
-            answer_text=cleaned_answer_text,
-            score=float(score),
-            question_row=question_row,
-            language=feedback_language,
-            telemetry_data=telemetry_dict,
-        )
+            question_row = await db.fetchrow(
+                """
+                SELECT q.text, q.text_en, q.text_vi,
+                       q.category, q.category_en, q.category_vi,
+                       q.difficulty,
+                       q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                       s.role, s.level, s.major,
+                       u.plan_tier, u.plan_status, u.resume_text
+                FROM questions q
+                JOIN sessions s ON s.id = $2
+                JOIN users u ON u.id = s.user_id
+                WHERE q.id = $1
+                """,
+                question_id, session_id,
+            )
+            if not question_row:
+                return
+
+            plan_tier = "free_trial"
+            if question_row:
+                plan_tier = question_row["plan_tier"] or "free_trial"
+                if question_row["plan_status"] != "active":
+                    plan_tier = "free_trial"
+
+            import json
+            telemetry_dict = None
+            if telemetry_data_str:
+                try:
+                    telemetry_dict = json.loads(telemetry_data_str)
+                except Exception:
+                    pass
+
+            # Recalculate WPM and fillers from the actual Whisper transcript
+            if telemetry_dict is not None and cleaned_answer_text:
+                word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
+                duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
+                if duration_sec > 0 and word_count > 0:
+                    telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
+                # Recalculate filler words from actual transcript
+                vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
+                en_fillers = {"uh", "um", "like", "actually", "basically"}
+                words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
+                filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
+                text_lower = cleaned_answer_text.lower()
+                filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
+                telemetry_dict["fillerWordsCount"] = filler_count
+                telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
+
+            try:
+                async with SCORING_SEMAPHORE:
+                    score, feedback = await score_answer(
+                        ScoringRequest(
+                            answer_text=cleaned_answer_text,
+                            ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                            question_text=localized_question_field(question_row, "text", feedback_language),
+                            role=question_row["role"],
+                            level=question_row["level"],
+                            category=localized_question_field(question_row, "category", feedback_language),
+                            difficulty=question_row["difficulty"],
+                            major=question_row["major"],
+                            preferred_language=feedback_language,
+                            force_language=force_feedback_language,
+                            telemetry_data=telemetry_dict,
+                            plan_tier=plan_tier,
+                            resume_text=question_row["resume_text"],
+                        )
+                    )
+            except Exception as exc:
+                score = 0
+                feedback = f"Lỗi chấm điểm: {str(exc)}"
+
+            await db.execute(
+                """
+                UPDATE answers
+                SET answer_text = $1, score = $2, feedback = $3, telemetry_data = $4, submitted_at = NOW()
+                WHERE id = $5
+                """,
+                cleaned_answer_text, score, feedback, telemetry_data_str, answer_id,
+            )
+
+            await _upsert_follow_up_question(
+                db=db,
+                session_id=session_id,
+                answer_id=answer_id,
+                answer_text=cleaned_answer_text,
+                score=float(score),
+                question_row=question_row,
+                language=feedback_language,
+                telemetry_data=telemetry_dict,
+            )
+    except Exception as e:
+        print(f"Error in process_video_answer_background for answer_id={answer_id}: {e}")
+        try:
+            pool = await create_pool()
+            async with pool.acquire() as db:
+                await db.execute(
+                    """
+                    UPDATE answers
+                    SET feedback = $1, score = 0, submitted_at = NOW()
+                    WHERE id = $2 AND feedback = 'PENDING'
+                    """,
+                    f"Lỗi xử lý: {str(e)}",
+                    answer_id,
+                )
+        except Exception as db_exc:
+            print(f"Failed to update answer fallback for answer_id={answer_id}: {db_exc}")
 
 
 @router.post("/{session_id}/stt", response_model=AnswerTranscriptOut)
@@ -1691,146 +1727,6 @@ async def session_live_agent_stream(
         return
 
 
-@router.websocket("/{session_id}/stt-stream")
-async def stream_session_stt(
-    websocket: WebSocket,
-    session_id: uuid.UUID,
-    db: asyncpg.Connection = Depends(get_db),
-):
-    if not settings.interview_stt_realtime_enabled:
-        await websocket.close(code=1013, reason="Realtime STT is disabled.")
-        return
-
-    try:
-        current_user = await _authenticate_ws_user(websocket, db)
-    except HTTPException:
-        await websocket.close(code=4401, reason="Unauthorized")
-        return
-
-    session_row = await db.fetchrow(
-        """
-        SELECT id, status
-        FROM sessions
-        WHERE id = $1 AND user_id = $2
-        """,
-        session_id, current_user.id,
-    )
-    if not session_row:
-        await websocket.close(code=4404, reason="Session not found")
-        return
-    if session_row["status"] != "IN_PROGRESS":
-        await websocket.close(code=4400, reason="Session is not in progress")
-        return
-
-    language = websocket.query_params.get("language") or session_row["language"]
-    question_id_raw = websocket.query_params.get("question_id")
-    question_id = int(question_id_raw) if question_id_raw and question_id_raw.isdigit() else None
-    sample_rate_raw = websocket.query_params.get("sample_rate")
-    sample_rate = int(sample_rate_raw) if sample_rate_raw and sample_rate_raw.isdigit() else 16000
-
-    await websocket.accept()
-    sequence = 0
-    try:
-        realtime_session = await asyncio.to_thread(
-            VoskRealtimeSession,
-            language=language,
-            sample_rate=sample_rate,
-        )
-    except (InterviewRealtimeSttRuntimeError, ValueError) as exc:
-        await websocket.send_json({
-            "type": "error",
-            "seq": sequence,
-            "detail": str(exc),
-            "recoverable": False,
-        })
-        await websocket.close(code=1011, reason=str(exc))
-        return
-
-    try:
-        while True:
-            message = await websocket.receive()
-            chunk_bytes = message.get("bytes")
-            text_message = message.get("text")
-
-            if text_message:
-                try:
-                    payload = json.loads(text_message)
-                except ValueError:
-                    payload = None
-
-                if isinstance(payload, dict) and payload.get("type") == "stop":
-                    final_text = await asyncio.to_thread(realtime_session.finalize)
-                    if final_text:
-                        sequence += 1
-                        await websocket.send_json({
-                            "type": "final",
-                            "seq": sequence,
-                            "text": final_text,
-                            "is_final": True,
-                        })
-                    await websocket.send_json({"type": "stopped", "seq": sequence})
-                    break
-                continue
-
-            if not chunk_bytes:
-                print(f"[WS-STT] Received message without bytes", flush=True)
-                continue
-            
-            chunk_len = len(chunk_bytes)
-            print(f"[WS-STT] Received chunk of size {chunk_len} bytes", flush=True)
-            if chunk_len < settings.interview_stt_realtime_min_chunk_bytes:
-                print(f"[WS-STT] Skipped chunk of size {chunk_len} (min is {settings.interview_stt_realtime_min_chunk_bytes})", flush=True)
-                continue
-
-            sequence += 1
-            try:
-                print(f"[WS-STT] Processing chunk {sequence} through Vosk...", flush=True)
-                result = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        realtime_session.accept_chunk,
-                        chunk_bytes,
-                        ".webm",
-                    ),
-                    timeout=settings.interview_stt_timeout_seconds,
-                )
-                print(f"[WS-STT] Vosk result for chunk {sequence}: {result}", flush=True)
-            except TimeoutError:
-                print(f"[WS-STT] Timeout processing chunk {sequence}", flush=True)
-                await websocket.send_json({
-                    "type": "error",
-                    "seq": sequence,
-                    "detail": "Realtime STT timed out.",
-                    "recoverable": True,
-                })
-                continue
-            except (ValueError, InterviewRealtimeSttRuntimeError, subprocess.CalledProcessError) as exc:
-                detail = exc.stderr.strip() if isinstance(exc, subprocess.CalledProcessError) and exc.stderr else str(exc)
-                print(f"[WS-STT] Exception processing chunk {sequence}: {detail}", flush=True)
-                await websocket.send_json({
-                    "type": "error",
-                    "seq": sequence,
-                    "detail": detail,
-                    "recoverable": True,
-                })
-                continue
-
-            transcript = str(result.get("text", "")).strip()
-            message_type = str(result.get("type", "partial"))
-            is_final = bool(result.get("is_final"))
-            # Do not run LLM cleanup on realtime streaming chunks to avoid latency and hallucinations.
-            pass
-
-            if transcript:
-                await websocket.send_json({
-                    "type": message_type,
-                    "seq": sequence,
-                    "text": transcript,
-                    "is_final": is_final,
-                })
-    except (WebSocketDisconnect, RuntimeError):
-        return
-
-
 async def process_text_answer_background(
     answer_id: uuid.UUID,
     session_id: uuid.UUID,
@@ -1840,88 +1736,105 @@ async def process_text_answer_background(
     feedback_language: str,
     force_feedback_language: bool,
 ):
-    pool = await create_pool()
-    async with pool.acquire() as db:
-        question_row = await db.fetchrow(
-            """
-            SELECT q.text, q.text_en, q.text_vi,
-                   q.category, q.category_en, q.category_vi,
-                   q.difficulty,
-                   q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
-                   s.role, s.level, s.major,
-                   u.plan_tier, u.plan_status, u.resume_text
-            FROM questions q
-            JOIN sessions s ON s.id = $2
-            JOIN users u ON u.id = s.user_id
-            WHERE q.id = $1
-            """,
-            question_id, session_id,
-        )
-        if not question_row:
-            return
+    try:
+        pool = await create_pool()
+        async with pool.acquire() as db:
+            question_row = await db.fetchrow(
+                """
+                SELECT q.text, q.text_en, q.text_vi,
+                       q.category, q.category_en, q.category_vi,
+                       q.difficulty,
+                       q.ideal_answer, q.ideal_answer_en, q.ideal_answer_vi,
+                       s.role, s.level, s.major,
+                       u.plan_tier, u.plan_status, u.resume_text
+                FROM questions q
+                JOIN sessions s ON s.id = $2
+                JOIN users u ON u.id = s.user_id
+                WHERE q.id = $1
+                """,
+                question_id, session_id,
+            )
+            if not question_row:
+                return
 
-        cleaned_answer_text = sanitize_user_text(answer_text)
-        plan_tier = "free_trial"
-        if question_row:
-            plan_tier = question_row["plan_tier"] or "free_trial"
-            if question_row["plan_status"] != "active":
-                plan_tier = "free_trial"
+            cleaned_answer_text = sanitize_user_text(answer_text)
+            plan_tier = "free_trial"
+            if question_row:
+                plan_tier = question_row["plan_tier"] or "free_trial"
+                if question_row["plan_status"] != "active":
+                    plan_tier = "free_trial"
 
-        import json
-        telemetry_dict = None
-        if telemetry_data_str:
+            import json
+            telemetry_dict = None
+            if telemetry_data_str:
+                try:
+                    telemetry_dict = json.loads(telemetry_data_str)
+                except Exception:
+                    pass
+
+            # Recalculate WPM and fillers from the actual Whisper transcript
+            if telemetry_dict is not None and cleaned_answer_text:
+                word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
+                duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
+                if duration_sec > 0 and word_count > 0:
+                    telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
+                # Recalculate filler words from actual transcript
+                vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
+                en_fillers = {"uh", "um", "like", "actually", "basically"}
+                words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
+                filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
+                text_lower = cleaned_answer_text.lower()
+                filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
+                telemetry_dict["fillerWordsCount"] = filler_count
+                telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
+
             try:
-                telemetry_dict = json.loads(telemetry_data_str)
-            except Exception:
-                pass
-
-        # Recalculate WPM and fillers from the actual Whisper transcript
-        if telemetry_dict is not None and cleaned_answer_text:
-            word_count = len(re.findall(r"\b[^\s]+\b", cleaned_answer_text))
-            duration_sec = telemetry_dict.get("recordingDurationSec", 0) or 0
-            if duration_sec > 0 and word_count > 0:
-                telemetry_dict["speakingPace"] = round((word_count / duration_sec) * 60)
-            # Recalculate filler words from actual transcript
-            vi_fillers = {"ừm", "à", "thì", "là", "kiểu", "ờ", "dạ"}
-            en_fillers = {"uh", "um", "like", "actually", "basically"}
-            words = re.findall(r"\b[^\s]+\b", cleaned_answer_text.lower())
-            filler_count = sum(1 for w in words if w.strip(".,!?;:") in vi_fillers or w.strip(".,!?;:") in en_fillers)
-            text_lower = cleaned_answer_text.lower()
-            filler_count += text_lower.count("kiểu như") + text_lower.count("you know")
-            telemetry_dict["fillerWordsCount"] = filler_count
-            telemetry_data_str = json.dumps(telemetry_dict, ensure_ascii=False)
-
-        try:
-            async with SCORING_SEMAPHORE:
-                score, feedback = await score_answer(
-                    ScoringRequest(
-                        answer_text=answer_text,
-                        ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
-                        question_text=localized_question_field(question_row, "text", feedback_language),
-                        role=question_row["role"],
-                        level=question_row["level"],
-                        category=localized_question_field(question_row, "category", feedback_language),
-                        difficulty=question_row["difficulty"],
-                        major=question_row["major"],
-                        preferred_language=feedback_language,
-                        force_language=force_feedback_language,
-                        telemetry_data=telemetry_dict,
-                        plan_tier=plan_tier,
-                        resume_text=question_row["resume_text"],
+                async with SCORING_SEMAPHORE:
+                    score, feedback = await score_answer(
+                        ScoringRequest(
+                            answer_text=answer_text,
+                            ideal_answer=localized_question_field(question_row, "ideal_answer", feedback_language),
+                            question_text=localized_question_field(question_row, "text", feedback_language),
+                            role=question_row["role"],
+                            level=question_row["level"],
+                            category=localized_question_field(question_row, "category", feedback_language),
+                            difficulty=question_row["difficulty"],
+                            major=question_row["major"],
+                            preferred_language=feedback_language,
+                            force_language=force_feedback_language,
+                            telemetry_data=telemetry_dict,
+                            plan_tier=plan_tier,
+                            resume_text=question_row["resume_text"],
+                        )
                     )
-                )
-        except Exception as exc:
-            score = 0
-            feedback = f"Lỗi chấm điểm: {str(exc)}"
+            except Exception as exc:
+                score = 0
+                feedback = f"Lỗi chấm điểm: {str(exc)}"
 
-        await db.execute(
-            """
-            UPDATE answers
-            SET score = $1, feedback = $2, submitted_at = NOW()
-            WHERE id = $3
-            """,
-            score, feedback, answer_id,
-        )
+            await db.execute(
+                """
+                UPDATE answers
+                SET score = $1, feedback = $2, telemetry_data = $3, submitted_at = NOW()
+                WHERE id = $4
+                """,
+                score, feedback, telemetry_data_str, answer_id,
+            )
+    except Exception as e:
+        print(f"Error in process_text_answer_background for answer_id={answer_id}: {e}")
+        try:
+            pool = await create_pool()
+            async with pool.acquire() as db:
+                await db.execute(
+                    """
+                    UPDATE answers
+                    SET feedback = $1, score = 0, submitted_at = NOW()
+                    WHERE id = $2 AND feedback = 'PENDING'
+                    """,
+                    f"Lỗi xử lý: {str(e)}",
+                    answer_id,
+                )
+        except Exception as db_exc:
+            print(f"Failed to update answer fallback for answer_id={answer_id}: {db_exc}")
 
 
 # ─── POST /sessions/{id}/answers ─────────────────────────────────────────────
