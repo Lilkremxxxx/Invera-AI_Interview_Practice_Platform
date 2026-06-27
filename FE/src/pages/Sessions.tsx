@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,11 @@ import { roleLabelMap } from '@/lib/mock-data';
 import { canExportSessions } from '@/lib/plans';
 import { formatScore, getScoreTextClass } from '@/lib/score';
 import { useToast } from '@/hooks/use-toast';
+import {
+  clearPendingSessionCompletion,
+  readPendingSessionCompletion,
+  type PendingSessionCompletion,
+} from '@/lib/session-completion';
 
 const levelLabels: Record<string, { vi: string; en: string }> = {
   intern: { vi: 'Intern', en: 'Intern' },
@@ -47,12 +52,20 @@ const Sessions = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<string | null>(null);
   const [isExportingAll, setIsExportingAll] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<PendingSessionCompletion | null>(null);
   const canExport = canExportSessions(user);
+
+  useEffect(() => {
+    setPendingCompletion(readPendingSessionCompletion());
+  }, []);
 
   const { data: sessions = [], isLoading, error } = useQuery<SessionOut[]>({
     queryKey: ['sessions'],
     queryFn: sessionsApi.list,
     refetchInterval: (query) => {
+      if (pendingCompletion) {
+        return 3000;
+      }
       const sessList = query.state.data;
       if (sessList && sessList.some(s => s.status === 'COMPLETED' && !s.evaluation_report)) {
         return 5000;
@@ -60,6 +73,16 @@ const Sessions = () => {
       return false;
     },
   });
+
+  useEffect(() => {
+    if (!pendingCompletion) return;
+
+    const targetSession = sessions.find((session) => session.id === pendingCompletion.sessionId);
+    if (targetSession && targetSession.status === 'COMPLETED') {
+      clearPendingSessionCompletion();
+      setPendingCompletion(null);
+    }
+  }, [pendingCompletion, sessions]);
 
   const filteredSessions = sessions.filter(session => {
     const roleLabel = roleLabelMap[session.role]?.en?.toLowerCase() || session.role;
@@ -102,6 +125,32 @@ const Sessions = () => {
 
   return (
     <div className="space-y-8">
+      {pendingCompletion && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 cursor-pointer"
+          onClick={() => {
+            clearPendingSessionCompletion();
+            setPendingCompletion(null);
+          }}
+          data-testid="pending-modal-backdrop"
+        >
+          <div 
+            className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-2xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-accent" />
+            <h3 className="text-lg font-semibold text-foreground">
+              {language === 'vi' ? 'Hãy chờ chút Invera chấm điểm cho bạn' : 'Please wait while Invera grades your session'}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {language === 'vi'
+                ? 'Phiên của bạn đang được hoàn tất ở nền.'
+                : 'Your session is being finalized in the background.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{t('sessions', 'title')}</h1>

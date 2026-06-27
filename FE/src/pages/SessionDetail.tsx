@@ -157,7 +157,6 @@ const SessionDetail = () => {
   let avgGaze = 0;
   let avgSmile = 0;
   let avgPosture = 0;
-  let avgFraming = 0;
   let avgFidget = 0;
   let totalHandGestures = 0;
   let avgConfidence = 0;
@@ -166,7 +165,6 @@ const SessionDetail = () => {
     let gazeSum = 0;
     let smileSum = 0;
     let postureSum = 0;
-    let framingSum = 0;
     let fidgetSum = 0;
     let confidenceSum = 0;
     
@@ -176,7 +174,6 @@ const SessionDetail = () => {
         gazeSum += tel.gazeRatio ?? 0;
         smileSum += tel.smileRatio ?? 0;
         postureSum += tel.bodyPostureScore ?? (tel.slouchRatio != null ? (1 - tel.slouchRatio) : 1);
-        framingSum += tel.cameraFramingScore ?? 1;
         fidgetSum += tel.fidgetRatio ?? 0;
         totalHandGestures += tel.handGestures ?? 0;
         confidenceSum += tel.presentationConfidence ?? 100;
@@ -187,7 +184,6 @@ const SessionDetail = () => {
     avgGaze = Math.round((gazeSum / count) * 100);
     avgSmile = Math.round((smileSum / count) * 100);
     avgPosture = Math.round((postureSum / count) * 100);
-    avgFraming = Math.round((framingSum / count) * 100);
     avgFidget = Math.round((fidgetSum / count) * 100);
     avgConfidence = Math.round(confidenceSum / count);
   }
@@ -507,21 +503,6 @@ const SessionDetail = () => {
                   <Progress value={avgPosture} className="h-1.5 bg-muted/40" />
                   <p className="text-[10px] text-muted-foreground">
                     {language === 'vi' ? 'Tỉ lệ thời gian ngồi thẳng, chuyên nghiệp' : 'Time spent sitting up straight'}
-                  </p>
-                </div>
-
-                {/* Camera Framing */}
-                <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="flex items-center gap-1.5 text-foreground/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                      {language === 'vi' ? 'Góc máy (Framing)' : 'Camera Framing'}
-                    </span>
-                    <span className="text-purple-500">{avgFraming}%</span>
-                  </div>
-                  <Progress value={avgFraming} className="h-1.5 bg-muted/40" />
-                  <p className="text-[10px] text-muted-foreground">
-                    {language === 'vi' ? 'Mặt nằm ở vị trí trung tâm camera' : 'Face positioned correctly in camera frame'}
                   </p>
                 </div>
 
