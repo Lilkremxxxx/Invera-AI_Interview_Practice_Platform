@@ -1,4 +1,10 @@
 import type { APIRequestContext } from "@playwright/test";
+import {
+  SMOKE_ADMIN_PREFIX,
+  SMOKE_AUTOMATION_PASSWORD,
+  SMOKE_CANDIDATE_PREFIX,
+  SMOKE_SESSION_PAYLOAD,
+} from "./constants";
 
 type AutomationSessionPayload = {
   major: string;
@@ -50,18 +56,11 @@ async function postBootstrap(apiBaseUrl: string): Promise<AutomationBootstrapRes
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      candidate_email_prefix: `automation-candidate-${Date.now()}`,
-      admin_email_prefix: `automation-admin-${Date.now()}`,
+      candidate_email_prefix: `${SMOKE_CANDIDATE_PREFIX}-${Date.now()}`,
+      admin_email_prefix: `${SMOKE_ADMIN_PREFIX}-${Date.now()}`,
       candidate_full_name: "Automation Candidate",
       admin_full_name: "Automation Admin",
-      session_payload: {
-        major: "technology",
-        role: "frontend-engineer",
-        level: "junior",
-        mode: "camera",
-        language: "vi",
-        question_count: 1,
-      },
+      session_payload: SMOKE_SESSION_PAYLOAD,
       questions: [
         {
           text: "Tell me about a time you shipped a feature under pressure.",
@@ -84,8 +83,8 @@ export async function bootstrapSmokeUsers(_request?: APIRequestContext): Promise
   const apiBaseUrl = readEnv("VITE_AUTOMATION_API_BASE_URL");
   const payload = await postBootstrap(apiBaseUrl);
   return {
-    candidate: { ...payload.candidate, password: "automation-password" },
-    admin: { ...payload.admin, password: "automation-password" },
+    candidate: { ...payload.candidate, password: SMOKE_AUTOMATION_PASSWORD },
+    admin: { ...payload.admin, password: SMOKE_AUTOMATION_PASSWORD },
     session: payload.session,
     questions: payload.questions,
   };
