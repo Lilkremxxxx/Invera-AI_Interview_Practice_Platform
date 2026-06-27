@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   ArrowRight,
   ArrowLeft,
+  ChevronRight,
   X,
   Mic, 
   MicOff, 
@@ -38,10 +39,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { roleLabelMap } from '@/lib/mock-data';
 import { formatScoreValue, getScoreBarClass, getScoreBgClass, getScoreTextClass, toScoreProgress } from '@/lib/score';
 import { WebcamTelemetry, TelemetryData } from '@/components/interview/WebcamTelemetry';
+import { clearPendingSessionCompletion, markPendingSessionCompletion } from '@/lib/session-completion';
 
 const RECORDING_LIMIT_SECONDS = 120;
 const QUESTION_TIME_LIMIT_SECONDS = 300;
-const DEFAULT_STT_LANGUAGE = 'vi';
 const FEEDBACK_MASCOT_ANIMATIONS = [
   'animate-mascot-bounce',
   'animate-mascot-wiggle',
@@ -63,48 +64,6 @@ function createFeedbackMascotCue(): FeedbackMascotCue {
 }
 
 type SttLanguage = 'vi' | 'en';
-
-const browserSttLanguageMap: Record<SttLanguage, string> = {
-  vi: 'vi-VN',
-  en: 'en-US',
-};
-
-type SpeechRecognitionResultLike = {
-  isFinal: boolean;
-  0: { transcript: string };
-};
-
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: {
-    length: number;
-    [index: number]: SpeechRecognitionResultLike;
-  };
-};
-
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-
-type SpeechRecognitionWindow = Window & {
-  SpeechRecognition?: SpeechRecognitionConstructor;
-  webkitSpeechRecognition?: SpeechRecognitionConstructor;
-};
-
-type RealtimeSttMessage =
-  | { type: 'partial'; seq: number; text: string; is_final: false }
-  | { type: 'final'; seq: number; text: string; is_final: true }
-  | { type: 'error'; seq: number; detail: string; recoverable?: boolean }
-  | { type: 'stopped'; seq: number };
 
 function resolveFeedbackAudioUrl(audioUrl: string): string {
   if (/^(https?:|blob:|data:)/i.test(audioUrl)) {
@@ -155,11 +114,9 @@ const InterviewRoom = () => {
     recordingLimit: language === 'vi' ? 'Tự dừng sau' : 'Auto-stop in',
     recordingLimitReached: language === 'vi' ? 'Đã chạm giới hạn ghi âm, đang chuyển sang văn bản.' : 'Recording limit reached, transcribing now.',
     transcribing: language === 'vi' ? 'Đang chuyển giọng nói thành văn bản...' : 'Transcribing your recording...',
-    liveTranscript: language === 'vi' ? 'Transcript realtime' : 'Live transcript',
     sttUnavailable: language === 'vi' ? 'Trình duyệt này không hỗ trợ ghi âm.' : 'This browser does not support audio recording.',
     sttPermissionDenied: language === 'vi' ? 'Không thể truy cập microphone.' : 'Unable to access the microphone.',
-    sttFailed: language === 'vi' ? 'Không thể chuyển giọng nói thành văn bản.' : 'Unable to transcribe the recording.',
-    sttLanguage: language === 'vi' ? 'Ngôn ngữ ghi âm' : 'Recording language',
+    sessionLanguage: language === 'vi' ? 'Ngôn ngữ phiên' : 'Session language',
     vietnameseLang: language === 'vi' ? 'Tiếng Việt' : 'Vietnamese',
     englishLang: language === 'vi' ? 'Tiếng Anh' : 'English',
     submit: language === 'vi' ? 'Nộp câu trả lời' : 'Submit answer',
@@ -242,7 +199,6 @@ const InterviewRoom = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSynthesizingFeedback, setIsSynthesizingFeedback] = useState(false);
-  const [liveTranscript, setLiveTranscript] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState<AnswerOut | null>(null);
   const [followUpAnswer, setFollowUpAnswer] = useState('');
   const [pendingQuestionId, setPendingQuestionId] = useState<number | null>(null);
@@ -251,6 +207,7 @@ const InterviewRoom = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
   const [loadError, setLoadError] = useState(false);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [questionTurnStartedAt, setQuestionTurnStartedAt] = useState<number | null>(null);
   const [questionTurnType, setQuestionTurnType] = useState<'answer' | 'followup' | null>(null);
@@ -259,18 +216,25 @@ const InterviewRoom = () => {
   const timeoutHandledRef = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const realtimeSocketRef = useRef<WebSocket | null>(null);
-  const realtimeSocketReadyRef = useRef(false);
-  const realtimeTranscriptReceivedRef = useRef(false);
-  const recordingAnswerPrefixRef = useRef('');
-  const realtimeFinalTranscriptRef = useRef('');
-  const realtimePartialTranscriptRef = useRef('');
-  const liveFinalTranscriptRef = useRef('');
   const audioChunksRef = useRef<Blob[]>([]);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const pendingAnswerUploadRef = useRef<Promise<unknown> | null>(null);
+
+  const trackPendingAnswerUpload = (uploadPromise: Promise<unknown>) => {
+    pendingAnswerUploadRef.current = uploadPromise;
+    uploadPromise.finally(() => {
+      if (pendingAnswerUploadRef.current === uploadPromise) {
+        pendingAnswerUploadRef.current = null;
+      }
+    });
+    return uploadPromise;
+  };
+
+  const waitForPendingAnswerUpload = async () => {
+    const pendingUpload = pendingAnswerUploadRef.current;
+    if (pendingUpload) {
+      await pendingUpload.catch(() => {});
+    }
+  };
 
   function handleForceSubmitAnswer() {
     if (isRecording) {
@@ -354,6 +318,7 @@ const InterviewRoom = () => {
     if (questionTurnType === null) return;
 
     timeoutHandledRef.current = true;
+    setHasTimedOut(true);
 
     if (questionTurnType === 'answer') {
       void handleForceSubmitAnswer();
@@ -374,8 +339,6 @@ const InterviewRoom = () => {
     return () => {
       mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-      speechRecognitionRef.current?.stop();
-      realtimeSocketRef.current?.close();
     };
   }, []);
 
@@ -605,324 +568,6 @@ const InterviewRoom = () => {
     mediaStreamRef.current = null;
   };
 
-  const appendTranscript = (transcript: string) => {
-    setAnswer((current) => {
-      const trimmedCurrent = current.trim();
-      if (!trimmedCurrent) return transcript;
-      return `${current}${/\s$/.test(current) ? '' : ' '}${transcript}`;
-    });
-  };
-
-  const buildCombinedTranscript = (prefix: string, finalText: string, partialText: string) => {
-    return [prefix.trim(), finalText.trim(), partialText.trim()].filter(Boolean).join(' ').trim();
-  };
-
-  const syncAnswerWithRealtimeTranscript = () => {
-    const combined = buildCombinedTranscript(
-      recordingAnswerPrefixRef.current,
-      realtimeFinalTranscriptRef.current,
-      realtimePartialTranscriptRef.current,
-    );
-    setAnswer(combined);
-  };
-
-  const closeRealtimeSttSocket = () => {
-    const socket = realtimeSocketRef.current;
-    realtimeSocketRef.current = null;
-    realtimeSocketReadyRef.current = false;
-
-    if (audioContextRef.current) {
-      try {
-        void audioContextRef.current.close();
-      } catch (err) {
-        console.error('Error closing audio context:', err);
-      }
-      audioContextRef.current = null;
-    }
-    if (audioProcessorRef.current) {
-      try {
-        audioProcessorRef.current.disconnect();
-      } catch (err) {
-        console.error('Error disconnecting audio processor:', err);
-      }
-      audioProcessorRef.current = null;
-    }
-    if (audioSourceRef.current) {
-      try {
-        audioSourceRef.current.disconnect();
-      } catch (err) {
-        console.error('Error disconnecting audio source:', err);
-      }
-      audioSourceRef.current = null;
-    }
-
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'stop' }));
-    }
-    socket?.close();
-    setLiveTranscript('');
-  };
-
-  const startRealtimeSttSocket = async () => {
-    if (!id || !session) return false;
-
-    closeRealtimeSttSocket();
-    realtimeTranscriptReceivedRef.current = false;
-    realtimeFinalTranscriptRef.current = '';
-    realtimePartialTranscriptRef.current = '';
-
-    // Create AudioContext early to detect sample rate
-    let sampleRate = 16000;
-    const stream = mediaStreamRef.current;
-    if (stream) {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContextClass();
-        audioContextRef.current = audioContext;
-        sampleRate = audioContext.sampleRate;
-      } catch (err) {
-        console.error('Failed to pre-create AudioContext:', err);
-      }
-    }
-
-    const socket = sessionsApi.createRealtimeSttSocket?.(id, {
-      language: sessionLanguage,
-      questionId: session.questions[currentQuestion]?.id,
-      sampleRate: sampleRate,
-    });
-    if (!socket) {
-      if (audioContextRef.current) {
-        void audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-      return false;
-    }
-
-    realtimeSocketRef.current = socket;
-    return await new Promise<boolean>((resolve) => {
-      let resolved = false;
-      const settle = (value: boolean) => {
-        if (resolved) return;
-        resolved = true;
-        resolve(value);
-      };
-
-      socket.onopen = async () => {
-        realtimeSocketReadyRef.current = true;
-
-        const audioContext = audioContextRef.current;
-        if (stream && audioContext) {
-          try {
-            const source = audioContext.createMediaStreamSource(stream);
-            let useWorklet = false;
-
-            if (audioContext.audioWorklet) {
-              try {
-                const workletCode = `
-                  class PCMProcessor extends AudioWorkletProcessor {
-                    process(inputs, outputs, parameters) {
-                      const input = inputs[0];
-                      if (input && input[0]) {
-                        this.port.postMessage(input[0]);
-                      }
-                      return true;
-                    }
-                  }
-                  registerProcessor('pcm-processor', PCMProcessor);
-                `;
-                const blob = new Blob([workletCode], { type: 'application/javascript' });
-                const workletUrl = URL.createObjectURL(blob);
-                await audioContext.audioWorklet.addModule(workletUrl);
-
-                const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
-                let bufferQueue: Float32Array[] = [];
-                let bufferLength = 0;
-                const TARGET_ACCUMULATED_SAMPLES = Math.floor(sampleRate * 0.25);
-
-                workletNode.port.onmessage = (event) => {
-                  const inputData = event.data as Float32Array;
-                  bufferQueue.push(new Float32Array(inputData));
-                  bufferLength += inputData.length;
-
-                  if (bufferLength >= TARGET_ACCUMULATED_SAMPLES) {
-                    const flattened = new Float32Array(bufferLength);
-                    let offset = 0;
-                    for (const chunk of bufferQueue) {
-                      flattened.set(chunk, offset);
-                      offset += chunk.length;
-                    }
-                    bufferQueue = [];
-                    bufferLength = 0;
-
-                    if (socket.readyState !== WebSocket.OPEN) return;
-                    const pcmData = new Int16Array(flattened.length);
-                    for (let i = 0; i < flattened.length; i++) {
-                      const s = Math.max(-1, Math.min(1, flattened[i]));
-                      pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                    }
-                    socket.send(pcmData.buffer);
-                  }
-                };
-
-                source.connect(workletNode);
-                workletNode.connect(audioContext.destination);
-
-                audioProcessorRef.current = workletNode;
-                audioSourceRef.current = source;
-                useWorklet = true;
-                console.log('Successfully set up real-time PCM audio streaming using AudioWorklet');
-              } catch (workletErr) {
-                console.warn('Failed to initialize AudioWorklet, falling back to ScriptProcessor:', workletErr);
-              }
-            }
-
-            if (!useWorklet) {
-              const processor = audioContext.createScriptProcessor(4096, 1, 1);
-              processor.onaudioprocess = (e) => {
-                if (socket.readyState !== WebSocket.OPEN) return;
-                const inputData = e.inputBuffer.getChannelData(0);
-                const pcmData = new Int16Array(inputData.length);
-                for (let i = 0; i < inputData.length; i++) {
-                  const s = Math.max(-1, Math.min(1, inputData[i]));
-                  pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                }
-                socket.send(pcmData.buffer);
-              };
-
-              source.connect(processor);
-              processor.connect(audioContext.destination);
-
-              audioProcessorRef.current = processor;
-              audioSourceRef.current = source;
-              console.log('Successfully set up real-time PCM audio streaming using ScriptProcessorNode');
-            }
-          } catch (err) {
-            console.error('Failed to set up real-time PCM audio streaming:', err);
-          }
-        }
-
-        settle(true);
-      };
-      socket.onerror = () => {
-        realtimeSocketReadyRef.current = false;
-        settle(false);
-      };
-      socket.onclose = () => {
-        realtimeSocketReadyRef.current = false;
-        if (isRecordingRef.current && !speechRecognitionRef.current) {
-          startLiveSpeechRecognition();
-        }
-      };
-      socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data) as RealtimeSttMessage;
-          if (payload.type === 'partial') {
-            realtimePartialTranscriptRef.current = payload.text.trim();
-            setLiveTranscript(realtimePartialTranscriptRef.current);
-            syncAnswerWithRealtimeTranscript();
-            return;
-          }
-          if (payload.type === 'final' && payload.text.trim()) {
-            realtimeTranscriptReceivedRef.current = true;
-            realtimeFinalTranscriptRef.current = `${realtimeFinalTranscriptRef.current} ${payload.text}`.trim();
-            realtimePartialTranscriptRef.current = '';
-            liveFinalTranscriptRef.current = realtimeFinalTranscriptRef.current;
-            setLiveTranscript('');
-            syncAnswerWithRealtimeTranscript();
-            return;
-          }
-          if (payload.type === 'error') {
-            setLiveTranscript('');
-          }
-        } catch {
-          // Ignore malformed WS messages and keep the recording alive.
-        }
-      };
-
-      window.setTimeout(() => settle(socket.readyState === WebSocket.OPEN), 1500);
-    });
-  };
-
-  const sendRealtimeChunk = (blob: Blob) => {
-    if (audioContextRef.current) return;
-    if (!blob.size) return;
-    const socket = realtimeSocketRef.current;
-    if (!socket || !realtimeSocketReadyRef.current || socket.readyState !== WebSocket.OPEN) return;
-
-    void blob.arrayBuffer().then((buffer) => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(buffer);
-      }
-    }).catch(() => {
-      // Ignore transient chunk serialization errors; upload fallback still exists.
-    });
-  };
-
-
-  const startLiveSpeechRecognition = () => {
-    if (speechRecognitionRef.current) {
-      console.warn('Speech recognition is already running.');
-      return;
-    }
-    const speechWindow = window as SpeechRecognitionWindow;
-    const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-    if (!Recognition) {
-      console.error('Web Speech API is not supported in this browser.');
-      return;
-    }
-
-    try {
-      const recognition = new Recognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = browserSttLanguageMap[sessionLanguage];
-      recognition.onresult = (event) => {
-        let interim = '';
-        let finalAccumulated = '';
-        for (let index = 0; index < event.results.length; index += 1) {
-          const result = event.results[index];
-          if (result.isFinal) {
-            finalAccumulated += result[0].transcript;
-          } else {
-            interim += result[0].transcript;
-          }
-        }
-        liveFinalTranscriptRef.current = finalAccumulated.trim();
-        setLiveTranscript(interim.trim());
-        
-        const combined = buildCombinedTranscript(
-          recordingAnswerPrefixRef.current,
-          finalAccumulated,
-          interim
-        );
-        setAnswer(combined);
-      };
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error, event.message);
-        speechRecognitionRef.current = null;
-        setLiveTranscript('');
-      };
-      recognition.onend = () => {
-        console.log('Speech recognition ended.');
-        speechRecognitionRef.current = null;
-        setLiveTranscript('');
-      };
-      recognition.start();
-      speechRecognitionRef.current = recognition;
-      console.log('Speech recognition started successfully.');
-    } catch (err) {
-      console.error('Failed to start speech recognition:', err);
-      speechRecognitionRef.current = null;
-    }
-  };
-
-  const stopLiveSpeechRecognition = () => {
-    const recognition = speechRecognitionRef.current;
-    speechRecognitionRef.current = null;
-    recognition?.stop();
-    setLiveTranscript('');
-  };
-
   const handleWebcamRecordingStart = (stream: MediaStream) => {
     mediaStreamRef.current = stream;
   };
@@ -937,15 +582,17 @@ const InterviewRoom = () => {
       const videoFile = new File([videoBlob], `session-${id}-${question.id}.webm`, { type: 'video/webm' });
 
       // Background upload (we preserve the promise)
-      uploadPromise = sessionsApi.submitVideoAnswer(
-        id,
-        videoFile,
-        telemetry,
-        sessionLanguage,
-        currentQuestionId
-      ).catch((err) => {
-        console.error("Error uploading video answer in background:", err);
-      });
+      uploadPromise = trackPendingAnswerUpload(
+        sessionsApi.submitVideoAnswer(
+          id,
+          videoFile,
+          telemetry,
+          sessionLanguage,
+          currentQuestionId
+        ).catch((err) => {
+          console.error("Error uploading video answer in background:", err);
+        }),
+      );
     }
 
     void uploadPromise.catch((err) => {
@@ -957,9 +604,6 @@ const InterviewRoom = () => {
 
   const handleStartRecording = async () => {
     if (isTimeUp || isTranscribing) return;
-    recordingAnswerPrefixRef.current = answer;
-    liveFinalTranscriptRef.current = '';
-    setLiveTranscript('');
     if (session?.mode === 'camera') {
       const hasVideo = mediaStreamRef.current?.getVideoTracks().some((track) => track.readyState === 'live');
       if (!hasVideo) {
@@ -970,19 +614,6 @@ const InterviewRoom = () => {
         return;
       }
       setIsRecording(true);
-      // Start speech recognition to capture transcript for WPM calculation
-      // Try WebSocket realtime STT first, fall back to browser SpeechRecognition
-      if (!navigator.mediaDevices?.getUserMedia) {
-        // No audio support — start browser speech recognition directly
-        startLiveSpeechRecognition();
-      } else {
-        // Start realtime STT WebSocket; if fails, browser fallback will activate
-        void startRealtimeSttSocket().then((connected) => {
-          if (!connected) {
-            startLiveSpeechRecognition();
-          }
-        });
-      }
       return;
     }
 
@@ -998,7 +629,6 @@ const InterviewRoom = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
-      liveFinalTranscriptRef.current = '';
 
       const preferredMimeType = typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported('audio/webm')
         ? 'audio/webm'
@@ -1060,8 +690,7 @@ const InterviewRoom = () => {
   const handleStopRecording = () => {
     if (session?.mode === 'camera') {
       setIsRecording(false);
-      stopLiveSpeechRecognition();
-      closeRealtimeSttSocket();
+      stopRecordingTracks();
       return;
     }
     const recorder = mediaRecorderRef.current;
@@ -1071,18 +700,17 @@ const InterviewRoom = () => {
   };
 
   const handleNextQuestion = async () => {
+    setHasTimedOut(false);
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer('');
       setFollowUpAnswer('');
-      setLiveTranscript('');
       setShowFeedback(false);
       setCurrentAnswer(null);
       setPendingQuestionId(null);
       setIsSubmitting(false);
       setIsSubmittingFollowUp(false);
       setWebcamTelemetry(null);
-      liveFinalTranscriptRef.current = '';
       setQuestionTurnType('answer');
       setQuestionTurnStartedAt(Date.now());
       setRemainingSeconds(QUESTION_TIME_LIMIT_SECONDS);
@@ -1091,6 +719,7 @@ const InterviewRoom = () => {
       // Last question — complete the session
       setIsCompleting(true);
       try {
+        await waitForPendingAnswerUpload();
         const completed = await sessionsApi.complete(id!, { generateReport: true });
         setCompletedSession(completed);
         sessionStorage.removeItem(`session_${id}`);
@@ -1110,12 +739,26 @@ const InterviewRoom = () => {
 
   const handleEndSession = async () => {
     setEndDialogOpen(false);
-    try {
-      await sessionsApi.complete(id!, { generateReport: false });
-      sessionStorage.removeItem(`session_${id}`);
-    } catch {
-      // Still return to the session list if the best-effort completion call fails.
+    if (!id) {
+      navigate('/app/sessions');
+      return;
     }
+
+    markPendingSessionCompletion(id);
+    void (async () => {
+      try {
+        await waitForPendingAnswerUpload();
+        await sessionsApi.complete(id, { generateReport: false });
+        sessionStorage.removeItem(`session_${id}`);
+      } catch {
+        // Still return to the session list if the best-effort completion call fails.
+        clearPendingSessionCompletion();
+      } finally {
+        if (pendingAnswerUploadRef.current == null) {
+          sessionStorage.removeItem(`session_${id}`);
+        }
+      }
+    })();
     navigate('/app/sessions');
   };
 
@@ -1235,7 +878,7 @@ const InterviewRoom = () => {
 
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{roomLanguage === 'vi' ? 'Ngôn ngữ ghi âm' : 'Recording language'}</span>
+                  <span className="font-medium text-foreground">{copy.sessionLanguage}</span>
                   <span>{sessionLanguage === 'vi' ? copy.vietnameseLang : copy.englishLang}</span>
                 </div>
 
@@ -1299,9 +942,7 @@ const InterviewRoom = () => {
                 isRecording={isRecording}
                 onRecordingStart={handleWebcamRecordingStart}
                 onRecordingStop={handleWebcamRecordingStop}
-                onRecordingChunk={sendRealtimeChunk}
                 language={sessionLanguage}
-                liveTranscript={liveTranscript}
                 answerText={answer}
                 onCameraReady={(stream) => {
                   mediaStreamRef.current = stream;
@@ -1344,6 +985,44 @@ const InterviewRoom = () => {
           </div>
         </div>
       </div>
+      
+      {hasTimedOut && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t p-4 flex items-center justify-between shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {roomLanguage === 'vi' ? 'Đã hết thời gian (5 phút)' : 'Time limit exceeded (5m)'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {roomLanguage === 'vi' 
+                  ? 'Câu trả lời của bạn đã được lưu tự động. Vui lòng chuyển sang câu tiếp theo.'
+                  : 'Your answer has been auto-submitted. Please proceed to the next question.'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="accent"
+            size="default"
+            onClick={() => void handleNextQuestion()}
+            className="flex items-center gap-2 px-6 shadow-md hover:shadow-lg transition-all font-semibold"
+          >
+            {currentQuestion < totalQuestions - 1 ? (
+              <>
+                <span>{roomLanguage === 'vi' ? 'Câu tiếp theo' : 'Next question'}</span>
+                <ChevronRight className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <span>{roomLanguage === 'vi' ? 'Hoàn thành phiên' : 'Finish session'}</span>
+                <Sparkles className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
