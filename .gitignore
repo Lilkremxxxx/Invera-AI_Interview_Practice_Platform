@@ -42,6 +42,7 @@ BE/.env
 BE/.env*
 FE/.env
 FE/.env*
+FE/test-results/
 .runtime/
 .antigravitycli/
 tmp/
