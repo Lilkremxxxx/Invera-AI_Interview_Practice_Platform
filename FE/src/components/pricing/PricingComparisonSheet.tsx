@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 
@@ -301,6 +302,10 @@ export function PricingComparisonSheet({
   onSelectPlan,
   getActionLabel,
 }: PricingComparisonSheetProps) {
+  const displayedPlans = useMemo(() => {
+    return mode === 'upgrade' ? pricingPlans.filter((p) => p.id !== 'free') : pricingPlans;
+  }, [mode]);
+
   const localizedRows = comparisonRows.map((row) => {
     if (row.key === 'price') {
       return {
@@ -376,11 +381,12 @@ export function PricingComparisonSheet({
       data-mode={mode}
     >
       <div className="grid gap-3 p-2 sm:p-3 md:hidden">
-        {pricingPlans.map((plan) => {
+        {displayedPlans.map((plan) => {
           const isCurrent = currentPlanTier === plan.id;
           const actionLabel =
             getActionLabel?.(plan.id as PricingPlanId, isCurrent)
-            ?? pricingPlanContent[plan.id as keyof typeof pricingPlanContent].cta[language];
+            ?? pricingPlanContent[plan.id as keyof typeof pricingPlanContent]?.cta?.[language]
+            ?? '';
 
           return (
             <div
@@ -399,7 +405,7 @@ export function PricingComparisonSheet({
                     </div>
                     <div className="truncate text-base font-semibold text-foreground sm:text-lg">{plan.name}</div>
                     <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-                      {pricingPlanContent[plan.id as keyof typeof pricingPlanContent].cta[language]}
+                      {pricingPlanContent[plan.id as keyof typeof pricingPlanContent]?.cta?.[language] ?? ''}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -524,7 +530,7 @@ export function PricingComparisonSheet({
               <th className="sticky left-0 z-20 w-[280px] border-b border-border bg-muted/95 px-5 py-4 text-left text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
                 {language === 'vi' ? 'Tính năng' : 'Features'}
               </th>
-              {pricingPlans.map((plan) => {
+              {displayedPlans.map((plan) => {
                 const isCurrent = currentPlanTier === plan.id;
                 return (
                   <th
@@ -540,7 +546,7 @@ export function PricingComparisonSheet({
                         <div>
                           <div className="text-lg font-semibold text-foreground">{plan.name}</div>
                           <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                            {pricingPlanContent[plan.id as keyof typeof pricingPlanContent].cta[language]}
+                            {pricingPlanContent[plan.id as keyof typeof pricingPlanContent]?.cta?.[language] ?? ''}
                           </div>
                         </div>
                         {plan.popular && (
@@ -567,7 +573,7 @@ export function PricingComparisonSheet({
                 <th className="sticky left-0 z-10 border-b border-border bg-card px-5 py-4 text-left text-sm font-medium text-foreground">
                   {row.label[language]}
                 </th>
-                {pricingPlans.map((plan) => {
+                {displayedPlans.map((plan) => {
                   const value = row.values[plan.id as PricingPlanId][language];
                   const isFeature = value === '✓';
                   const isMissing = value === '—';
@@ -587,8 +593,7 @@ export function PricingComparisonSheet({
                           isMissing && 'text-muted-foreground',
                         )}
                       >
-                        {isFeature ? <CheckCircle2 className="h-4 w-4" /> : null}
-                        {value}
+                        {isFeature ? <CheckCircle2 className="h-4 w-4" /> : value}
                       </span>
                     </td>
                   );
@@ -601,11 +606,12 @@ export function PricingComparisonSheet({
               <td className="sticky left-0 z-10 border-t border-border bg-muted/95 px-5 py-5 text-left text-xs uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
                 {language === 'vi' ? 'Thanh toán' : 'Checkout'}
               </td>
-              {pricingPlans.map((plan) => {
+              {displayedPlans.map((plan) => {
                 const isCurrent = currentPlanTier === plan.id;
                 const actionLabel =
                   getActionLabel?.(plan.id as PricingPlanId, isCurrent)
-                  ?? pricingPlanContent[plan.id as keyof typeof pricingPlanContent].cta[language];
+                  ?? pricingPlanContent[plan.id as keyof typeof pricingPlanContent]?.cta?.[language]
+                  ?? '';
                 const buttonContent = loadingPlanId === plan.id
                   ? (
                       <>
