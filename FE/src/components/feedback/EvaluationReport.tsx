@@ -132,9 +132,6 @@ function extractMetricBadges(lines: string[]): { label: string; value: string; c
     // Posture
     const postureMatch = line.match(/(?:Posture|tư thế).*?(\d+)%/i);
     if (postureMatch) badges.push({ label: 'Posture', value: `${postureMatch[1]}%`, color: postureMatch[1] >= '70' ? 'bg-emerald-100/80 text-emerald-700 border border-emerald-200/60' : 'bg-amber-100/80 text-amber-700 border border-amber-200/60' });
-    // Framing
-    const framingMatch = line.match(/(?:Framing|khung hình).*?(\d+)%/i);
-    if (framingMatch) badges.push({ label: 'Framing', value: `${framingMatch[1]}%`, color: framingMatch[1] >= '60' ? 'bg-emerald-100/80 text-emerald-700 border border-emerald-200/60' : 'bg-amber-100/80 text-amber-700 border border-amber-200/60' });
     // Pace / WPM
     const paceMatch = line.match(
       /(\d+(?:\.\d+)?)\s*(?:WPM|words?\s*per\s*minute|từ\s*\/\s*phút|từ\s*phút|minutes?\s*per\s*word)/i
