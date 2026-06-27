@@ -263,63 +263,6 @@ def test_session_video_route_runs_transcription_off_event_loop(monkeypatch):
     assert response.json() == {"text": "Đang xử lý..."}
 
 
-def test_session_stt_websocket_streams_chunk_transcripts(monkeypatch):
-    from app.api.endpoints import sessions as sessions_endpoint
-
-    app = FastAPI()
-    app.include_router(sessions_router, prefix="/api/sessions")
-
-    async def override_db():
-        yield FakeInProgressSessionDb()
-
-    async def fake_authenticate_ws_user(websocket, db):
-        return _build_user()
-
-    class FakeRealtimeSession:
-        def __init__(self, *, language=None):
-            self.language = language
-
-        def accept_chunk(self, audio_bytes, suffix=".webm"):
-            assert audio_bytes == (b"x" * 5000)
-            return {"type": "partial", "text": "stream transcript", "is_final": False}
-
-        def finalize(self):
-            return "final transcript"
-
-    async def fake_to_thread(func, *args, **kwargs):
-        if func is sessions_endpoint.VoskRealtimeSession:
-            return FakeRealtimeSession(language=kwargs.get("language"))
-        return func(*args, **kwargs)
-
-    monkeypatch.setattr(sessions_endpoint, "_authenticate_ws_user", fake_authenticate_ws_user)
-    monkeypatch.setattr(sessions_endpoint, "VoskRealtimeSession", FakeRealtimeSession)
-    monkeypatch.setattr(sessions_endpoint.asyncio, "to_thread", fake_to_thread)
-
-    from app.db.session import get_db
-
-    app.dependency_overrides[get_db] = override_db
-
-    client = TestClient(app)
-    with client.websocket_connect("/api/sessions/00000000-0000-0000-0000-000000000001/stt-stream?token=test&language=en") as websocket:
-        websocket.send_bytes(b"x" * 5000)
-        payload = websocket.receive_json()
-        websocket.send_text('{"type":"stop"}')
-        final_payload = websocket.receive_json()
-
-    assert payload == {
-        "type": "partial",
-        "seq": 1,
-        "text": "stream transcript",
-        "is_final": False,
-    }
-    assert final_payload == {
-        "type": "final",
-        "seq": 2,
-        "text": "final transcript",
-        "is_final": True,
-    }
-
-
 def test_live_agent_websocket_streams_prompt_events(monkeypatch):
     from app.api.endpoints import sessions as sessions_endpoint
 

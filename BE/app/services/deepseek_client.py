@@ -32,7 +32,11 @@ async def close_deepseek_client() -> None:
         _clients.clear()
 
     for client in clients:
-        await client.aclose()
+        try:
+            await client.aclose()
+        except RuntimeError as e:
+            if "Event loop is closed" not in str(e):
+                raise
 
 
 async def create_chat_completion(

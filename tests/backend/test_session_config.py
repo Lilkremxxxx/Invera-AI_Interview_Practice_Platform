@@ -43,10 +43,11 @@ class FakeDb:
             "role": params[2],
             "level": params[3],
             "mode": params[4],
+            "language": params[5] if len(params) > 5 else "en",
             "status": "IN_PROGRESS",
             "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
             "completed_at": None,
-            "time_limit_minutes": params[5],
+            "time_limit_minutes": params[6] if len(params) > 6 else None,
         }
 
     async def executemany(self, query, values):
@@ -125,6 +126,7 @@ def test_create_session_forces_five_minutes_per_question_and_accepts_camera_mode
     monkeypatch.setattr(sessions_module, "_fetch_session_questions", fake_fetch_questions)
     monkeypatch.setattr(sessions_module, "ensure_question_bank_minimum", fake_ensure_question_bank_minimum)
     monkeypatch.setattr(sessions_module, "translate_questions_to_vi_if_needed", passthrough_translate)
+    monkeypatch.setattr(sessions_module, "translate_questions_to_en_if_needed", passthrough_translate)
 
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_current_user] = _build_user
@@ -146,7 +148,7 @@ def test_create_session_forces_five_minutes_per_question_and_accepts_camera_mode
     assert response.status_code == 200
     assert response.json()["mode"] == "camera"
     assert fake_db.insert_params[1][4] == "camera"
-    assert fake_db.insert_params[1][5] is None
+    assert fake_db.insert_params[1][6] is None
 
 
 def test_create_session_rotates_repeated_first_question(monkeypatch):
@@ -335,6 +337,7 @@ def test_create_session_accepts_live_mode_for_pro_users(monkeypatch):
     monkeypatch.setattr(sessions_module, "_fetch_session_questions", fake_fetch_questions)
     monkeypatch.setattr(sessions_module, "ensure_question_bank_minimum", fake_ensure_question_bank_minimum)
     monkeypatch.setattr(sessions_module, "translate_questions_to_vi_if_needed", passthrough_translate)
+    monkeypatch.setattr(sessions_module, "translate_questions_to_en_if_needed", passthrough_translate)
 
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_current_user] = _build_user
@@ -426,8 +429,13 @@ def test_create_session_only_appends_cv_tagged_user_questions(monkeypatch):
             }
         ]
 
+    async def passthrough_translate(db, questions):
+        return questions
+
     monkeypatch.setattr(sessions_module, "get_user_plan_snapshot", fake_plan_snapshot)
     monkeypatch.setattr(sessions_module, "_fetch_session_questions", fake_fetch_questions)
+    monkeypatch.setattr(sessions_module, "translate_questions_to_vi_if_needed", passthrough_translate)
+    monkeypatch.setattr(sessions_module, "translate_questions_to_en_if_needed", passthrough_translate)
     monkeypatch.setattr(sessions_module.random, "randint", lambda a, b: 2)
 
     app.dependency_overrides[get_db] = override_db
@@ -450,7 +458,7 @@ def test_create_session_only_appends_cv_tagged_user_questions(monkeypatch):
     question_ids = [question["id"] for question in response.json()["questions"]]
     assert question_ids == [1, 90]
     assert all(question["tags"] == ["CV-based"] or question["id"] == 1 for question in response.json()["questions"])
-    assert fake_db.insert_params[1][5] is None
+    assert fake_db.insert_params[1][6] is None
 
 
 def test_complete_session_can_schedule_report_generation_without_waiting(monkeypatch):
@@ -471,6 +479,7 @@ def test_complete_session_can_schedule_report_generation_without_waiting(monkeyp
                     "major": "technology",
                     "status": "IN_PROGRESS",
                     "mode": "text",
+                    "language": "en",
                     "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
                     "completed_at": None,
                     "time_limit_minutes": 25,
@@ -485,6 +494,7 @@ def test_complete_session_can_schedule_report_generation_without_waiting(monkeyp
                     "role": "frontend",
                     "level": "junior",
                     "mode": "text",
+                    "language": "en",
                     "status": "COMPLETED",
                     "created_at": datetime(2026, 5, 5, tzinfo=timezone.utc),
                     "completed_at": datetime(2026, 5, 5, 0, 5, tzinfo=timezone.utc),

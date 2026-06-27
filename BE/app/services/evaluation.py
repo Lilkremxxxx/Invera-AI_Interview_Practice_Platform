@@ -173,7 +173,6 @@ async def generate_session_evaluation_and_plan(
             p_gaze = []
             p_smile = []
             p_wpm = []
-            p_framing = []
             p_posture = []
             p_fillers = 0
             p_pauses = 0
@@ -193,8 +192,6 @@ async def generate_session_evaluation_and_plan(
                             p_smile.append(tel["smileRatio"])
                         if "speakingPace" in tel:
                             p_wpm.append(tel["speakingPace"])
-                        if "cameraFramingScore" in tel:
-                            p_framing.append(tel["cameraFramingScore"])
                         if "bodyPostureScore" in tel:
                             p_posture.append(tel["bodyPostureScore"])
                         p_fillers += tel.get("fillerWordsCount", 0)
@@ -203,7 +200,6 @@ async def generate_session_evaluation_and_plan(
             avg_p_gaze = sum(p_gaze)/len(p_gaze) if p_gaze else None
             avg_p_smile = sum(p_smile)/len(p_smile) if p_smile else None
             avg_p_wpm = sum(p_wpm)/len(p_wpm) if p_wpm else None
-            avg_p_framing = sum(p_framing)/len(p_framing) if p_framing else None
             avg_p_posture = sum(p_posture)/len(p_posture) if p_posture else None
             
             if language == "vi":
@@ -213,7 +209,6 @@ async def generate_session_evaluation_and_plan(
 - Giao tiếp mắt (Eye Contact): {f"{int(avg_p_gaze * 100)}%" if avg_p_gaze is not None else "N/A"}
 - Biểu cảm thân thiện (Smile): {f"{int(avg_p_smile * 100)}%" if avg_p_smile is not None else "N/A"}
 - Tư thế ngồi thẳng (Posture): {f"{int(avg_p_posture * 100)}%" if avg_p_posture is not None else "N/A"}
-- Khung hình chuẩn (Framing): {f"{int(avg_p_framing * 100)}%" if avg_p_framing is not None else "N/A"}
 - Tốc độ nói: {f"{int(avg_p_wpm)} WPM" if avg_p_wpm is not None else "N/A"}
 - Tổng số từ thừa: {p_fillers}
 - Tổng số khoảng dừng dài: {p_pauses}
@@ -225,7 +220,6 @@ async def generate_session_evaluation_and_plan(
 - Eye Contact (Gaze Ratio): {f"{int(avg_p_gaze * 100)}%" if avg_p_gaze is not None else "N/A"}
 - Friendly Expression (Smile): {f"{int(avg_p_smile * 100)}%" if avg_p_smile is not None else "N/A"}
 - Body Posture Score: {f"{int(avg_p_posture * 100)}%" if avg_p_posture is not None else "N/A"}
-- Camera Framing Score: {f"{int(avg_p_framing * 100)}%" if avg_p_framing is not None else "N/A"}
 - Speaking Pace: {f"{int(avg_p_wpm)} WPM" if avg_p_wpm is not None else "N/A"}
 - Total Filler Words: {p_fillers}
 - Total Long Pauses: {p_pauses}
@@ -235,7 +229,6 @@ async def generate_session_evaluation_and_plan(
     c_gaze = []
     c_smile = []
     c_wpm = []
-    c_framing = []
     c_posture = []
     c_blink = []
     c_yaw = []
@@ -264,8 +257,6 @@ async def generate_session_evaluation_and_plan(
                 c_smile.append(telemetry_dict["smileRatio"])
             if "speakingPace" in telemetry_dict:
                 c_wpm.append(telemetry_dict["speakingPace"])
-            if "cameraFramingScore" in telemetry_dict:
-                c_framing.append(telemetry_dict["cameraFramingScore"])
             if "bodyPostureScore" in telemetry_dict:
                 c_posture.append(telemetry_dict["bodyPostureScore"])
             if "blinkRatio" in telemetry_dict:
@@ -289,7 +280,6 @@ async def generate_session_evaluation_and_plan(
     avg_c_gaze = sum(c_gaze)/len(c_gaze) if c_gaze else None
     avg_c_smile = sum(c_smile)/len(c_smile) if c_smile else None
     avg_c_wpm = sum(c_wpm)/len(c_wpm) if c_wpm else None
-    avg_c_framing = sum(c_framing)/len(c_framing) if c_framing else None
     avg_c_posture = sum(c_posture)/len(c_posture) if c_posture else None
     avg_c_blink = sum(c_blink)/len(c_blink) if c_blink else None
     avg_c_yaw = sum(c_yaw)/len(c_yaw) if c_yaw else None
@@ -300,7 +290,6 @@ async def generate_session_evaluation_and_plan(
 - Giao tiếp mắt: {f"{int(avg_c_gaze * 100)}% thời gian" if avg_c_gaze is not None else "N/A"}
 - Biểu cảm thân thiện (Smile): {f"{int(avg_c_smile * 100)}% thời gian" if avg_c_smile is not None else "N/A"}
 - Tư thế đúng (Posture): {f"{int(avg_c_posture * 100)}% thời gian" if avg_c_posture is not None else "N/A"}
-- Khung hình chuẩn & Ánh sáng (Framing): {f"{int(avg_c_framing * 100)}% thời gian" if avg_c_framing is not None else "N/A"}
 - Tốc độ nói: {f"{int(avg_c_wpm)} từ/phút (WPM)" if avg_c_wpm is not None else "N/A"}
 - Tổng số từ thừa (Filler words): {c_fillers} từ
 - Tổng số khoảng dừng dài (>3.5s): {c_pauses} lần
@@ -312,7 +301,6 @@ async def generate_session_evaluation_and_plan(
 - Eye Contact (Gaze Ratio): {f"{int(avg_c_gaze * 100)}%" if avg_c_gaze is not None else "N/A"}
 - Friendly Expression (Smile): {f"{int(avg_c_smile * 100)}%" if avg_c_smile is not None else "N/A"}
 - Body Posture Score: {f"{int(avg_c_posture * 100)}%" if avg_c_posture is not None else "N/A"}
-- Camera Framing Score: {f"{int(avg_c_framing * 100)}%" if avg_c_framing is not None else "N/A"}
 - Speaking Pace: {f"{int(avg_c_wpm)} WPM" if avg_c_wpm is not None else "N/A"}
 - Total Filler Words: {c_fillers}
 - Total Long Pauses: {c_pauses}
