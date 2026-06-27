@@ -60,7 +60,7 @@ async def bootstrap_test_automation(
             row = await db.fetchrow(
                 """
                 INSERT INTO questions (major, role, level, text, category, difficulty, tags, user_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NULL)
+                VALUES ($1, $2, $3, $4, $5, $6, $7::text[], NULL)
                 RETURNING id, major, role, level, text, category, difficulty, tags
                 """,
                 payload.session_payload.major,
@@ -69,7 +69,7 @@ async def bootstrap_test_automation(
                 question.text,
                 question.category,
                 question.difficulty,
-                json.dumps(question.tags),
+                question.tags,
             )
             questions.append(dict(row) if row else {"seed_index": index, **question.model_dump()})
 

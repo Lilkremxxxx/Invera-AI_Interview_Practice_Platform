@@ -1,0 +1,16 @@
+export const smokeSelectors = {
+  landingHero: /chinh phục buổi phỏng vấn.*công nghệ ai.*tiên tiến/i,
+  loginHeading: /welcome back|chào mừng quay lại/i,
+  signupHeading: /start your interview journey|bắt đầu hành trình/i,
+  forgotPasswordHeading: /forgot password|quên mật khẩu/i,
+  resetPasswordHeading: /reset password|đặt lại mật khẩu/i,
+  dashboardHeading: /dashboard|bảng điều khiển/i,
+  sessionsHeading: /sessions|phiên/i,
+  newSessionHeading: /new session|tạo session mới/i,
+  sessionDetailHeading: /session detail|tóm tắt phiên/i,
+  interviewRoomHeading: /question\s*\d+|câu\s*\d+/i,
+  liveRoomPhase: /connecting|kết nối|live agent/i,
+  upgradeHeading: /upgrade|nâng cấp/i,
+  adminAccessHeading: /admin access|quyền admin/i,
+  adminLoginHeading: /admin login|đăng nhập admin/i,
+} as const;

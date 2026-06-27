@@ -4,12 +4,14 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import InterviewRoom from "../pages/InterviewRoom";
+import { PENDING_SESSION_COMPLETION_KEY } from "../lib/session-completion";
 
 const getSession = vi.fn();
 const submitAnswer = vi.fn();
 const completeSession = vi.fn();
 const transcribeAnswer = vi.fn();
 const submitVideoAnswer = vi.fn();
+const createRealtimeSttSocket = vi.fn(() => null);
 
 vi.mock("../hooks/use-toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -95,7 +97,7 @@ vi.mock("../lib/api", () => ({
     complete: (...args: unknown[]) => completeSession(...args),
     transcribeAnswer: (...args: unknown[]) => transcribeAnswer(...args),
     submitVideoAnswer: (...args: unknown[]) => submitVideoAnswer(...args),
-    createRealtimeSttSocket: () => null,
+    createRealtimeSttSocket: (...args: unknown[]) => createRealtimeSttSocket(...args),
     synthesizeFeedbackAudio: vi.fn(),
   },
 }));
@@ -143,6 +145,7 @@ class FakeSpeechRecognition {
 describe("InterviewRoom auto-advance", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    createRealtimeSttSocket.mockClear();
     const storage = new Map<string, string>();
     vi.stubGlobal("localStorage", {
       getItem: vi.fn((key: string) => storage.get(key) ?? null),
@@ -183,6 +186,7 @@ describe("InterviewRoom auto-advance", () => {
       role: "frontend",
       level: "junior",
       mode: "camera",
+      language: "en",
       status: "IN_PROGRESS",
       created_at: "2026-05-05T00:00:00Z",
       completed_at: null,
@@ -261,6 +265,7 @@ describe("InterviewRoom auto-advance", () => {
         1,
       );
     });
+    expect(createRealtimeSttSocket).not.toHaveBeenCalled();
 
     await waitFor(() => {
       expect(screen.getByText(/Question 2 \/ 2/i)).toBeInTheDocument();
@@ -275,6 +280,7 @@ describe("InterviewRoom auto-advance", () => {
       role: "frontend",
       level: "junior",
       mode: "camera",
+      language: "en",
       status: "IN_PROGRESS",
       created_at: "2026-05-05T00:00:00Z",
       completed_at: null,
@@ -342,6 +348,7 @@ describe("InterviewRoom auto-advance", () => {
       role: "frontend",
       level: "junior",
       mode: "camera",
+      language: "en",
       status: "IN_PROGRESS",
       created_at: "2026-05-05T00:00:00Z",
       completed_at: null,
@@ -375,5 +382,135 @@ describe("InterviewRoom auto-advance", () => {
       expect(completeSession).toHaveBeenCalledWith("session-3", { generateReport: true });
       expect(screen.getByText("Sessions list")).toBeInTheDocument();
     });
+  });
+
+  it("waits for the pending answer upload before completing the final session", async () => {
+    getSession.mockResolvedValueOnce({
+      id: "session-4",
+      user_id: "user-1",
+      major: "frontend",
+      role: "frontend",
+      level: "junior",
+      mode: "camera",
+      language: "en",
+      status: "IN_PROGRESS",
+      created_at: "2026-05-05T00:00:00Z",
+      completed_at: null,
+      time_limit_minutes: null,
+      questions: [
+        {
+          id: 31,
+          role: "frontend",
+          level: "junior",
+          text: "What is memoization?",
+          category: "JavaScript",
+          difficulty: "easy",
+        },
+      ],
+      answers: [],
+    });
+
+    let resolveUpload!: () => void;
+    const pendingUpload = new Promise<void>((resolve) => {
+      resolveUpload = resolve;
+    });
+    submitVideoAnswer.mockReturnValue(
+      pendingUpload.then(() => ({ text: "transcribed video answer" })),
+    );
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={["/app/interview/session-4"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+          <Route path="/app/sessions" element={<div>Sessions list</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /record/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^stop$/i }));
+
+    await waitFor(() => {
+      expect(submitVideoAnswer).toHaveBeenCalledTimes(1);
+    });
+    expect(completeSession).not.toHaveBeenCalled();
+
+    resolveUpload();
+
+    await waitFor(() => {
+      expect(completeSession).toHaveBeenCalledWith("session-4", { generateReport: true });
+      expect(screen.getByText("Sessions list")).toBeInTheDocument();
+    });
+  });
+
+  it("navigates away immediately after ending the session and leaves a pending completion marker", async () => {
+    getSession.mockResolvedValueOnce({
+      id: "session-5",
+      user_id: "user-1",
+      major: "frontend",
+      role: "frontend",
+      level: "junior",
+      mode: "camera",
+      language: "en",
+      status: "IN_PROGRESS",
+      created_at: "2026-05-05T00:00:00Z",
+      completed_at: null,
+      time_limit_minutes: null,
+      questions: [
+        {
+          id: 41,
+          role: "frontend",
+          level: "junior",
+          text: "How do you structure a React app?",
+          category: "Architecture",
+          difficulty: "easy",
+        },
+      ],
+      answers: [],
+    });
+
+    let resolveComplete!: () => void;
+    const pendingComplete = new Promise<void>((resolve) => {
+      resolveComplete = resolve;
+    });
+    completeSession.mockReturnValue(pendingComplete.then(() => ({
+      id: "session-5",
+      user_id: "user-1",
+      major: "frontend",
+      role: "frontend",
+      level: "junior",
+      mode: "camera",
+      status: "COMPLETED",
+      created_at: "2026-05-05T00:00:00Z",
+      completed_at: "2026-05-05T00:01:00Z",
+      avg_score: null,
+      question_count: 1,
+      time_limit_minutes: null,
+      evaluation_report: null,
+      practice_plan: null,
+    })));
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={["/app/interview/session-5"]}>
+        <Routes>
+          <Route path="/app/interview/:id" element={<InterviewRoom />} />
+          <Route path="/app/sessions" element={<div>Sessions list</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /end/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /end session/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Sessions list")).toBeInTheDocument();
+    });
+
+    expect(JSON.parse(sessionStorage.getItem(PENDING_SESSION_COMPLETION_KEY) ?? "null")).toMatchObject({
+      sessionId: "session-5",
+      status: "completing",
+    });
+
+    resolveComplete();
   });
 });
